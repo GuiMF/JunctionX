@@ -1,12 +1,22 @@
+# Python
 .venv/
 __pycache__/
 .pytest_cache/
 *.py[cod]
 .coverage
 htmlcov/
-.DS_Store
+*.egg-info/
+reports/
+
+# Node / Web
+node_modules/
 dist/
 build/
-*.egg-info/
+*.log
+.env.local
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
 .env
-reports/
