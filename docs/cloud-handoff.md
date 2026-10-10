@@ -100,9 +100,16 @@ A avaliação central, recomendações, pontuação, API e CycloneDX pertencem a
 desconhecidas até essa avaliação. As propriedades `tls_policy` descrevem capacidades
 configuradas; `negotiated_group` e `observed_at` permanecem null.
 
-O contrato implementado usa o exemplo do plano; ainda precisa de ser alinhado com
-o contrato definitivo do responsável 04. O frontend pode usar estes exemplos para
-inventário, detalhe da evidência e comparação enquanto essa integração acontece.
+O adaptador partilhado `cloud_adapter` está registado na API e usa o contrato do
+core. O CLI mantém o relatório separado acima. O serviço recebe JSON inline e
+preserva 28 recursos e 27 findings, incluindo os dois listeners HTTP. Os oito
+avisos de postura, digest das assinaturas, relações e capacidades TLS configuradas
+chegam aos exports JSON/CycloneDX. O contrato inclui inventário e snapshots;
+`observed_at` das findings configuradas é `GeneratedAt`, enquanto a negociação
+continua desconhecida. Expiração e idade usam `AdapterContext.evaluated_at`.
+Consultar [cloud-adapter.md](cloud-adapter.md) para o exemplo API e limites.
+Os testes de integração usam os três inventários reais das fixtures, incluindo
+comparações da política híbrida e da renovação, sem importar findings pré-fabricadas.
 O ficheiro HTML do quadro de tarefas guarda progresso no browser e não sincroniza
 com os checkboxes do plano Markdown.
 O snapshot [cloud-progress.json](cloud-progress.json) permite importar a conclusão

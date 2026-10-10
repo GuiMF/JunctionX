@@ -1,0 +1,145 @@
+{
+  "fixture_format": "quantumtrace.normalized.v1",
+  "result": {
+    "findings": [
+      {
+        "schema_version": "1.0",
+        "id": "finding-6fd89fd4901ffeccc1e4670a8cf6140f",
+        "asset_id": "asset-8e2aa59f340a3c8c5b7d48b469adf6d0",
+        "source_type": "cloud",
+        "algorithm": "X25519MLKEM768",
+        "parameters": {
+          "key_bits": null,
+          "mode": null,
+          "named_group": "X25519MLKEM768",
+          "hash_algorithm": null,
+          "iterations": null,
+          "configured_tls_policy": null
+        },
+        "usage": "key_establishment",
+        "evidence_kind": "configured",
+        "evidence": [
+          {
+            "file": "synthetic/cloud-example",
+            "locator": "/listeners/0/securityPolicy",
+            "detail": "Synthetic modified configuration offers a standardized hybrid group; observed negotiation remains unverified."
+          }
+        ],
+        "confidence": "high",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [],
+        "owner": "partners",
+        "observed_at": "2026-10-10T12:00:00Z",
+        "rule_id": null,
+        "rationale": null,
+        "recommendation": null,
+        "references": []
+      },
+      {
+        "schema_version": "1.0",
+        "id": "finding-50b2e250c764028a77b0f8c8ddcad288",
+        "asset_id": "asset-e5375b71762e8b8073777760c93a83e0",
+        "source_type": "cloud",
+        "algorithm": "RSA",
+        "parameters": {
+          "key_bits": 2048,
+          "mode": null,
+          "named_group": null,
+          "hash_algorithm": null,
+          "iterations": null,
+          "configured_tls_policy": null
+        },
+        "usage": "signature",
+        "evidence_kind": "configured",
+        "evidence": [
+          {
+            "file": "synthetic/cloud-example",
+            "locator": "/certificates/0/signatureAlgorithm",
+            "detail": "Synthetic adapter observation: RSA for signature; not a real scan."
+          }
+        ],
+        "confidence": "high",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [
+          "Synthetic certificate expiry issue for demonstration; not live AWS state."
+        ],
+        "owner": "partners",
+        "observed_at": "2026-10-10T12:00:00Z",
+        "rule_id": null,
+        "rationale": null,
+        "recommendation": null,
+        "references": []
+      },
+      {
+        "schema_version": "1.0",
+        "id": "finding-7d28a51278bccf5f56cfc1c8cc2e04fe",
+        "asset_id": "asset-51abe1bcdc960bd776a0daaa236110b0",
+        "source_type": "cloud",
+        "algorithm": "RSA",
+        "parameters": {
+          "key_bits": 2048,
+          "mode": null,
+          "named_group": null,
+          "hash_algorithm": null,
+          "iterations": null,
+          "configured_tls_policy": null
+        },
+        "usage": "encryption",
+        "evidence_kind": "configured",
+        "evidence": [
+          {
+            "file": "synthetic/cloud-example",
+            "locator": "/keys/0/KeySpec",
+            "detail": "Synthetic adapter observation: RSA for encryption; not a real scan."
+          }
+        ],
+        "confidence": "high",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [],
+        "owner": "payments",
+        "observed_at": "2026-10-10T12:00:00Z",
+        "rule_id": null,
+        "rationale": null,
+        "recommendation": null,
+        "references": []
+      }
+    ],
+    "coverage": [
+      {
+        "source_type": "cloud",
+        "input_name": "cloud-example.json",
+        "unit": "resources",
+        "assessed": 3,
+        "unknown": 0,
+        "unsupported": 0,
+        "failed": 0
+      }
+    ],
+    "errors": [],
+    "relationships": [
+      {
+        "source_asset_id": "asset-8e2aa59f340a3c8c5b7d48b469adf6d0",
+        "target_asset_id": "asset-e5375b71762e8b8073777760c93a83e0",
+        "kind": "uses_certificate",
+        "evidence": [
+          {
+            "file": "synthetic/cloud-example",
+            "locator": "/listeners/0/CertificateArn",
+            "detail": "Explicit synthetic certificate identifier reference"
+          }
+        ]
+      }
+    ],
+    "tool_versions": {
+      "synthetic-example-builder": "1.0.0"
+    },
+    "assets": [],
+    "snapshots": []
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "source_type": {
+      "enum": [
+        "pcap",
+        "source",
+        "cloud"
+      ],
+      "title": "Source Type",
+      "type": "string"
+    },
+    "format": {
+      "enum": [
+        "normalized",
+        "raw"
+      ],
+      "title": "Format",
+      "type": "string"
+    },
+    "content": {
+      "maxLength": 8388608,
+      "title": "Content",
+      "type": "string"
+    },
+    "encoding": {
+      "default": "utf-8",
+      "enum": [
+        "utf-8",
+        "base64"
+      ],
+      "title": "Encoding",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "source_type",
+    "format",
+    "content"
+  ],
+  "title": "ScanInput",
+  "type": "object"
+}

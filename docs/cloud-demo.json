@@ -116,7 +116,7 @@
         "hybrid_groups": [],
         "negotiated_group": null,
         "reference": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
-        "mapping_version": "cloud-1.0"
+        "mapping_version": "cloud-1.1"
       },
       "after": {
         "name": "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09",
@@ -141,7 +141,7 @@
         ],
         "negotiated_group": null,
         "reference": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
-        "mapping_version": "cloud-1.0"
+        "mapping_version": "cloud-1.1"
       },
       "before_evidence": [
         {
@@ -329,7 +329,7 @@
           "hybrid_groups": [],
           "negotiated_group": null,
           "reference": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
-          "mapping_version": "cloud-1.0"
+          "mapping_version": "cloud-1.1"
         }
       }
     ],
@@ -353,7 +353,7 @@
         "quantum_status": "unknown",
         "challenge_tier": "unknown",
         "classical_issues": [],
-        "rule_id": "cloud-1.0",
+        "rule_id": "cloud-1.1",
         "rationale": "Configuration snapshot; runtime use is unverified.",
         "recommendation": null,
         "references": [
@@ -391,7 +391,7 @@
         "quantum_status": "unknown",
         "challenge_tier": "unknown",
         "classical_issues": [],
-        "rule_id": "cloud-1.0",
+        "rule_id": "cloud-1.1",
         "rationale": "Configuration snapshot; runtime use is unverified.",
         "recommendation": null,
         "references": [
@@ -434,7 +434,7 @@
         "quantum_status": "unknown",
         "challenge_tier": "unknown",
         "classical_issues": [],
-        "rule_id": "cloud-1.0",
+        "rule_id": "cloud-1.1",
         "rationale": "Configuration snapshot; runtime use is unverified.",
         "recommendation": null,
         "references": [
@@ -457,7 +457,8 @@
         "parameters": {
           "key_bits": null,
           "mode": null,
-          "named_group": null
+          "named_group": null,
+          "hash_algorithm": "SHA384"
         },
         "usage": "signature",
         "evidence_kind": "configured",
@@ -467,7 +468,7 @@
         "quantum_status": "unknown",
         "challenge_tier": "unknown",
         "classical_issues": [],
-        "rule_id": "cloud-1.0",
+        "rule_id": "cloud-1.1",
         "rationale": "Configuration snapshot; runtime use is unverified.",
         "recommendation": null,
         "references": [
@@ -500,7 +501,7 @@
         "quantum_status": "unknown",
         "challenge_tier": "unknown",
         "classical_issues": [],
-        "rule_id": "cloud-1.0",
+        "rule_id": "cloud-1.1",
         "rationale": "Configuration snapshot; runtime use is unverified.",
         "recommendation": null,
         "references": [

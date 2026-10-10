@@ -1,0 +1,10 @@
+[project]
+name = "quantumtrace-core"
+version = "0.1.0"
+description = "QuantumTrace task 04 local integration backend"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"

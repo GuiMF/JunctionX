@@ -1,0 +1,426 @@
+{
+  "$defs": {
+    "ConfiguredTLSPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "protocols": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Protocols"
+        },
+        "cipher_suites": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cipher Suites"
+        },
+        "hybrid_pq_capable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hybrid Pq Capable"
+        },
+        "hybrid_groups": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hybrid Groups"
+        },
+        "classical_fallback": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Classical Fallback"
+        },
+        "negotiated_group": {
+          "const": null,
+          "default": null,
+          "title": "Negotiated Group",
+          "type": "null"
+        },
+        "reference": {
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        },
+        "mapping_version": {
+          "minLength": 1,
+          "title": "Mapping Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference",
+        "mapping_version"
+      ],
+      "title": "ConfiguredTLSPolicy",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "detail": {
+          "minLength": 1,
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "locator",
+        "detail"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "key_bits": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key Bits"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "named_group": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Named Group"
+        },
+        "hash_algorithm": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hash Algorithm"
+        },
+        "iterations": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iterations"
+        },
+        "configured_tls_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConfiguredTLSPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Parameters",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "asset_id": {
+      "minLength": 1,
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "source_type": {
+      "enum": [
+        "pcap",
+        "source",
+        "cloud"
+      ],
+      "title": "Source Type",
+      "type": "string"
+    },
+    "algorithm": {
+      "minLength": 1,
+      "title": "Algorithm",
+      "type": "string"
+    },
+    "parameters": {
+      "$ref": "#/$defs/Parameters"
+    },
+    "usage": {
+      "enum": [
+        "key_establishment",
+        "signature",
+        "encryption",
+        "hash",
+        "mac",
+        "kdf",
+        "unknown"
+      ],
+      "title": "Usage",
+      "type": "string"
+    },
+    "evidence_kind": {
+      "enum": [
+        "declared",
+        "configured",
+        "offered",
+        "observed"
+      ],
+      "title": "Evidence Kind",
+      "type": "string"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "minItems": 1,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "quantum_status": {
+      "default": "unknown",
+      "enum": [
+        "vulnerable",
+        "resistant_primitive",
+        "hybrid",
+        "unknown",
+        "not_applicable"
+      ],
+      "title": "Quantum Status",
+      "type": "string"
+    },
+    "challenge_tier": {
+      "default": "unknown",
+      "enum": [
+        "critical",
+        "medium",
+        "resilient",
+        "unknown"
+      ],
+      "title": "Challenge Tier",
+      "type": "string"
+    },
+    "classical_issues": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Classical Issues",
+      "type": "array"
+    },
+    "posture_issues": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Posture Issues",
+      "type": "array"
+    },
+    "owner": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Owner"
+    },
+    "observed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed At"
+    },
+    "rule_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rule Id"
+    },
+    "rationale": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rationale"
+    },
+    "recommendation": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Recommendation"
+    },
+    "references": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "References",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "asset_id",
+    "source_type",
+    "algorithm",
+    "usage",
+    "evidence_kind",
+    "evidence",
+    "confidence"
+  ],
+  "title": "Finding",
+  "type": "object"
+}

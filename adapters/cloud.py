@@ -12,7 +12,12 @@ KMS_REFERENCE = "https://docs.aws.amazon.com/kms/latest/developerguide/symm-asym
 ALB_REFERENCE = "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html"
 NLB_REFERENCE = "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/describe-ssl-policies.html"
 ACM_REFERENCE = "https://docs.aws.amazon.com/acm/latest/APIReference/API_CertificateDetail.html"
-MAPPING_VERSION = "cloud-1.0"
+MAPPING_VERSION = "cloud-1.1"
+INPUTS = (
+    ("kms_key_inventory.json", "Keys", "kms_key", "KeyArn"),
+    ("acm_certificates.json", "Certificates", "certificate", "CertificateArn"),
+    ("load_balancer_listeners.json", "LoadBalancers", "load_balancer", "LoadBalancerArn"),
+)
 
 
 ECDHE_TLS12_CIPHERS = [
@@ -130,10 +135,7 @@ def _validate_record(record, identifier):
     return arn
 
 
-def scan_cloud(directory="cloud-posture", *, evaluated_at=None):
-    """Return a JSON-serializable adapter report, retaining partial successes."""
-    directory = Path(directory)
-    evaluation = _date(evaluated_at) if evaluated_at is not None else datetime.now(timezone.utc)
+def _scan_cloud(contents, evaluation):
     report = {
         "schema_version": "1.0", "mapping_version": MAPPING_VERSION,
         "evaluated_at": evaluation.isoformat(), "assessment_status": "pending_core",
@@ -190,33 +192,35 @@ def scan_cloud(directory="cloud-posture", *, evaluated_at=None):
             "evidence": [_evidence(file, locator, value)],
         })
 
-    for filename, collection, kind, identifier in (
-        ("kms_key_inventory.json", "Keys", "kms_key", "KeyArn"),
-        ("acm_certificates.json", "Certificates", "certificate", "CertificateArn"),
-        ("load_balancer_listeners.json", "LoadBalancers", "load_balancer", "LoadBalancerArn"),
-    ):
-        file = directory / filename
+    for filename, collection, kind, identifier in INPUTS:
+        if filename not in contents:
+            continue
+        file, content, prefix = contents[filename]
         coverage = {"unit": "resources", "total": None, "inventoried": 0, "failed": 0, "file_failed": False}
         report["coverage"][kind] = coverage
         try:
-            content = file.read_bytes()
+            if isinstance(content, OSError):
+                raise content
             report["input_hashes"][filename] = hashlib.sha256(content).hexdigest()
             snapshot = json.loads(content, object_pairs_hook=_json_object,
                                   parse_constant=_invalid_json_constant, parse_float=_json_float)
             if not isinstance(snapshot, dict) or not isinstance(snapshot.get(collection), list):
                 raise ValueError(f"Expected an object with a {collection} list")
+            for field in ("Account", "Region"):
+                if field in snapshot and (not isinstance(snapshot[field], str) or not snapshot[field].strip()):
+                    raise ValueError(f"{field} must be a nonempty string")
             generated = _date(snapshot.get("GeneratedAt"))
             report["snapshots"].append({
-                "file": str(file), "generated_at": generated.isoformat(),
+                "file": str(file), "locator": prefix + "/GeneratedAt", "generated_at": generated.isoformat(),
                 "age_seconds": (evaluation - generated).total_seconds(),
             })
         except (OSError, ValueError) as exc:
             coverage["file_failed"] = True
-            error(file, "", str(exc))
+            error(file, prefix, str(exc))
             continue
         coverage["total"] = len(snapshot[collection])
         for index, record in enumerate(snapshot[collection]):
-            pointer = f"/{collection}/{index}"
+            pointer = prefix + f"/{collection}/{index}"
             try:
                 item = asset(record, kind, identifier, file, pointer, snapshot)
             except ValueError as exc:
@@ -238,7 +242,7 @@ def scan_cloud(directory="cloud-posture", *, evaluated_at=None):
                 if "KeyUsage" in record:
                     report["findings"][-1]["evidence"].append(_evidence(file, pointer + "/KeyUsage", record["KeyUsage"]))
                 if spec == "SYMMETRIC_DEFAULT" and "Region" in snapshot:
-                    report["findings"][-1]["evidence"].append(_evidence(file, "/Region", snapshot["Region"]))
+                    report["findings"][-1]["evidence"].append(_evidence(file, prefix + "/Region", snapshot["Region"]))
                 for field, value, code in (
                     ("KeyRotationStatus", "DISABLED", "rotation_disabled"),
                     ("KeyState", "PendingDeletion", "pending_deletion"),
@@ -253,6 +257,8 @@ def scan_cloud(directory="cloud-posture", *, evaluated_at=None):
                 signature = record.get("SignatureAlgorithm")
                 signatures = {"SHA256WITHRSA": "RSA", "SHA1WITHRSA": "RSA", "ECDSA_WITH_SHA256": "ECDSA", "ECDSA_WITH_SHA384": "ECDSA"}
                 finding(item, "issuer_signature", signatures.get(signature, "unknown"), None, None, "signature", file, pointer + "/SignatureAlgorithm", signature, ACM_REFERENCE)
+                digests = {"SHA1WITHRSA": "SHA1", "SHA256WITHRSA": "SHA256", "ECDSA_WITH_SHA256": "SHA256", "ECDSA_WITH_SHA384": "SHA384"}
+                report["findings"][-1]["parameters"]["hash_algorithm"] = digests.get(signature)
                 if signature == "SHA1WITHRSA":
                     issue(item, "sha1_certificate_signature", file, pointer + "/SignatureAlgorithm", signature)
                 if "NotAfter" in record and _date(record["NotAfter"]) <= evaluation:
@@ -321,6 +327,21 @@ def scan_cloud(directory="cloud-posture", *, evaluated_at=None):
         "unknown": sum(p["protocols"] is None for p in policies),
     }
     return report
+
+
+def scan_cloud(directory="cloud-posture", *, evaluated_at=None):
+    """Read local snapshots for the standalone CLI; raw API scanning never opens paths."""
+    directory = Path(directory)
+    evaluation = _date(evaluated_at) if evaluated_at is not None else datetime.now(timezone.utc)
+    contents = {}
+    for filename, *_ in INPUTS:
+        file = directory / filename
+        try:
+            content = file.read_bytes()
+        except OSError as exc:
+            content = exc
+        contents[filename] = (file, content, "")
+    return _scan_cloud(contents, evaluation)
 
 
 if __name__ == "__main__":

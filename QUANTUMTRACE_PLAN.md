@@ -225,7 +225,7 @@ Replace the owner blanks with teammate names. Each owner implements and checks t
 
 **Handoff:** Deliver linked listener/certificate examples, owner-tagged KMS examples, and original/modified demo fixtures.
 
-**Local completion:** See [cloud handoff](docs/cloud-handoff.md) and [generated examples](docs/cloud-demo.json). The final Person 4 contract and team integration remain pending.
+**Cloud integration:** See [cloud handoff](docs/cloud-handoff.md), [raw API input](docs/cloud-adapter.md), and [generated examples](docs/cloud-demo.json). The registered adapter uses Person 4's shared contract; raw service/API tests cover inventory, posture, provenance and JSON/CycloneDX exports. Network/source and the final frontend remain separate team handoffs.
 
 **Certificate renewal demo:** A separate [synthetic reimport comparison](docs/cloud-renewal-demo.json)
 removes expiry and SHA-1 posture issues without changing certificate identity or

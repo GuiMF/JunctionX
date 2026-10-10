@@ -1,0 +1,1112 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "QuantumTrace local scan API",
+    "description": "Synchronous local integration API. Results are held in bounded process memory. Normalized inputs are labelled synthetic fixtures; raw inputs need registered scanners.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/scans": {
+      "post": {
+        "summary": "Create Scan",
+        "operationId": "create_scan_api_scans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scans/{scan_id}": {
+      "get": {
+        "summary": "Get Scan",
+        "operationId": "get_scan_api_scans__scan_id__get",
+        "parameters": [
+          {
+            "name": "scan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scans/{scan_id}/export": {
+      "get": {
+        "summary": "Get Export",
+        "operationId": "get_export_api_scans__scan_id__export_get",
+        "parameters": [
+          {
+            "name": "scan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scan Id"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "cyclonedx"
+              ],
+              "type": "string",
+              "default": "json",
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConfiguredTLSPolicy": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "protocols": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocols"
+          },
+          "cipher_suites": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cipher Suites"
+          },
+          "hybrid_pq_capable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hybrid Pq Capable"
+          },
+          "hybrid_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hybrid Groups"
+          },
+          "classical_fallback": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classical Fallback"
+          },
+          "negotiated_group": {
+            "type": "null",
+            "title": "Negotiated Group"
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Reference"
+          },
+          "mapping_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Mapping Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reference",
+          "mapping_version"
+        ],
+        "title": "ConfiguredTLSPolicy"
+      },
+      "Coverage": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "input_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Input Name"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "files",
+              "packets",
+              "sessions",
+              "resources",
+              "inputs"
+            ],
+            "title": "Unit"
+          },
+          "assessed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Assessed",
+            "default": 0
+          },
+          "unknown": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unknown",
+            "default": 0
+          },
+          "unsupported": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unsupported",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Failed",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_type",
+          "input_name",
+          "unit"
+        ],
+        "title": "Coverage"
+      },
+      "Evidence": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "title": "File"
+          },
+          "locator": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Locator"
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "file",
+          "locator",
+          "detail"
+        ],
+        "title": "Evidence"
+      },
+      "Finding": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "asset_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Asset Id"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "algorithm": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Algorithm"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/Parameters"
+          },
+          "usage": {
+            "type": "string",
+            "enum": [
+              "key_establishment",
+              "signature",
+              "encryption",
+              "hash",
+              "mac",
+              "kdf",
+              "unknown"
+            ],
+            "title": "Usage"
+          },
+          "evidence_kind": {
+            "type": "string",
+            "enum": [
+              "declared",
+              "configured",
+              "offered",
+              "observed"
+            ],
+            "title": "Evidence Kind"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Confidence"
+          },
+          "quantum_status": {
+            "type": "string",
+            "enum": [
+              "vulnerable",
+              "resistant_primitive",
+              "hybrid",
+              "unknown",
+              "not_applicable"
+            ],
+            "title": "Quantum Status",
+            "default": "unknown"
+          },
+          "challenge_tier": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "medium",
+              "resilient",
+              "unknown"
+            ],
+            "title": "Challenge Tier",
+            "default": "unknown"
+          },
+          "classical_issues": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Classical Issues"
+          },
+          "posture_issues": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "Posture Issues"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation"
+          },
+          "references": {
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": "array",
+            "title": "References"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "asset_id",
+          "source_type",
+          "algorithm",
+          "usage",
+          "evidence_kind",
+          "evidence",
+          "confidence"
+        ],
+        "title": "Finding"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InventoryAsset": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Asset Id"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Kind"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "snapshot_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot At"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "configuration": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Configuration"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_id",
+          "source_type",
+          "kind",
+          "configuration",
+          "evidence"
+        ],
+        "title": "InventoryAsset"
+      },
+      "Parameters": {
+        "properties": {
+          "key_bits": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Bits"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "named_group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Named Group"
+          },
+          "hash_algorithm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hash Algorithm"
+          },
+          "iterations": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iterations"
+          },
+          "configured_tls_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfiguredTLSPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Parameters"
+      },
+      "Relationship": {
+        "properties": {
+          "source_asset_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Asset Id"
+          },
+          "target_asset_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Target Asset Id"
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Kind"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_asset_id",
+          "target_asset_id",
+          "kind",
+          "evidence"
+        ],
+        "title": "Relationship"
+      },
+      "ScanError": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "input_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Input Name"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_type",
+          "input_name",
+          "code",
+          "message"
+        ],
+        "title": "ScanError"
+      },
+      "ScanInput": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "normalized",
+              "raw"
+            ],
+            "title": "Format"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 8388608,
+            "title": "Content"
+          },
+          "encoding": {
+            "type": "string",
+            "enum": [
+              "utf-8",
+              "base64"
+            ],
+            "title": "Encoding",
+            "default": "utf-8"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "source_type",
+          "format",
+          "content"
+        ],
+        "title": "ScanInput"
+      },
+      "ScanRequest": {
+        "properties": {
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/ScanInput"
+            },
+            "type": "array",
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Inputs"
+          },
+          "evaluated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluated At"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "synthetic": {
+            "type": "boolean",
+            "title": "Synthetic",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inputs"
+        ],
+        "title": "ScanRequest"
+      },
+      "ScanResult": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "scan_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Scan Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "evaluated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Evaluated At"
+          },
+          "ruleset_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Ruleset Version"
+          },
+          "tool_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tool Versions"
+          },
+          "input_hashes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Input Hashes"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "coverage": {
+            "items": {
+              "$ref": "#/components/schemas/Coverage"
+            },
+            "type": "array",
+            "title": "Coverage"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ScanError"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "relationships": {
+            "items": {
+              "$ref": "#/components/schemas/Relationship"
+            },
+            "type": "array",
+            "title": "Relationships"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryAsset"
+            },
+            "type": "array",
+            "title": "Assets"
+          },
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/Snapshot"
+            },
+            "type": "array",
+            "title": "Snapshots"
+          },
+          "score": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Score"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "synthetic": {
+            "type": "boolean",
+            "title": "Synthetic",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scan_id",
+          "status",
+          "started_at",
+          "evaluated_at",
+          "ruleset_version"
+        ],
+        "title": "ScanResult"
+      },
+      "Snapshot": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "input_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Input Name"
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "title": "File"
+          },
+          "locator": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Locator"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "age_seconds": {
+            "type": "number",
+            "title": "Age Seconds"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_type",
+          "input_name",
+          "file",
+          "locator",
+          "generated_at",
+          "age_seconds"
+        ],
+        "title": "Snapshot"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
