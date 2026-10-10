@@ -1,293 +1,482 @@
 import type { ScanResult, MigrationComparison } from '../types/contract';
 
 export const mockScanResult: ScanResult = {
-  schema_version: '1.0',
-  scan_id: 'scan-jx-2026-demo-01',
-  started_at: '2026-10-10T14:15:00Z',
-  evaluated_at: '2026-10-10T14:15:18Z',
-  ruleset_version: '2026.10-nist-fips',
-  tool_versions: {
-    tshark: '4.2.6',
-    rules_engine: '1.0.0-deterministic',
-    source_analyzer: 'cryptoscan-adapter-v1',
-    cloud_parser: 'aws-adapter-v1'
+  "schema_version": "1.0",
+  "scan_id": "example-scan-original",
+  "status": "completed",
+  "started_at": "2026-10-10T12:00:00Z",
+  "evaluated_at": "2026-10-10T12:00:00Z",
+  "ruleset_version": "1.0.1",
+  "tool_versions": {
+    "quantumtrace-core": "0.1.0",
+    "source-example.json/synthetic-example-builder": "1.0.0",
+    "source-example.json/normalized-fixture-importer": "1.0.0",
+    "network-example.json/synthetic-example-builder": "1.0.0",
+    "network-example.json/normalized-fixture-importer": "1.0.0",
+    "cloud-example.json/synthetic-example-builder": "1.0.0",
+    "cloud-example.json/normalized-fixture-importer": "1.0.0"
   },
-  input_hashes: {
-    network_pcap: 'sha256:4a8b79c02d8f99e32a...',
-    source_bundle: 'sha256:88e3b29c91d4021a...',
-    cloud_kms: 'sha256:12c49a88df0149bb...',
-    cloud_alb: 'sha256:fe99139a04cd123e...',
-    cloud_certs: 'sha256:ba770192e104ca81...'
+  "input_hashes": {
+    "source-example.json": "4e2d522cb3e3e6e332b9dbca23123c88546c3ed51422a4535295764d036a5771",
+    "network-example.json": "2c8437a4a98a65c5381f104916de8bbcf26924fced27f79f36f528e211227859",
+    "cloud-example.json": "dd5e60ab4411570b2ef465fa6c8ef5f0668d32a457b2d995c2d957064a8e8431"
   },
-  coverage: {
-    network: {
-      assessed: 118,
-      unknown: 12,
-      unsupported: 5,
-      failed: 0,
-      unit: 'sessions'
-    },
-    source: {
-      assessed: 22,
-      unknown: 2,
-      unsupported: 0,
-      failed: 0,
-      unit: 'files'
-    },
-    cloud: {
-      assessed: 21,
-      unknown: 0,
-      unsupported: 0,
-      failed: 0,
-      unit: 'resources'
-    }
-  },
-  errors: [],
-  findings: [
+  "findings": [
     {
-      schema_version: '1.0',
-      id: 'f-src-rsa1024-001',
-      asset_id: 'src-py-crypto-service',
-      source_type: 'source',
-      algorithm: 'RSA',
-      parameters: {
-        key_bits: 1024,
-        mode: null,
-        named_group: null
+      "schema_version": "1.0",
+      "id": "finding-12d701235a71dc82def5d27cbf1e4f13",
+      "asset_id": "asset-8ff1a0f49750812b29386b9321c3aa83",
+      "source_type": "pcap",
+      "algorithm": "X25519",
+      "parameters": {
+        "key_bits": null,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
       },
-      usage: 'signature',
-      evidence_kind: 'declared',
-      evidence: [
+      "usage": "key_establishment",
+      "evidence_kind": "observed",
+      "evidence": [
         {
-          file: 'services/identity/crypto_service.py',
-          locator: 'lines 42-45',
-          detail: 'Crypto.PublicKey.RSA.generate(1024) invoked for session token signing'
+          "file": "synthetic/pcap-example",
+          "locator": "frame 18; stream 1",
+          "detail": "Synthetic adapter observation: X25519 for key_establishment; not a real scan."
         }
       ],
-      confidence: 'high',
-      quantum_status: 'vulnerable',
-      challenge_tier: 'critical',
-      classical_issues: ['Key length < 2048 bits is considered broken classically'],
-      owner: 'team-identity',
-      observed_at: null,
-      rule_id: 'R-SRC-RSA-DEPRECATED',
-      rationale: 'RSA-1024 is trivially broken by Shor algorithm and unsafe classically under NIST SP 800-131A.',
-      recommendation: 'Replace with NIST FIPS 204 ML-DSA-65 (or hybrid ML-DSA/Ed25519) for quantum-resistant signatures.',
-      references: [
-        'https://csrc.nist.gov/pubs/fips/204/final',
-        'https://csrc.nist.gov/Projects/post-quantum-cryptography'
+      "confidence": "high",
+      "quantum_status": "vulnerable",
+      "challenge_tier": "critical",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": "2026-10-10T12:00:00Z",
+      "rule_id": "QT-CLASSICAL-ASYMMETRIC@1.0.1",
+      "rationale": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Observed evidence applies only to the captured operation, not other sessions or the whole application. A primitive assessment does not certify whole-application resilience. Passive TLS 1.3 normally hides certificate and CertificateVerify details after ServerHello; absent details remain unknown.",
+      "recommendation": "Plan supported ML-KEM or a standardized hybrid key-establishment protocol; assess signatures separately.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs",
+        "https://csrc.nist.gov/pubs/fips/203/final",
+        "https://www.rfc-editor.org/rfc/rfc10024.html",
+        "https://www.rfc-editor.org/rfc/rfc8446.html"
       ]
     },
     {
-      schema_version: '1.0',
-      id: 'f-net-tls-offer-002',
-      asset_id: 'net-stream-44-edge',
-      source_type: 'pcap',
-      algorithm: 'X25519MLKEM768',
-      parameters: {
-        key_bits: null,
-        mode: null,
-        named_group: 'x25519_kyber768_draft00'
+      "schema_version": "1.0",
+      "id": "finding-198be5bba5c661cf12c85f2127ca4c2e",
+      "asset_id": "asset-7de123eb7223eff6767280d1d89a775c",
+      "source_type": "source",
+      "algorithm": "RSA",
+      "parameters": {
+        "key_bits": 1024,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": "SHA-1",
+        "iterations": null
       },
-      usage: 'key_establishment',
-      evidence_kind: 'offered',
-      evidence: [
+      "usage": "signature",
+      "evidence_kind": "declared",
+      "evidence": [
         {
-          file: 'traffic/edge_gateway.pcap',
-          locator: 'stream 44, frame 112',
-          detail: 'ClientHello supported_groups offers hybrid group 0x6399 (draft X25519MLKEM768)'
+          "file": "synthetic/source-example",
+          "locator": "line 12",
+          "detail": "Synthetic adapter observation: RSA for signature; not a real scan."
         }
       ],
-      confidence: 'high',
-      quantum_status: 'hybrid',
-      challenge_tier: 'resilient',
-      classical_issues: ['Draft Kyber group ID rather than IANA standardized FIPS 203 ML-KEM codepoint'],
-      owner: 'team-edge-net',
-      observed_at: '2026-10-10T13:42:01Z',
-      rule_id: 'R-NET-TLS-OFFER-HYBRID',
-      rationale: 'Client offered hybrid PQ key exchange. Note: Client offers are NOT server selections.',
-      recommendation: 'Verify ServerHello negotiation to confirm if server selected PQ or fell back to classical secp256r1.',
-      references: ['https://www.iana.org/assignments/tls-parameters', 'https://csrc.nist.gov/pubs/fips/203/final']
-    },
-    {
-      schema_version: '1.0',
-      id: 'f-net-tls-sel-003',
-      asset_id: 'net-stream-44-edge-selected',
-      source_type: 'pcap',
-      algorithm: 'secp256r1 (NIST P-256)',
-      parameters: {
-        key_bits: 256,
-        mode: null,
-        named_group: 'secp256r1'
-      },
-      usage: 'key_establishment',
-      evidence_kind: 'observed',
-      evidence: [
-        {
-          file: 'traffic/edge_gateway.pcap',
-          locator: 'stream 44, frame 116',
-          detail: 'ServerHello selected key_share secp256r1, rejecting client hybrid PQ offer'
-        }
+      "confidence": "high",
+      "quantum_status": "vulnerable",
+      "challenge_tier": "critical",
+      "classical_issues": [
+        "RSA key below 2048 bits; unsuitable for new protection under the pinned transition policy.",
+        "SHA-1 is unsuitable for new digital signatures because of collision weaknesses."
       ],
-      confidence: 'high',
-      quantum_status: 'vulnerable',
-      challenge_tier: 'critical',
-      classical_issues: [],
-      owner: 'team-edge-net',
-      observed_at: '2026-10-10T13:42:01Z',
-      rule_id: 'R-NET-TLS-FALLBACK-CLASSICAL',
-      rationale: 'Negotiated session fell back to classical ECDHE. Server does not support post-quantum key exchange on the wire.',
-      recommendation: 'Update TLS server termination config to support standardized X25519MLKEM768 group.',
-      references: ['https://csrc.nist.gov/pubs/fips/203/final']
-    },
-    {
-      schema_version: '1.0',
-      id: 'f-net-tls-unknown-004',
-      asset_id: 'net-stream-44-auth',
-      source_type: 'pcap',
-      algorithm: 'Unknown (Encrypted TLS 1.3 Handshake)',
-      parameters: {},
-      usage: 'signature',
-      evidence_kind: 'observed',
-      evidence: [
-        {
-          file: 'traffic/edge_gateway.pcap',
-          locator: 'stream 44, frames 117-120',
-          detail: 'TLS 1.3 encrypted handshake records; certificate and CertificateVerify are encrypted on the wire'
-        }
-      ],
-      confidence: 'low',
-      quantum_status: 'unknown',
-      challenge_tier: 'unknown',
-      classical_issues: [],
-      owner: 'team-edge-net',
-      observed_at: '2026-10-10T13:42:02Z',
-      rule_id: 'R-NET-TLS-ENCRYPTED-CERT-LIMIT',
-      rationale: 'Passive TLS 1.3 wire capture hides server certificate. Cryptographic algorithm cannot be deduced without out-of-band evidence.',
-      recommendation: 'Inspect cloud certificate manager (ACM) or host keystore to determine authentication algorithm.',
-      references: ['https://www.rfc-editor.org/rfc/rfc8446.html']
-    },
-    {
-      schema_version: '1.0',
-      id: 'f-cld-alb-005',
-      asset_id: 'arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/partner-api-alb/4891b0',
-      source_type: 'cloud',
-      algorithm: 'ECDHE + RSA / ECDSA (TLS 1.3 Classical)',
-      parameters: {
-        named_group: 'secp256r1, x25519'
-      },
-      usage: 'key_establishment',
-      evidence_kind: 'configured',
-      evidence: [
-        {
-          file: 'cloud/load_balancers.json',
-          locator: '/LoadBalancers/2/Listeners/0/SslPolicy',
-          detail: 'Configured SSL Policy: ELBSecurityPolicy-TLS13-1-2-2021-06'
-        }
-      ],
-      confidence: 'high',
-      quantum_status: 'vulnerable',
-      challenge_tier: 'critical',
-      classical_issues: [],
-      owner: 'team-infra-cloud',
-      observed_at: null,
-      rule_id: 'R-CLD-ALB-NON-PQ',
-      rationale: 'ELBSecurityPolicy-TLS13-1-2-2021-06 provides modern classical TLS 1.3, but lacks hybrid post-quantum key exchange groups.',
-      recommendation: 'Upgrade policy to ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09 to support ML-KEM hybrid key encapsulation.',
-      references: [
-        'https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html'
+      "posture_issues": [],
+      "owner": "payments",
+      "observed_at": null,
+      "rule_id": "QT-CLASSICAL-ASYMMETRIC@1.0.1",
+      "rationale": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Plan a supported ML-DSA or SLH-DSA signature migration; verify certificate and peer compatibility.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs",
+        "https://csrc.nist.gov/pubs/fips/204/final",
+        "https://csrc.nist.gov/pubs/fips/205/final",
+        "https://csrc.nist.gov/pubs/sp/800/131/a/r2/final"
       ]
     },
     {
-      schema_version: '1.0',
-      id: 'f-src-ed25519-006',
-      asset_id: 'src-go-auth-jwt',
-      source_type: 'source',
-      algorithm: 'Ed25519',
-      parameters: {
-        key_bits: 256
+      "schema_version": "1.0",
+      "id": "finding-50b2e250c764028a77b0f8c8ddcad288",
+      "asset_id": "asset-e5375b71762e8b8073777760c93a83e0",
+      "source_type": "cloud",
+      "algorithm": "RSA",
+      "parameters": {
+        "key_bits": 2048,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
       },
-      usage: 'signature',
-      evidence_kind: 'declared',
-      evidence: [
+      "usage": "signature",
+      "evidence_kind": "configured",
+      "evidence": [
         {
-          file: 'auth/jwt_issuer.go',
-          locator: 'line 88',
-          detail: 'ed25519.GenerateKey(rand.Reader) used for API authentication tokens'
+          "file": "synthetic/cloud-example",
+          "locator": "/certificates/0/signatureAlgorithm",
+          "detail": "Synthetic adapter observation: RSA for signature; not a real scan."
         }
       ],
-      confidence: 'high',
-      quantum_status: 'vulnerable',
-      challenge_tier: 'critical',
-      classical_issues: [],
-      owner: 'team-security-core',
-      observed_at: null,
-      rule_id: 'R-SRC-ED25519-SHOR',
-      rationale: 'Ed25519 is high-grade classical ECC, but completely vulnerable to Shor polynomial-time discrete logarithm factoring.',
-      recommendation: 'Plan dual-signature or stateful migration to ML-DSA (FIPS 204). Do NOT assume Ed25519 is post-quantum.',
-      references: ['https://csrc.nist.gov/pubs/fips/204/final']
+      "confidence": "high",
+      "quantum_status": "vulnerable",
+      "challenge_tier": "critical",
+      "classical_issues": [],
+      "posture_issues": [
+        "Synthetic certificate expiry issue for demonstration; not live AWS state."
+      ],
+      "owner": "partners",
+      "observed_at": "2026-10-10T12:00:00Z",
+      "rule_id": "QT-CLASSICAL-ASYMMETRIC@1.0.1",
+      "rationale": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Plan a supported ML-DSA or SLH-DSA signature migration; verify certificate and peer compatibility.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs",
+        "https://csrc.nist.gov/pubs/fips/204/final",
+        "https://csrc.nist.gov/pubs/fips/205/final"
+      ]
     },
     {
-      schema_version: '1.0',
-      id: 'f-src-aesecb-007',
-      asset_id: 'src-java-crypto-util',
-      source_type: 'source',
-      algorithm: 'AES-128',
-      parameters: {
-        key_bits: 128,
-        mode: 'ECB'
+      "schema_version": "1.0",
+      "id": "finding-6fd89fd4901ffeccc1e4670a8cf6140f",
+      "asset_id": "asset-8e2aa59f340a3c8c5b7d48b469adf6d0",
+      "source_type": "cloud",
+      "algorithm": "ECDHE",
+      "parameters": {
+        "key_bits": null,
+        "mode": null,
+        "named_group": "X25519",
+        "hash_algorithm": null,
+        "iterations": null
       },
-      usage: 'encryption',
-      evidence_kind: 'declared',
-      evidence: [
+      "usage": "key_establishment",
+      "evidence_kind": "configured",
+      "evidence": [
         {
-          file: 'backend/src/main/java/CipherUtil.java',
-          locator: 'line 112',
-          detail: 'Cipher.getInstance("AES/ECB/PKCS5Padding")'
+          "file": "synthetic/cloud-example",
+          "locator": "/listeners/0/securityPolicy",
+          "detail": "Synthetic adapter observation: ECDHE for key_establishment; not a real scan."
         }
       ],
-      confidence: 'high',
-      quantum_status: 'not_applicable',
-      challenge_tier: 'critical',
-      classical_issues: ['ECB mode leaks plaintext pattern structures', 'No authentication tag (AEAD missing)'],
-      owner: 'team-backend-java',
-      observed_at: null,
-      rule_id: 'R-SRC-AES-ECB-INSECURE',
-      rationale: 'Classical vulnerability: ECB mode does not randomize identical blocks. Classified as Classical Weakness, separate from Quantum Shor risk.',
-      recommendation: 'Migrate immediately to AES-256-GCM or ChaCha20-Poly1305 with random IV per message.',
-      references: ['https://csrc.nist.gov/publications/detail/sp/800-38d/final']
+      "confidence": "high",
+      "quantum_status": "vulnerable",
+      "challenge_tier": "critical",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": "partners",
+      "observed_at": "2026-10-10T12:00:00Z",
+      "rule_id": "QT-CLASSICAL-ASYMMETRIC@1.0.1",
+      "rationale": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Plan supported ML-KEM or a standardized hybrid key-establishment protocol; assess signatures separately.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs",
+        "https://csrc.nist.gov/pubs/fips/203/final",
+        "https://www.rfc-editor.org/rfc/rfc10024.html"
+      ]
     },
     {
-      schema_version: '1.0',
-      id: 'f-cld-kms-008',
-      asset_id: 'arn:aws:kms:eu-west-1:123456789012:key/3b889a-data-encrypt',
-      source_type: 'cloud',
-      algorithm: 'AES-256',
-      parameters: {
-        key_bits: 256,
-        mode: 'GCM'
+      "schema_version": "1.0",
+      "id": "finding-7d28a51278bccf5f56cfc1c8cc2e04fe",
+      "asset_id": "asset-51abe1bcdc960bd776a0daaa236110b0",
+      "source_type": "cloud",
+      "algorithm": "RSA",
+      "parameters": {
+        "key_bits": 2048,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
       },
-      usage: 'encryption',
-      evidence_kind: 'configured',
-      evidence: [
+      "usage": "encryption",
+      "evidence_kind": "configured",
+      "evidence": [
         {
-          file: 'cloud/kms_keys.json',
-          locator: '/Keys/4',
-          detail: 'KeySpec: SYMMETRIC_DEFAULT; KeyRotationEnabled: false'
+          "file": "synthetic/cloud-example",
+          "locator": "/keys/0/KeySpec",
+          "detail": "Synthetic adapter observation: RSA for encryption; not a real scan."
         }
       ],
-      confidence: 'high',
-      quantum_status: 'resistant_primitive',
-      challenge_tier: 'resilient',
-      classical_issues: ['Automatic key rotation is disabled'],
-      owner: 'team-infra-cloud',
-      observed_at: null,
-      rule_id: 'R-CLD-KMS-ROTATION-FLAG',
-      rationale: 'AES-256 is quantum-resistant against Grover search (128-bit quantum security margin). However, operational key rotation is disabled.',
-      recommendation: 'Enable automatic AWS KMS annual key rotation to resolve operational posture issue.',
-      references: ['https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html']
+      "confidence": "high",
+      "quantum_status": "vulnerable",
+      "challenge_tier": "critical",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": "payments",
+      "observed_at": "2026-10-10T12:00:00Z",
+      "rule_id": "QT-CLASSICAL-ASYMMETRIC@1.0.1",
+      "rationale": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Plan a vetted encryption protocol combining ML-KEM key establishment with authenticated symmetric encryption; ML-KEM is not a drop-in bulk-encryption API.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs",
+        "https://csrc.nist.gov/pubs/fips/203/final"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finding-7df8d664a8b385049999233da3e75c19",
+      "asset_id": "asset-b96822afd9e16c621a471c1fd3751a37",
+      "source_type": "source",
+      "algorithm": "AES",
+      "parameters": {
+        "key_bits": null,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
+      },
+      "usage": "encryption",
+      "evidence_kind": "declared",
+      "evidence": [
+        {
+          "file": "synthetic/source-example",
+          "locator": "line 48",
+          "detail": "Synthetic adapter observation: AES for encryption; not a real scan."
+        }
+      ],
+      "confidence": "high",
+      "quantum_status": "unknown",
+      "challenge_tier": "unknown",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": null,
+      "rule_id": "QT-UNKNOWN@1.0.1",
+      "rationale": "AES key size is absent, unsupported, or contradicts its name, or mode metadata conflicts; assessment remains unknown. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Resolve AES key size in bits and any conflicting mode metadata from the actual API or configuration.",
+      "references": []
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finding-898cf3264e81d3d42fd0819225469ef7",
+      "asset_id": "asset-ce683ffdfc1ddad8b084b0b259f005b2",
+      "source_type": "source",
+      "algorithm": "Ed25519",
+      "parameters": {
+        "key_bits": null,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
+      },
+      "usage": "signature",
+      "evidence_kind": "declared",
+      "evidence": [
+        {
+          "file": "synthetic/source-example",
+          "locator": "line 24",
+          "detail": "Synthetic adapter observation: Ed25519 for signature; not a real scan."
+        }
+      ],
+      "confidence": "high",
+      "quantum_status": "vulnerable",
+      "challenge_tier": "critical",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": "identity",
+      "observed_at": null,
+      "rule_id": "QT-CLASSICAL-ASYMMETRIC@1.0.1",
+      "rationale": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Plan a supported ML-DSA or SLH-DSA signature migration; verify certificate and peer compatibility.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs",
+        "https://csrc.nist.gov/pubs/fips/204/final",
+        "https://csrc.nist.gov/pubs/fips/205/final",
+        "https://www.rfc-editor.org/rfc/rfc8032.html"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finding-cd691d4692fbf4f50c4395c894d9c4c1",
+      "asset_id": "asset-52e2b934466d69ca2abfca5d87b94443",
+      "source_type": "source",
+      "algorithm": "AES",
+      "parameters": {
+        "key_bits": 256,
+        "mode": "GCM",
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
+      },
+      "usage": "encryption",
+      "evidence_kind": "declared",
+      "evidence": [
+        {
+          "file": "synthetic/source-example",
+          "locator": "line 36",
+          "detail": "Synthetic adapter observation: AES for encryption; not a real scan."
+        }
+      ],
+      "confidence": "high",
+      "quantum_status": "resistant_primitive",
+      "challenge_tier": "resilient",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": null,
+      "rule_id": "QT-AES@1.0.1",
+      "rationale": "AES-256 is a symmetric primitive. Generic quantum search does not establish a practical break. This classification does not establish key-exchange or authentication resistance. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Verify authenticated encryption, nonce uniqueness, key handling, and separately assess key establishment and signatures. Consider AES-256 where policy requires additional margin.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finding-e6febb541a370d1e013ce99779157046",
+      "asset_id": "asset-8ff1a0f49750812b29386b9321c3aa83",
+      "source_type": "pcap",
+      "algorithm": "unknown",
+      "parameters": {
+        "key_bits": null,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
+      },
+      "usage": "signature",
+      "evidence_kind": "observed",
+      "evidence": [
+        {
+          "file": "synthetic/pcap-example",
+          "locator": "stream 1; encrypted TLS 1.3 authentication unavailable",
+          "detail": "Synthetic adapter observation: unknown for signature; not a real scan."
+        }
+      ],
+      "confidence": "high",
+      "quantum_status": "unknown",
+      "challenge_tier": "unknown",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": "2026-10-10T12:00:00Z",
+      "rule_id": "QT-UNKNOWN@1.0.1",
+      "rationale": "The normalized algorithm, parameters, or usage are insufficient for a supported assessment. Observed evidence applies only to the captured operation, not other sessions or the whole application. A primitive assessment does not certify whole-application resilience. Passive TLS 1.3 normally hides certificate and CertificateVerify details after ServerHello; absent details remain unknown.",
+      "recommendation": "Confirm the algorithm and usage from direct evidence; retain unresolved facts as unknown.",
+      "references": [
+        "https://www.rfc-editor.org/rfc/rfc8446.html"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finding-f10313c2fe618558541601a1d8926d1f",
+      "asset_id": "asset-8ff1a0f49750812b29386b9321c3aa83",
+      "source_type": "pcap",
+      "algorithm": "X25519MLKEM768",
+      "parameters": {
+        "key_bits": null,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null
+      },
+      "usage": "key_establishment",
+      "evidence_kind": "offered",
+      "evidence": [
+        {
+          "file": "synthetic/pcap-example",
+          "locator": "frame 15; stream 1",
+          "detail": "Synthetic adapter observation: X25519MLKEM768 for key_establishment; not a real scan."
+        }
+      ],
+      "confidence": "high",
+      "quantum_status": "hybrid",
+      "challenge_tier": "resilient",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": "2026-10-10T12:00:00Z",
+      "rule_id": "QT-HYBRID-MLKEM@1.0.1",
+      "rationale": "This exact RFC 10024 group combines classical ECDHE with standardized ML-KEM. The assessment covers key establishment only; authentication remains independently assessed. An offered capability is not a negotiated selection. A primitive assessment does not certify whole-application resilience. Passive TLS 1.3 normally hides certificate and CertificateVerify details after ServerHello; absent details remain unknown.",
+      "recommendation": "Verify platform support, peer interoperability, negotiated selection, and authentication separately.",
+      "references": [
+        "https://csrc.nist.gov/pubs/fips/203/final",
+        "https://www.iana.org/assignments/tls-parameters",
+        "https://www.rfc-editor.org/rfc/rfc10024.html",
+        "https://www.rfc-editor.org/rfc/rfc8446.html"
+      ]
     }
-  ]
+  ],
+  "coverage": [
+    {
+      "source_type": "source",
+      "input_name": "source-example.json",
+      "unit": "files",
+      "assessed": 3,
+      "unknown": 1,
+      "unsupported": 0,
+      "failed": 0
+    },
+    {
+      "source_type": "pcap",
+      "input_name": "network-example.json",
+      "unit": "sessions",
+      "assessed": 1,
+      "unknown": 0,
+      "unsupported": 0,
+      "failed": 0
+    },
+    {
+      "source_type": "cloud",
+      "input_name": "cloud-example.json",
+      "unit": "resources",
+      "assessed": 3,
+      "unknown": 0,
+      "unsupported": 0,
+      "failed": 0
+    }
+  ],
+  "errors": [],
+  "relationships": [
+    {
+      "source_asset_id": "asset-8e2aa59f340a3c8c5b7d48b469adf6d0",
+      "target_asset_id": "asset-e5375b71762e8b8073777760c93a83e0",
+      "kind": "uses_certificate",
+      "evidence": [
+        {
+          "file": "synthetic/cloud-example",
+          "locator": "/listeners/0/CertificateArn",
+          "detail": "Explicit synthetic certificate identifier reference"
+        }
+      ]
+    }
+  ],
+  "score": {
+    "policy_version": "1.0.0",
+    "label": "Project quantum exposure heuristic (0\u2013100; higher means more exposure)",
+    "value": 85.71,
+    "weights": {
+      "critical": 100,
+      "medium": 50,
+      "resilient": 0
+    },
+    "denominator": "Unique assessed asset IDs with non-offered, known quantum assessments; worst tier per asset",
+    "assessed_assets": 7,
+    "total_assets": 8,
+    "unknown_assets": 1,
+    "assets_with_unknowns": 2,
+    "offered_only_assets": 0,
+    "not_applicable_assets": 0,
+    "quantum_vulnerable_assets": 6,
+    "hybrid_assets": 0,
+    "classical_issue_assets": 1,
+    "posture_issue_assets": 1,
+    "assets_by_evidence_kind": {
+      "configured": 3,
+      "declared": 4,
+      "observed": 1,
+      "offered": 1
+    },
+    "limitations": "Inventory heuristic, not a probability, NIST metric, or application security certification. Unknown and offered-only assets are excluded, never counted as safe. Coverage units remain separate. Business criticality is not inferred."
+  },
+  "label": "Synthetic original integration fixtures",
+  "synthetic": true
 };
 
 export const mockMigrationComparison: MigrationComparison = {
@@ -305,19 +494,20 @@ export const mockMigrationComparison: MigrationComparison = {
         id: 'orig-alb-1',
         asset_id: 'partner-api-alb',
         source_type: 'cloud',
-        algorithm: 'ECDHE (Classical Curves)',
-        parameters: { named_group: 'secp256r1, x25519' },
+        algorithm: 'ECDHE',
+        parameters: { named_group: 'X25519' },
         usage: 'key_establishment',
         evidence_kind: 'configured',
-        evidence: [{ file: 'cloud/load_balancers.json', locator: '/Listeners/0', detail: 'ELBSecurityPolicy-TLS13-1-2-2021-06' }],
+        evidence: [{ file: 'cloud/load_balancers.json', locator: '/listeners/0/securityPolicy', detail: 'ELBSecurityPolicy-TLS13-1-2-2021-06' }],
         confidence: 'high',
         quantum_status: 'vulnerable',
         challenge_tier: 'critical',
         classical_issues: [],
-        rule_id: 'R-CLD-ALB-NON-PQ',
+        posture_issues: [],
+        rule_id: 'QT-CLASSICAL-ASYMMETRIC@1.0.1',
         rationale: 'Key exchange uses elliptic curve Diffie-Hellman vulnerable to quantum decryption.',
         recommendation: 'Upgrade to AWS Hybrid Post-Quantum policy.',
-        references: []
+        references: ['https://csrc.nist.gov/pubs/fips/203/final']
       }
     ]
   },
@@ -332,16 +522,17 @@ export const mockMigrationComparison: MigrationComparison = {
         id: 'upg-alb-1',
         asset_id: 'partner-api-alb',
         source_type: 'cloud',
-        algorithm: 'X25519MLKEM768 (Hybrid Post-Quantum)',
-        parameters: { named_group: 'x25519_mlkem768' },
+        algorithm: 'X25519MLKEM768',
+        parameters: { named_group: 'X25519MLKEM768' },
         usage: 'key_establishment',
         evidence_kind: 'configured',
-        evidence: [{ file: 'cloud/load_balancers_modified.json', locator: '/Listeners/0', detail: 'ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09' }],
+        evidence: [{ file: 'cloud/load_balancers_modified.json', locator: '/listeners/0/securityPolicy', detail: 'ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09' }],
         confidence: 'high',
         quantum_status: 'hybrid',
         challenge_tier: 'resilient',
         classical_issues: [],
-        rule_id: 'R-CLD-ALB-HYBRID-PQ',
+        posture_issues: [],
+        rule_id: 'QT-STANDARDIZED-PQC@1.0.1',
         rationale: 'ALB configured with hybrid post-quantum key encapsulation mechanism (FIPS 203 ML-KEM).',
         recommendation: 'Collect secondary PCAP capture to verify whether client peers actually negotiate hybrid PQ.',
         references: ['https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html']

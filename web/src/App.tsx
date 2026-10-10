@@ -14,17 +14,19 @@ export const App: React.FC = () => {
   const [scanResult, setScanResult] = useState<ScanResult>(mockScanResult);
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
   const [activeTab, setActiveTab] = useState<'inventory' | 'migration'>('inventory');
+  const [resetCounter, setResetCounter] = useState<number>(0);
 
   const handleExportJson = () => {
     exportProjectJson(scanResult);
   };
 
-  const handleExportCbom = () => {
-    exportCycloneDxCbom(scanResult);
+  const handleExportCbom = async () => {
+    await exportCycloneDxCbom(scanResult);
   };
 
   const handleResetDemo = () => {
     setScanResult(mockScanResult);
+    setResetCounter((prev) => prev + 1);
   };
 
   return (
@@ -44,13 +46,17 @@ export const App: React.FC = () => {
             <UploadBar
               onLoadDemoData={handleResetDemo}
               onSimulateScan={() => {}}
+              resetTrigger={resetCounter}
             />
 
             {/* Coverage Summary across Network, Source Code, and Cloud */}
             <CoverageCards coverage={scanResult.coverage} />
 
             {/* Posture Banner: Shor Risk vs Classical Flaws vs Operational Posture */}
-            <RiskPostureBanner findings={scanResult.findings} />
+            <RiskPostureBanner
+              findings={scanResult.findings}
+              score={scanResult.score}
+            />
 
             {/* Interactive Prioritized Findings Table with Filtering */}
             <FindingsTable
@@ -76,7 +82,7 @@ export const App: React.FC = () => {
             QuantumTrace &copy; 2026 &middot; JunctionX Lisbon Demo Platform
           </span>
           <span className="font-mono text-[11px] text-slate-400">
-            Ruleset: {scanResult.ruleset_version} &middot; Scan: {scanResult.scan_id}
+            Ruleset: {scanResult.ruleset_version} &middot; Scan: {scanResult.scan_id} &middot; Status: {scanResult.status}
           </span>
         </div>
       </footer>

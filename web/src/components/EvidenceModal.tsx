@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ExternalLink, ShieldAlert, CheckCircle, FileText, Network, Cloud } from 'lucide-react';
+import { X, ExternalLink, ShieldAlert, CheckCircle, FileText, Network, Cloud, ShieldCheck } from 'lucide-react';
 import type { Finding } from '../types/contract';
 
 interface EvidenceModalProps {
@@ -93,14 +93,14 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ finding, onClose }
             <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
               <p className="mb-2 font-medium text-slate-200">{finding.rationale}</p>
               <div className="text-[11px] text-slate-500 font-mono">
-                Evaluated by Rule: <span className="text-slate-400">{finding.rule_id}</span> | Confidence:{' '}
+                Evaluated by Rule: <span className="text-slate-400">{finding.rule_id || 'N/A'}</span> | Confidence:{' '}
                 <span className="text-slate-400 uppercase">{finding.confidence}</span>
               </div>
             </div>
           </div>
 
           {/* Classical Issues */}
-          {finding.classical_issues.length > 0 && (
+          {finding.classical_issues && finding.classical_issues.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5" /> Classical Flaws & Policy Warnings
@@ -118,18 +118,37 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ finding, onClose }
             </div>
           )}
 
+          {/* Posture Issues */}
+          {finding.posture_issues && finding.posture_issues.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-2 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" /> Operational Posture Warnings
+              </h4>
+              <ul className="space-y-1.5">
+                {finding.posture_issues.map((issue, idx) => (
+                  <li
+                    key={idx}
+                    className="p-2.5 bg-purple-950/20 border border-purple-900/40 rounded-lg text-xs text-purple-200"
+                  >
+                    {issue}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Actionable Recommendation */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
               <CheckCircle className="w-3.5 h-3.5" /> Migration Next Step
             </h4>
             <div className="p-3.5 bg-emerald-950/20 border border-emerald-900/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium">
-              {finding.recommendation}
+              {finding.recommendation || 'No specific migration action defined.'}
             </div>
           </div>
 
           {/* References */}
-          {finding.references.length > 0 && (
+          {finding.references && finding.references.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Standardization Sources</h4>
               <div className="space-y-1">

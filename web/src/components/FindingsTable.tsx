@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ArrowUpRight, Network, FileText, Cloud, AlertCircle } from 'lucide-react';
+import { Search, ArrowUpRight, Network, FileText, Cloud, AlertCircle, ShieldAlert } from 'lucide-react';
 import type { Finding, SourceType, ChallengeTier, EvidenceKind } from '../types/contract';
 
 interface FindingsTableProps {
@@ -198,9 +198,14 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({ findings, onSelect
                   </div>
                   <div className="text-[11px] text-slate-400 capitalize">
                     {finding.usage.replace('_', ' ')}
-                    {finding.classical_issues.length > 0 && (
+                    {finding.classical_issues && finding.classical_issues.length > 0 && (
                       <span className="ml-2 inline-flex items-center text-amber-400 text-[10px]" title="Classical weakness detected">
-                        <AlertCircle className="w-2.5 h-2.5 mr-0.5 inline" /> Flaw noted
+                        <AlertCircle className="w-2.5 h-2.5 mr-0.5 inline" /> Classical flaw
+                      </span>
+                    )}
+                    {finding.posture_issues && finding.posture_issues.length > 0 && (
+                      <span className="ml-2 inline-flex items-center text-purple-400 text-[10px]" title="Posture issue detected">
+                        <ShieldAlert className="w-2.5 h-2.5 mr-0.5 inline" /> Posture issue
                       </span>
                     )}
                   </div>
