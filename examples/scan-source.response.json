@@ -7,8 +7,8 @@
   "ruleset_version": "1.0.2",
   "tool_versions": {
     "quantumtrace-core": "0.1.0",
-    "synthetic%2Fhandoff.py/quantumtrace-source": "0.1.1",
-    "synthetic%2Fhandoff.py/source-rules": "source-api-v2"
+    "synthetic%2Fhandoff.py/quantumtrace-source": "0.2.0",
+    "synthetic%2Fhandoff.py/source-rules": "source-api-v3"
   },
   "input_hashes": {
     "synthetic/handoff.py": "8990f5d137b53f808650acb483b4a5322adf88bbe278b4fb730f65b1962183f0"
@@ -34,7 +34,7 @@
         {
           "file": "synthetic/handoff.py",
           "locator": "line:8:column:12",
-          "detail": "API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.1; rule source-api-v2/python-aes; source declaration only; runtime execution unverified"
+          "detail": "API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.2.0; rule source-api-v3/python-aes; source declaration only; runtime execution unverified"
         }
       ],
       "confidence": "medium",
@@ -69,7 +69,7 @@
         {
           "file": "synthetic/handoff.py",
           "locator": "line:6:column:1",
-          "detail": "API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.1; rule source-api-v2/python-aes; source declaration only; runtime execution unverified"
+          "detail": "API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.2.0; rule source-api-v3/python-aes; source declaration only; runtime execution unverified"
         }
       ],
       "confidence": "medium",
@@ -106,7 +106,7 @@
         {
           "file": "synthetic/handoff.py",
           "locator": "line:4:column:1",
-          "detail": "API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.1.1; rule source-api-v2/python-rsa-generation; source declaration only; runtime execution unverified"
+          "detail": "API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.2.0; rule source-api-v3/python-rsa-generation; source declaration only; runtime execution unverified"
         }
       ],
       "confidence": "medium",
