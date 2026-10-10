@@ -10,7 +10,9 @@ from pydantic import (
 
 MAX_SCAN_INPUTS = 10_000
 MAX_INPUT_BYTES = 64 * 1024 * 1024
-MAX_SCAN_BYTES = 256 * 1024 * 1024
+MAX_SCAN_BYTES = 3_000_000_000
+MAX_INLINE_SCAN_BYTES = 256 * 1024 * 1024
+MAX_UPLOAD_BATCH_BYTES = 64 * 1024 * 1024
 
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 Count = Annotated[int, Field(strict=True, ge=0)]
@@ -155,7 +157,7 @@ class ScanRequest(ContractModel):
             raise ValueError("Input names must be unique within a scan")
         if any(len(item.content.encode("utf-8")) > MAX_INPUT_BYTES for item in self.inputs):
             raise ValueError("Each input must be at most 64 MiB encoded")
-        if sum(len(item.content.encode("utf-8")) for item in self.inputs) > MAX_SCAN_BYTES:
+        if sum(len(item.content.encode("utf-8")) for item in self.inputs) > MAX_INLINE_SCAN_BYTES:
             raise ValueError("Combined input contents must be at most 256 MiB encoded")
         return self
 

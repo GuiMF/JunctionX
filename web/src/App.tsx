@@ -9,8 +9,7 @@ import { MigrationView } from './components/MigrationView';
 import { UploadBar } from './components/UploadBar';
 import { mockScanResult, mockMigrationComparison } from './fixtures/mockData';
 import type { Finding, ScanResult } from './types/contract';
-import { prepareScan } from './utils/scanInputs';
-import { submitScan } from './api/client';
+import { submitFiles } from './api/client';
 import { exportProjectJson, exportCycloneDxCbom } from './utils/cbomExport';
 
 export const App: React.FC = () => {
@@ -23,6 +22,7 @@ export const App: React.FC = () => {
   const [exportError, setExportError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(true);
   const pending = useRef<AbortController | null>(null);
@@ -52,13 +52,14 @@ export const App: React.FC = () => {
     pending.current = controller;
     pendingExport.current?.abort();
     setIsScanning(true);
+    setScanProgress(null);
     setScanError(null);
     setExportError(null);
     setNotice(null);
     try {
-      const request = await prepareScan(files);
-      if (controller.signal.aborted) return;
-      const result = await submitScan(request, controller.signal);
+      const result = await submitFiles(files, controller.signal, message => {
+        if (pending.current === controller && !controller.signal.aborted) setScanProgress(message);
+      });
       if (controller.signal.aborted || pending.current !== controller) return;
       pendingExport.current?.abort();
       setExportError(null);
@@ -117,7 +118,7 @@ export const App: React.FC = () => {
           {activeTab === 'inventory' ? <div className="space-y-5"><RiskPostureBanner findings={scanResult.findings} score={scanResult.score} /><FindingsTable key={resetCounter} findings={scanResult.findings} onSelectFinding={setSelectedFinding} selectedFindingId={selectedFinding?.id} /></div> : <MigrationView comparison={mockMigrationComparison} />}
         </main>
       </div>
-      {importOpen && <UploadBar onLoadDemoData={resetDemo} onClose={closeImport} onScan={handleScan} onCancel={cancelScan} isScanning={isScanning} error={scanError} />}
+      {importOpen && <UploadBar onLoadDemoData={resetDemo} onClose={closeImport} onScan={handleScan} onCancel={cancelScan} isScanning={isScanning} progress={scanProgress} error={scanError} />}
       <EvidenceModal finding={selectedFinding} onClose={() => setSelectedFinding(null)} />
     </div>
   );

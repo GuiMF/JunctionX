@@ -1,6 +1,7 @@
 """Adapter isolation, deterministic assessment and bounded local result storage."""
 
 from collections import OrderedDict
+from collections.abc import Iterable
 from datetime import datetime, timezone
 import hashlib
 from threading import RLock
@@ -13,7 +14,7 @@ from adapters.normalized import import_normalized, input_bytes
 from adapters.registry import AdapterRegistry, default_registry
 from core.assessment import RULESET_VERSION, assess_finding
 from core.identity import deduplicate_findings
-from core.models import AdapterContext, AdapterResult, Coverage, ScanError, ScanInput, ScanRequest, ScanResult
+from core.models import MAX_INPUT_BYTES, MAX_SCAN_BYTES, MAX_SCAN_INPUTS, AdapterContext, AdapterResult, Coverage, ScanError, ScanInput, ScanRequest, ScanResult
 from core.scoring import score_findings
 
 
@@ -64,8 +65,15 @@ class ScanService:
 
     def run_scan(self, request: ScanRequest) -> ScanResult:
         request = ScanRequest.model_validate(request.model_dump())
+        return self.run_inputs(request.inputs, evaluated_at=request.evaluated_at, label=request.label, synthetic=request.synthetic)
+
+    def run_inputs(
+        self, inputs: Iterable[ScanInput], *, evaluated_at: datetime | None = None,
+        label: str | None = None, synthetic: bool = False,
+    ) -> ScanResult:
+        """Consume disk-backed upload inputs one at a time; retain results, not file contents."""
         started_at = datetime.now(timezone.utc)
-        evaluated_at = request.evaluated_at or started_at
+        evaluated_at = evaluated_at or started_at
         context = AdapterContext(evaluated_at=evaluated_at)
         findings = []
         coverage = []
@@ -91,7 +99,21 @@ class ScanService:
                 unit="inputs", unsupported=int(unsupported), failed=int(not unsupported),
             ))
 
-        for scan_input in request.inputs:
+        normalized = False
+        total_bytes = 0
+        input_names = set()
+        input_count = 0
+        for scan_input in inputs:
+            scan_input = ScanInput.model_validate(scan_input.model_dump())
+            input_count += 1
+            content_bytes = len(scan_input.content.encode("utf-8"))
+            total_bytes += content_bytes
+            if input_count > MAX_SCAN_INPUTS or content_bytes > MAX_INPUT_BYTES or total_bytes > MAX_SCAN_BYTES:
+                raise ValueError("Scan exceeds the input count, per-input size or 3 GB combined limit")
+            if scan_input.name in input_names:
+                raise ValueError("Input names must be unique within a scan")
+            input_names.add(scan_input.name)
+            normalized |= scan_input.format == "normalized"
             try:
                 input_hashes[scan_input.name] = hashlib.sha256(input_bytes(scan_input)).hexdigest()
             except (ValueError, UnicodeError):
@@ -136,7 +158,8 @@ class ScanService:
 
         # Repeated explicit relationships retain all distinct evidence entries.
         relationships = list({item.model_dump_json(): item for item in relationships}.values())
-        normalized = any(item.format == "normalized" for item in request.inputs)
+        if not input_count:
+            raise ValueError("A scan requires at least one input")
         scan = ScanResult(
             scan_id=f"scan-{uuid4()}",
             status="partial" if degraded and successful_input else "failed" if degraded else "completed",
@@ -145,8 +168,8 @@ class ScanService:
             input_hashes=input_hashes, findings=findings, coverage=coverage,
             errors=errors, relationships=relationships, score=score_findings(findings),
             assets=assets, snapshots=snapshots,
-            synthetic=request.synthetic or normalized,
-            label=request.label or ("Normalized adapter fixtures" if normalized else None),
+            synthetic=synthetic or normalized,
+            label=label or ("Normalized adapter fixtures" if normalized else None),
         )
         self.store.put(scan)
         return scan
