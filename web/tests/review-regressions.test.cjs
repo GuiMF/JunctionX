@@ -1,22 +1,7 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const { test, afterEach, mock } = require('node:test');
-const ts = require('typescript');
 
-// Exercise the actual components/exporter without adding a second build tool.
-for (const extension of ['.ts', '.tsx']) {
-  require.extensions[extension] = (module, filename) => {
-    const result = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2020,
-        module: ts.ModuleKind.CommonJS,
-        jsx: ts.JsxEmit.ReactJSX,
-        esModuleInterop: true
-      }
-    });
-    module._compile(result.outputText, filename);
-  };
-}
+require('./register.cjs');
 
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');

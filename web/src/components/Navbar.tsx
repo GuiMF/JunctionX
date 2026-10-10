@@ -27,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <span className="font-semibold text-white tracking-tight text-base">QuantumTrace</span>
               <span className="ml-2 text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full">
-                JunctionX Demo
+                JunctionX
               </span>
             </div>
           </div>
@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Before / After Migration
+              Demo Migration
             </button>
           </nav>
         </div>

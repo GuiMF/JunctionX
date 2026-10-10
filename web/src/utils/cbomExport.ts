@@ -1,51 +1,37 @@
 import type { ScanResult } from '../types/contract';
 import mockCycloneDxCbom from '../../../examples/scan-original.cdx.json';
 import { mockScanResult } from '../fixtures/mockData';
+import { apiRequest } from '../api/client';
 
-export function exportProjectJson(scanResult: ScanResult) {
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(scanResult, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute('href', dataStr);
-  downloadAnchor.setAttribute('download', `quantumtrace-scan-${scanResult.scan_id}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-}
-
-export async function exportCycloneDxCbom(scanResult: ScanResult) {
-  const filename = `quantumtrace-cbom-${scanResult.scan_id}.cdx.json`;
-  // Only this exact fixture has a bundled report. Other synthetic scans still
-  // need their own export; never substitute sample evidence for a different scan.
+async function exportScan(scanResult: ScanResult, format: 'json' | 'cyclonedx', signal?: AbortSignal) {
+  const filename = format === 'json' ? `quantumtrace-scan-${scanResult.scan_id}.json` : `quantumtrace-cbom-${scanResult.scan_id}.cdx.json`;
+  // Only the exact fixture has a bundled report; never substitute demo evidence.
   if (JSON.stringify(scanResult) === JSON.stringify(mockScanResult)) {
-    const a = document.createElement('a');
-    a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(mockCycloneDxCbom, null, 2));
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const data = format === 'json' ? scanResult : mockCycloneDxCbom;
+    download('data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2)), filename);
     return;
   }
+  const blob = await apiRequest(`/api/scans/${encodeURIComponent(scanResult.scan_id)}/export?format=${format}`,
+    { signal }, response => response.blob(), 10_000);
+  if (signal?.aborted) return;
+  const url = window.URL.createObjectURL(blob);
+  try { download(url, filename); }
+  finally { window.URL.revokeObjectURL(url); }
+}
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-  try {
-    const res = await fetch(`http://127.0.0.1:8000/api/scans/${encodeURIComponent(scanResult.scan_id)}/export?format=cyclonedx`, {
-      signal: controller.signal
-    });
-    if (!res.ok) throw new Error(`CBOM export failed (HTTP ${res.status}). Please retry.`);
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    if (controller.signal.aborted) throw new Error('CBOM export timed out. Please retry.');
-    throw error instanceof Error ? error : new Error('CBOM export failed. Please retry.');
-  } finally {
-    clearTimeout(timeout);
-  }
+function download(href: string, filename: string) {
+  const anchor = document.createElement('a');
+  anchor.href = href;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+export function exportProjectJson(scanResult: ScanResult, signal?: AbortSignal) {
+  return exportScan(scanResult, 'json', signal);
+}
+
+export function exportCycloneDxCbom(scanResult: ScanResult, signal?: AbortSignal) {
+  return exportScan(scanResult, 'cyclonedx', signal);
 }
