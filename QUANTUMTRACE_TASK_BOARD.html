@@ -95,7 +95,7 @@ $('timeline').innerHTML=project.milestones.map(([time,title,desc])=>`<article cl
 $('sources').innerHTML=project.sources.map(([title,url])=>`<a class="source-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(title)} ↗</a>`).join('');
 $('contract-json').textContent=JSON.stringify(project.contract,null,2);
 $('board').addEventListener('input',e=>{const id=e.target.dataset.owner;if(id){state.owners[id]=e.target.value;save();updateTotals();}});
-$('board').addEventListener('change',e=>{const id=e.target.dataset.task;if(id){state.done[id]=e.target.checked;save();renderBoard();const replacement=$('check-'+id);if(replacement)replacement.focus();}});
+$('board').addEventListener('change',e=>{const id=e.target.dataset.task;if(id){state.done[id]=e.target.checked;save();renderBoard();const replacement=$('check-'+id)||document.querySelector('#board [data-task]')||$('status-filter');replacement.focus();}});
 $('board').addEventListener('click',e=>{if(e.target.id==='clear-filters'){$('search').value='';$('role-filter').value='all';$('status-filter').value='all';renderBoard();$('search').focus();}});
 for(const id of ['search','role-filter','status-filter'])$(id).addEventListener(id==='search'?'input':'change',renderBoard);
 function setTab(id){document.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===id;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;$('panel-'+b.dataset.tab).hidden=!active;});}

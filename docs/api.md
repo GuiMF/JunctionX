@@ -40,7 +40,10 @@ Limits: 1–16 inputs; unique names; at most 8 MiB of encoded content per input 
 
 ## Scanner owner handoff
 
-Raw scanning is **not implemented in this workstream**. Unregistered scanners produce `unsupported_adapter` with one unsupported `inputs` coverage unit. Register each teammate's callable explicitly:
+The default application registers `adapters.cloud_adapter.cloud_adapter` for raw
+cloud snapshots. Network and source scanners remain unregistered and produce
+`unsupported_adapter` with one unsupported `inputs` coverage unit. A custom
+`ScanService` keeps its explicitly supplied registry. Register each teammate's callable explicitly:
 
 ```python
 from adapters.registry import AdapterRegistry
@@ -57,7 +60,18 @@ registry.register("source", source_adapter)
 app = create_app(ScanService(registry=registry))
 ```
 
-Callable output is `AdapterResult`: `findings`, `coverage`, `errors`, `relationships`, and `tool_versions`. Coverage must have at least one entry and identify the same input name/source type. Findings must match the input source type and carry nonempty evidence. Scan and input models reject extra fields. Duplicate registration is rejected to avoid accidentally replacing a scanner.
+Callable output is `AdapterResult`: `findings`, `coverage`, `errors`, `relationships`,
+`tool_versions`, and optional `assets`/`snapshots`. Coverage and snapshots must
+identify their own input name/source type. Findings and inventory assets must
+match the input source type and carry nonempty evidence. Scan and input models
+reject extra fields. Duplicate registration is rejected to avoid replacing a scanner.
+
+Cloud raw content accepts a single AWS-style snapshot or a JSON object keyed by
+`kms_key_inventory.json`, `acm_certificates.json`, and
+`load_balancer_listeners.json`, whose values are the snapshot objects. Submit all
+three together to resolve certificate links in the same adapter invocation. These
+are raw metadata exports, not `quantumtrace.normalized.v1` fixtures. See
+[the cloud guide](cloud-adapter.md) for a runnable API example.
 
 Every adapter receives an `AdapterContext` containing the scan's timezone-aware `evaluated_at`. Use this value for expiry and other time-dependent posture checks rather than reading the wall clock. The service gives each invocation independent copies of its input and context; mutations cannot change another adapter's evaluation time or the request.
 

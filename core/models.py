@@ -20,12 +20,25 @@ class ContractModel(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
 
+class ConfiguredTLSPolicy(ContractModel):
+    name: Text | None = None
+    protocols: list[Text] | None = None
+    cipher_suites: list[Text] | None = None
+    hybrid_pq_capable: bool | None = None
+    hybrid_groups: list[Text] | None = None
+    classical_fallback: bool | None = None
+    negotiated_group: Literal[None] = None
+    reference: Text
+    mapping_version: Text
+
+
 class Parameters(ContractModel):
     key_bits: Positive | None = None
     mode: Text | None = None
     named_group: Text | None = None
     hash_algorithm: Text | None = None
     iterations: Positive | None = None
+    configured_tls_policy: ConfiguredTLSPolicy | None = None
 
 
 class Evidence(ContractModel):
@@ -81,12 +94,36 @@ class Relationship(ContractModel):
     evidence: list[Evidence] = Field(min_length=1)
 
 
+class InventoryAsset(ContractModel):
+    asset_id: Text
+    source_type: SourceType
+    kind: Text
+    parent_id: Text | None = None
+    owner: Text | None = None
+    snapshot_at: AwareDatetime | None = None
+    account: Text | None = None
+    region: Text | None = None
+    configuration: dict[str, Any]
+    evidence: list[Evidence] = Field(min_length=1)
+
+
+class Snapshot(ContractModel):
+    source_type: SourceType
+    input_name: Text
+    file: Text
+    locator: Text
+    generated_at: AwareDatetime
+    age_seconds: float
+
+
 class AdapterResult(ContractModel):
     findings: list[Finding] = Field(default_factory=list)
     coverage: list[Coverage] = Field(min_length=1)
     errors: list[ScanError] = Field(default_factory=list)
     relationships: list[Relationship] = Field(default_factory=list)
     tool_versions: dict[Text, Text] = Field(default_factory=dict)
+    assets: list[InventoryAsset] = Field(default_factory=list)
+    snapshots: list[Snapshot] = Field(default_factory=list)
 
 
 class ScanInput(ContractModel):
@@ -132,6 +169,8 @@ class ScanResult(ContractModel):
     coverage: list[Coverage] = Field(default_factory=list)
     errors: list[ScanError] = Field(default_factory=list)
     relationships: list[Relationship] = Field(default_factory=list)
+    assets: list[InventoryAsset] = Field(default_factory=list)
+    snapshots: list[Snapshot] = Field(default_factory=list)
     score: dict[str, Any] = Field(default_factory=dict)
     label: Text | None = None
     synthetic: bool = False

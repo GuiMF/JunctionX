@@ -2,7 +2,7 @@
 
 Task 04 connects discovery adapters to deterministic cryptographic assessments,
 an asset-based score, and JSON/CycloneDX reports. This branch implements the
-shared backend; teammates supply the network, source, and cloud scanners.
+shared backend and the raw cloud adapter; teammates supply the network and source scanners.
 
 ## Run locally
 
@@ -29,7 +29,8 @@ In another terminal, exercise all three synthetic inputs and save both exports:
 
 Read `reports/demo-summary.json`, `reports/scan.json`, and `reports/scan.cdx.json`.
 These are explicitly labelled integration fixtures, not organizer-input scans.
-Raw inputs return `unsupported_adapter` until a teammate's scanner is registered.
+Raw cloud snapshots are supported. Raw network/source inputs return
+`unsupported_adapter` until a teammate's scanner is registered.
 
 If the environment blocks opening local ports, exercise the same HTTP routes
 without a server socket with `.venv/bin/python -m scripts.demo --in-process`.
@@ -43,6 +44,8 @@ without a server socket with `.venv/bin/python -m scripts.demo --in-process`.
 - [Assessment policy](docs/assessment.md), [scoring policy](docs/scoring.md), and [export mapping](docs/export.md) explain results.
 - [Example request](examples/scan-original.request.json) and [response](examples/scan-original.response.json) unblock the frontend.
 - [Original project plan](QUANTUMTRACE_PLAN.md) and [task board](QUANTUMTRACE_TASK_BOARD.html) retain the team-wide scope.
+- [Cloud adapter](docs/cloud-adapter.md) documents raw snapshot input, directory CLI,
+  configured TLS capabilities, and synthetic migration/renewal fixtures.
 
 ## Verify
 
