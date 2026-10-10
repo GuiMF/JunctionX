@@ -2,6 +2,7 @@
 
 import base64
 import json
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -38,6 +39,26 @@ def test_default_api_raw_source_export_and_metadata_only():
         cbom = client.get(f'/api/scans/{scan["scan_id"]}/export?format=cyclonedx')
         assert cbom.status_code == 200 and secret not in cbom.text
         validate_cyclonedx(cbom.json())
+
+
+def test_default_api_preserves_cloud_and_source_registration():
+    snapshots = Path(__file__).resolve().parents[1] / "cloud-posture"
+    cloud = ScanInput(name="cloud.json", source_type="cloud", format="raw", content=json.dumps({
+        path.name: json.loads(path.read_text()) for path in snapshots.glob("*.json")
+    }))
+    with TestClient(create_app()) as client:
+        response = client.post("/api/scans", json={
+            "inputs": [source("import hashlib\nhashlib.md5(data)").model_dump(), cloud.model_dump()],
+            "evaluated_at": "2026-10-10T12:00:00Z", "synthetic": True,
+        })
+        assert response.status_code == 201
+        scan = response.json()
+        assert scan["status"] == "completed" and not scan["errors"]
+        assert {finding["source_type"] for finding in scan["findings"]} == {"cloud", "source"}
+        assert len(scan["assets"]) == 28 and len(scan["snapshots"]) == 3
+        exported = client.get(f'/api/scans/{scan["scan_id"]}/export?format=cyclonedx')
+        assert exported.status_code == 200
+        validate_cyclonedx(exported.json())
 
 
 def test_encoding_and_input_name_is_never_opened(tmp_path):

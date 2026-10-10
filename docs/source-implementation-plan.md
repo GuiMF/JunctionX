@@ -4,6 +4,9 @@
 
 Implement board tasks S1–S5 on `feat/02-source-discovery`, branched from main
 at `69b38fc`. Preserve the shared v1 contract and deterministic core assessment.
+Before publishing, rebased onto `b23d35b` after the cloud adapter merged into main;
+the default registry now includes both scanners, with a mixed-input API/export
+regression protecting cloud inventory and snapshot fields.
 Deliver offline Python, Java and Go scanning of inline source, exact file/line
 evidence, versioned detector identity, conservative parameters, and a reproducible
 labelled evaluation of the 24 organizer files plus independent holdout variations.
