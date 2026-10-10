@@ -210,7 +210,7 @@ def test_adapter_evaluation_context_is_reproducible_and_isolated():
     {"inputs": []},
     {"inputs": [raw_input().model_dump()] * 2},
     {"inputs": [raw_input().model_dump()], "evaluated_at": "2026-10-10T10:00:00"},
-    {"inputs": [dict(raw_input().model_dump(), content="x" * (8 * 1024 * 1024 + 1))]},
+    {"inputs": [dict(raw_input().model_dump(), content="x" * (64 * 1024 * 1024 + 1))]},
 ])
 def test_invalid_request_is_rejected(payload):
     with pytest.raises(ValidationError):

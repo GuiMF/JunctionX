@@ -83,11 +83,11 @@ def test_request_validation_422(client, body):
 def test_folder_input_count_limit(client):
     inputs = [
         {"name": f"project/{i}/source.py", "source_type": "source", "format": "raw", "content": "# empty"}
-        for i in range(1024)
+        for i in range(10_000)
     ]
     response = client.post("/api/scans", json={"inputs": inputs})
     assert response.status_code == 201
-    assert len(response.json()["coverage"]) == 1024
+    assert len(response.json()["coverage"]) == 10_000
     assert client.post("/api/scans", json={"inputs": inputs + [dict(inputs[0], name="extra.py")]}).status_code == 422
 
 
@@ -101,7 +101,7 @@ def test_validation_errors_do_not_echo_submitted_content(client, failure):
     elif failure == "extra_field":
         body["credentials"] = secret
     else:
-        item["content"] = secret + "x" * (8 * 1024 * 1024)
+        item["content"] = secret + "x" * (64 * 1024 * 1024)
     response = client.post("/api/scans", json=body)
     assert response.status_code == 422
     assert secret not in response.text

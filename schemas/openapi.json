@@ -821,7 +821,7 @@
           },
           "content": {
             "type": "string",
-            "maxLength": 8388608,
+            "maxLength": 67108864,
             "title": "Content"
           },
           "encoding": {
@@ -851,7 +851,7 @@
               "$ref": "#/components/schemas/ScanInput"
             },
             "type": "array",
-            "maxItems": 1024,
+            "maxItems": 10000,
             "minItems": 1,
             "title": "Inputs"
           },

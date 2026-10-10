@@ -5,7 +5,7 @@ export function apiUrl(path: string): string {
   return `${base}${path}`;
 }
 
-export async function apiRequest<T>(path: string, options: RequestInit, read: (response: Response) => Promise<T>, timeoutMs = 60_000): Promise<T> {
+export async function apiRequest<T>(path: string, options: RequestInit, read: (response: Response) => Promise<T>, timeoutMs = 300_000): Promise<T> {
   const controller = new AbortController();
   const abort = () => controller.abort();
   options.signal?.addEventListener('abort', abort, { once: true });

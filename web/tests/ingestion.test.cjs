@@ -75,17 +75,17 @@ test('unsupported, ambiguous, malformed and non-UTF-8 files have actionable erro
 });
 
 test('count, names and encoded byte limits apply before reading and after AWS bundling', async () => {
-  await assert.rejects(prepareScan([]), /1–1024/);
-  await assert.rejects(prepareScan(Array.from({ length: 1025 }, (_, i) => file(`${i}.py`))), /1–1024/);
+  await assert.rejects(prepareScan([]), /1–10000/);
+  await assert.rejects(prepareScan(Array.from({ length: 10001 }, (_, i) => file(`${i}.py`))), /1–10000/);
   await assert.rejects(prepareScan([file(), file()]), /unique/);
-  const huge = { name: 'huge.pcap', size: 6 * 1024 * 1024 + 1, arrayBuffer() { throw Error('must not read'); } };
-  await assert.rejects(prepareScan([huge]), /8 MiB encoded/);
-  const input = { name: 'a.py', source_type: 'source', format: 'raw', content: 'é'.repeat(4 * 1024 * 1024) };
+  const huge = { name: 'huge.pcap', size: 48 * 1024 * 1024 + 1, arrayBuffer() { throw Error('must not read'); } };
+  await assert.rejects(prepareScan([huge]), /64 MiB encoded/);
+  const input = { name: 'a.py', source_type: 'source', format: 'raw', content: 'é'.repeat(32 * 1024 * 1024) };
   validateInputs([input]);
-  assert.throws(() => validateInputs([{ ...input, content: input.content + 'é' }]), /8 MiB/);
-  assert.throws(() => validateInputs([input, { ...input, name: 'b.py' }, { ...input, name: 'c.py', content: 'x' }]), /16 MiB/);
-  const snapshot = JSON.stringify({ Keys: [], padding: ' '.repeat(4 * 1024 * 1024) });
-  await assert.rejects(prepareScan([file('keys.json', snapshot), file('certs.json', snapshot.replace('Keys', 'Certificates'))]), /8 MiB/);
+  assert.throws(() => validateInputs([{ ...input, content: input.content + 'é' }]), /64 MiB/);
+  assert.throws(() => validateInputs([...Array.from({ length: 4 }, (_, i) => ({ ...input, name: `${i}.py` })), { ...input, name: 'extra.py', content: 'x' }]), /256 MiB/);
+  const snapshot = JSON.stringify({ Keys: [], padding: ' '.repeat(32 * 1024 * 1024) });
+  await assert.rejects(prepareScan([file('keys.json', snapshot), file('certs.json', snapshot.replace('Keys', 'Certificates'))]), /64 MiB/);
 });
 
 test('successful scan updates the active result and evidence, closes import, and exports both formats from a custom API port', async (t) => {
@@ -157,8 +157,8 @@ test('invalid and oversized selections never submit and allow replacing the file
   await select([file('unknown.txt')]);
   assert.match(container.querySelector('[role=alert]').textContent, /files were not added.*supported files/);
   assert.equal(button('Scan selected files').disabled, true, 'unsupported selection cannot be submitted');
-  await select([{ name: 'big.py', size: 9 * 1024 * 1024 }]); await click('Scan selected files');
-  assert.match(container.querySelector('[role=alert]').textContent, /8 MiB/);
+  await select([{ name: 'big.py', size: 65 * 1024 * 1024 }]); await click('Scan selected files');
+  assert.match(container.querySelector('[role=alert]').textContent, /64 MiB/);
   assert.equal(fetch.mock.callCount(), 0);
   assert.equal(document.querySelector('input[type=file]').disabled, false);
 });

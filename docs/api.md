@@ -36,7 +36,7 @@ The example checks the full transport with an empty finding inventory; it does n
 
 Inputs are inline content, never local paths or remote URLs. `name` is an identifier used for coverage and hashes; no file is opened by that name. `source_type` is `source`, `pcap`, or `cloud`; `format` is `normalized` or `raw`. For binary captures, use `encoding: "base64"`; scanners can use `adapters.normalized.input_bytes()` to decode. Base64 is validated, not guessed. SHA-256 hashes cover decoded content. Un-decodable input has an error and no hash.
 
-Limits: 1–1,024 inputs; unique names; at most 8 MiB of encoded content per input and 16 MiB combined. `evaluated_at` is optional and requires a timezone; by default it is the scan start time. Evaluation time is distinct from evidence observation time. A supplied `synthetic` flag and label persist.
+Limits: 1–10,000 inputs; unique names; at most 64 MiB of encoded content per input and 256 MiB combined. `evaluated_at` is optional and requires a timezone; by default it is the scan start time. Evaluation time is distinct from evidence observation time. A supplied `synthetic` flag and label persist.
 
 ## Adapter registration
 

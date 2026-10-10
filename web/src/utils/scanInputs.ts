@@ -1,9 +1,12 @@
 import type { ScanInput, ScanRequest } from '../types/contract';
 import { filePath } from './folderFiles';
 
-export const MAX_SCAN_FILES = 1024;
+export const MAX_SCAN_FILES = 10_000;
 
 const MIB = 1024 * 1024;
+export const MAX_INPUT_MIB = 64;
+export const MAX_SCAN_MIB = 256;
+export const MAX_INPUT_BYTES = MAX_INPUT_MIB * MIB;
 const encoder = new TextEncoder();
 const cloudCollections = {
   Keys: 'kms_key_inventory.json',
@@ -12,7 +15,7 @@ const cloudCollections = {
 };
 
 function checkSize(name: string, bytes: number) {
-  if (bytes > 8 * MIB) throw new Error(`${name}: exceeds 8 MiB encoded. Choose a smaller file (captures expand in base64).`);
+  if (bytes > MAX_INPUT_BYTES) throw new Error(`${name}: exceeds ${MAX_INPUT_MIB} MiB encoded. Choose a smaller file (captures expand in base64).`);
 }
 
 export function validateInputs(inputs: ScanInput[]): void {
@@ -27,7 +30,7 @@ export function validateInputs(inputs: ScanInput[]): void {
     checkSize(input.name, bytes);
     total += bytes;
   }
-  if (total > 16 * MIB) throw new Error('Combined inputs exceed 16 MiB encoded. Select fewer or smaller files.');
+  if (total > MAX_SCAN_MIB * MIB) throw new Error(`Combined inputs exceed ${MAX_SCAN_MIB} MiB encoded. Select fewer or smaller files.`);
 }
 
 // Related snapshots in each directory share an adapter invocation so certificate links resolve.
@@ -42,7 +45,7 @@ export async function prepareScan(files: File[]): Promise<ScanRequest> {
     checkSize(filePath(file), size);
     estimatedTotal += size;
   }
-  if (estimatedTotal > 16 * MIB) throw new Error('Combined inputs exceed 16 MiB encoded. Select fewer or smaller files.');
+  if (estimatedTotal > MAX_SCAN_MIB * MIB) throw new Error(`Combined inputs exceed ${MAX_SCAN_MIB} MiB encoded. Select fewer or smaller files.`);
   const inputs: ScanInput[] = [];
   const cloudGroups = new Map<string, { snapshots: Map<string, string>; names: string[] }>();
   for (const file of files) {

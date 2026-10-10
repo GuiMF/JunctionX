@@ -9,6 +9,16 @@ from core.models import Finding, ScanRequest
 from core.scoring import score_findings
 
 
+def test_expanded_upload_byte_limits_count_utf8_bytes_and_combined_content():
+    content = 'é' * (32 * 1024 * 1024)  # Exactly 64 MiB encoded, fewer characters.
+    inputs = [dict(name=f'{i}.json', source_type='cloud', format='raw', content=content) for i in range(4)]
+    assert len(ScanRequest(inputs=inputs).inputs) == 4  # Exactly 256 MiB combined.
+    with pytest.raises(ValidationError, match='Each input must be at most 64 MiB'):
+        ScanRequest(inputs=[dict(inputs[0], content=content + 'é')])
+    with pytest.raises(ValidationError, match='Combined input contents must be at most 256 MiB'):
+        ScanRequest(inputs=inputs + [dict(inputs[0], name='extra.json', content='x')])
+
+
 def finding(**updates):
     data = dict(id="f-1", asset_id="a-1", source_type="source", algorithm="RSA",
                 parameters={"key_bits": 1024}, usage="signature", evidence_kind="declared",

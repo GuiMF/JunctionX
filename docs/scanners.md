@@ -66,7 +66,7 @@ HMAC remains a MAC, and Ed25519 remains a classical signature.
 
 ## Boundaries and honest unknowns
 
-- Files are limited to 1 MiB and 5,000 occurrences; excessive input fails visibly.
+- Files are limited to 16 MiB and 20,000 occurrences; excessive input fails visibly.
 - A processed file is one assessed file even with zero findings or dynamic
   parameters. That is processing coverage, never proof of cryptographic safety.
 - Unsupported extensions count as unsupported files. UTF-8/parse/limit failures

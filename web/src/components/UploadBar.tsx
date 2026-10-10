@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Cloud, FileCode2, FileUp, FolderOpen, FlaskConical, Info, Layers, Loader2, Network, Upload, X } from 'lucide-react';
 
 import { collectDroppedFiles, filePath, type CollectedFiles } from '../utils/folderFiles';
-import { cloudSnapshotEntries, MAX_SCAN_FILES } from '../utils/scanInputs';
+import { cloudSnapshotEntries, MAX_SCAN_FILES, MAX_INPUT_BYTES, MAX_INPUT_MIB, MAX_SCAN_MIB } from '../utils/scanInputs';
 
 interface UploadBarProps {
   onLoadDemoData: () => void;
@@ -68,8 +68,8 @@ export const UploadBar: React.FC<UploadBarProps> = ({ onLoadDemoData, onClose, o
         if (!extensions.some(ext => file.name.toLowerCase().endsWith(ext))) { skipped++; continue; }
         if ((folder || filePath(file).includes('/')) && /\.json$/i.test(file.name)) {
           // Folder trees commonly include package manifests and other unrelated JSON.
-          if (file.size > 8 * 1024 * 1024) {
-            issues.push(`${filePath(file)}: JSON exceeds 8 MiB and was skipped.`);
+          if (file.size > MAX_INPUT_BYTES) {
+            issues.push(`${filePath(file)}: JSON exceeds ${MAX_INPUT_MIB} MiB and was skipped.`);
             skipped++; continue;
           }
           try {
@@ -86,8 +86,11 @@ export const UploadBar: React.FC<UploadBarProps> = ({ onLoadDemoData, onClose, o
       if (discovery.current !== token) return;
       setFiles(previous => {
         const next = [...previous];
+        const identity = (file: File) => JSON.stringify([filePath(file), file.size, file.lastModified]);
+        const seen = new Set(previous.map(identity));
         for (const file of valid) {
-          if (!next.some(existing => filePath(existing) === filePath(file) && existing.size === file.size && existing.lastModified === file.lastModified)) next.push(file);
+          const key = identity(file);
+          if (!seen.has(key)) { seen.add(key); next.push(file); }
         }
         return next;
       });
@@ -107,7 +110,7 @@ export const UploadBar: React.FC<UploadBarProps> = ({ onLoadDemoData, onClose, o
       <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded border border-sky-100 bg-sky-50 text-sky-600"><Upload size={18} /></div><div><h2 id="import-title" className="text-base font-semibold">Import discovery data</h2><p className="mt-0.5 text-[13px] text-slate-500">Combine sources into one cryptographic assessment.</p></div></div><button className="icon-button" aria-label="Close import dialog" onClick={onClose}><X size={18} /></button></div>
       <div className="space-y-5 p-6">
         <div><h3 className="mb-3 text-[13px] font-semibold uppercase tracking-wider text-slate-500">01 / Select a source</h3><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{sources.map(item => <button key={item.id} disabled={busy} aria-pressed={source.id === item.id} onClick={() => { setSource(item); setSelectionError(null); if (fileInput.current) fileInput.current.value = ''; }} className={`relative rounded-md border p-3 text-left disabled:cursor-not-allowed disabled:opacity-60 ${source.id === item.id ? 'border-sky-500 bg-sky-50 text-sky-800' : 'border-slate-200 text-slate-600 hover:border-slate-400'}`}><item.icon size={18} className="mb-3" />{source.id === item.id && <Check size={13} className="absolute right-3 top-3" />}<strong className="block text-[13px] font-semibold">{item.label}</strong><span className="mt-1 block text-[11px] opacity-75">{item.detail}</span></button>)}</div></div>
-        <div><h3 className="mb-3 text-[13px] font-semibold uppercase tracking-wider text-slate-500">02 / Add files or folders</h3><div onDragOver={event => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); if (!busy) void selectFiles(collectDroppedFiles(event.dataTransfer), true); }} className={`rounded-md border border-dashed p-6 text-center ${dragging && !busy ? 'border-sky-500 bg-sky-50' : 'border-slate-300 bg-slate-50'}`}><FileUp size={25} className="mx-auto mb-3 text-slate-500" /><p className="text-[15px] font-medium text-slate-700">Drop files or folders here</p><p className="mb-4 mt-1 text-[13px] text-slate-500">{source.detail} · folders include all subfolders</p><button disabled={busy} className="button button-secondary disabled:cursor-not-allowed disabled:opacity-50" onClick={() => fileInput.current?.click()}>Browse files</button><button disabled={busy} className="button button-secondary ml-2 disabled:cursor-not-allowed disabled:opacity-50" onClick={() => folderInput.current?.click()}><FolderOpen size={14} />Browse folder</button><input ref={fileInput} aria-label="Select discovery files" className="hidden" type="file" multiple disabled={busy} accept={source.accept} onChange={event => { selectFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /><input ref={folderInput} aria-label="Select discovery folder" className="hidden" type="file" multiple disabled={busy} onChange={event => { void selectFiles(Array.from(event.target.files || []), true); event.target.value = ''; }} /></div><p className="mt-2 text-[11px] leading-5 text-slate-500">Up to 1,024 files · 8 MiB per encoded input · 16 MiB combined. Captures expand in base64; related AWS files in each folder are combined into one input.</p></div>
+        <div><h3 className="mb-3 text-[13px] font-semibold uppercase tracking-wider text-slate-500">02 / Add files or folders</h3><div onDragOver={event => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={event => { event.preventDefault(); setDragging(false); if (!busy) void selectFiles(collectDroppedFiles(event.dataTransfer), true); }} className={`rounded-md border border-dashed p-6 text-center ${dragging && !busy ? 'border-sky-500 bg-sky-50' : 'border-slate-300 bg-slate-50'}`}><FileUp size={25} className="mx-auto mb-3 text-slate-500" /><p className="text-[15px] font-medium text-slate-700">Drop files or folders here</p><p className="mb-4 mt-1 text-[13px] text-slate-500">{source.detail} · folders include all subfolders</p><button disabled={busy} className="button button-secondary disabled:cursor-not-allowed disabled:opacity-50" onClick={() => fileInput.current?.click()}>Browse files</button><button disabled={busy} className="button button-secondary ml-2 disabled:cursor-not-allowed disabled:opacity-50" onClick={() => folderInput.current?.click()}><FolderOpen size={14} />Browse folder</button><input ref={fileInput} aria-label="Select discovery files" className="hidden" type="file" multiple disabled={busy} accept={source.accept} onChange={event => { selectFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /><input ref={folderInput} aria-label="Select discovery folder" className="hidden" type="file" multiple disabled={busy} onChange={event => { void selectFiles(Array.from(event.target.files || []), true); event.target.value = ''; }} /></div><p className="mt-2 text-[11px] leading-5 text-slate-500">Up to {MAX_SCAN_FILES.toLocaleString('en-US')} files · {MAX_INPUT_MIB} MiB per encoded input · {MAX_SCAN_MIB} MiB combined. Source files: 16 MiB each. Captures expand in base64; related AWS files in each folder are combined into one input.</p></div>
         {isDiscovering && <p role="status" className="flex items-center gap-2 text-[13px] text-sky-700"><Loader2 size={16} className="animate-spin" />Checking folders for compatible files…</p>}
         {selectionNotice && <p role="status" className="text-[13px] text-slate-600">{selectionNotice}</p>}
         {selectionError && <p role="alert" className="text-[13px] text-rose-600">{selectionError}</p>}
