@@ -30,6 +30,7 @@ jobs:
       - run: python -m scripts.scan_source tests/fixtures/source --synthetic --output reports/source.json --cyclonedx-dir reports/source-cbom
       - run: npm ci --prefix web
       - run: npm test --prefix web
+      - run: npm run test:integration --prefix web
       - run: npm run build --prefix web
       - name: Verify generated contracts and examples are current
         run: |

@@ -4,8 +4,9 @@ QuantumTrace discovers cryptographic facts in Python/Java/Go source, saved netwo
 captures and AWS JSON snapshots. A shared rule engine assesses findings, calculates
 asset exposure, and exports JSON or a schema-validated CycloneDX 1.6 CBOM.
 
-The React dashboard currently displays generated demo fixtures. Selecting files
-in the UI does not submit them to the backend yet. Use the API or CLI for scans.
+The React dashboard starts with synthetic demo fixtures. Open **Import data**, select source,
+AWS snapshot, or capture files and click **Scan selected files** to analyze them
+with the local API, inspect the returned findings, and export the active scan.
 
 ## Run locally
 
@@ -28,11 +29,46 @@ npm ci
 npm run dev
 ```
 
+For a custom API port, set the same origin in the frontend (restart Vite after changes):
+
+```sh
+# Backend terminal, from repository root
+PORT=8001 ./scripts/run-local.sh
+# Frontend terminal, from web/
+VITE_API_BASE_URL=http://127.0.0.1:8001 npm run dev
+```
+
+`VITE_API_BASE_URL` defaults to `http://127.0.0.1:8000` and is used for scans and
+both live exports. It is a build-time setting; set it for `npm run build` too.
+
 Open the URL printed by Vite, normally `http://localhost:5173`. Stop either server
 with Ctrl-C. npm commands belong in `web/`; there is no root Node application.
 
 Scanning and export work offline after setup. PCAP parsing additionally requires
 TShark installed on the host. Source and cloud scans do not require TShark.
+
+## Dashboard workflow
+
+Open **Import data** and select `.py`, `.java`, `.go`, `.pcap`, `.pcapng`, `.cap`, or AWS snapshot `.json`
+files, then click **Scan selected files**. Source and cloud files must be UTF-8;
+captures are encoded as base64. JSON must contain a `Keys`, `Certificates`, or
+`LoadBalancers` snapshot, or the [documented AWS bundle](docs/api.md). Select related
+AWS snapshots together: the dashboard bundles them into one input so certificate
+references resolve. Select only one snapshot of each kind per scan; scan different
+environments separately.
+
+Select 1–16 files with unique names. Encoded inputs are limited to 8 MiB each and
+16 MiB combined, including base64 expansion and the combined AWS bundle. Invalid
+selections explain how to correct them before submission. The previous result stays
+visible while scanning. A returned `partial` or `failed` result replaces it and
+shows per-input errors; `201` alone does not mean all inputs succeeded.
+
+Use **Retry scan** after fixing a connection problem, or reselect corrected files.
+Scans time out after 60 seconds; exports after 10 seconds. **Cancel scan** or
+**Load demo dataset** discards pending results in the browser (server work may continue).
+Reset restores the offline demo and its JSON/CBOM exports. Live exports use the
+active scan ID; if it was evicted or the API restarted, scan the files again.
+The migration tab is a separate, labeled synthetic demo comparison.
 
 ## Scan and demonstrate
 
