@@ -5,7 +5,10 @@ export const MAX_SCAN_FILES = 10_000;
 
 const MIB = 1024 * 1024;
 export const MAX_INPUT_MIB = 64;
-export const MAX_SCAN_MIB = 256;
+export const MAX_SCAN_BYTES = 3_000_000_000;
+export const MAX_SCAN_LABEL = '3 GB';
+export const MAX_INLINE_SCAN_BYTES = 256 * MIB;
+export const MAX_BATCH_BYTES = 64 * MIB;
 export const MAX_INPUT_BYTES = MAX_INPUT_MIB * MIB;
 const encoder = new TextEncoder();
 const cloudCollections = {
@@ -30,11 +33,11 @@ export function validateInputs(inputs: ScanInput[]): void {
     checkSize(input.name, bytes);
     total += bytes;
   }
-  if (total > MAX_SCAN_MIB * MIB) throw new Error(`Combined inputs exceed ${MAX_SCAN_MIB} MiB encoded. Select fewer or smaller files.`);
+  if (total > MAX_INLINE_SCAN_BYTES) throw new Error(`Combined inputs exceed 256 MiB encoded. Select fewer or smaller files.`);
 }
 
 // Related snapshots in each directory share an adapter invocation so certificate links resolve.
-export async function prepareScan(files: File[]): Promise<ScanRequest> {
+export function validateFileSelection(files: File[]): number {
   if (!files.length || files.length > MAX_SCAN_FILES) throw new Error(`Select 1–${MAX_SCAN_FILES} files per scan.`);
   if (new Set(files.map(file => filePath(file).trim())).size !== files.length) {
     throw new Error('Input names must be unique. Rename duplicate files and select them again.');
@@ -45,7 +48,14 @@ export async function prepareScan(files: File[]): Promise<ScanRequest> {
     checkSize(filePath(file), size);
     estimatedTotal += size;
   }
-  if (estimatedTotal > MAX_SCAN_MIB * MIB) throw new Error(`Combined inputs exceed ${MAX_SCAN_MIB} MiB encoded. Select fewer or smaller files.`);
+  if (estimatedTotal > MAX_SCAN_BYTES) throw new Error('Combined inputs exceed 3 GB (3,000,000,000 encoded bytes). Select fewer or smaller files.');
+  return estimatedTotal;
+}
+
+export async function prepareScan(files: File[]): Promise<ScanRequest> {
+  if (validateFileSelection(files) > MAX_INLINE_SCAN_BYTES) {
+    throw new Error('Large folders require batched uploads. Use Scan selected files to upload up to 3 GB.');
+  }
   const inputs: ScanInput[] = [];
   const cloudGroups = new Map<string, { snapshots: Map<string, string>; names: string[] }>();
   for (const file of files) {
@@ -112,4 +122,43 @@ export function cloudSnapshotEntries(content: string, name: string): [string, st
     throw new Error(`${name}: ambiguous or unsupported JSON. Use an AWS snapshot with Keys, Certificates or LoadBalancers, or a documented filename-keyed bundle.`);
   }
   return entries;
+}
+
+// Read only the next batch. Keep related AWS snapshots together even across file ordering.
+export async function* prepareScanBatches(files: File[], signal: AbortSignal): AsyncGenerator<ScanRequest> {
+  validateFileSelection(files);
+  const groups: File[][] = [];
+  const cloudGroups = new Map<string, File[]>();
+  for (const file of files) {
+    if (/\.json$/i.test(file.name)) {
+      const path = filePath(file);
+      const directory = path.slice(0, path.lastIndexOf('/') + 1);
+      let group = cloudGroups.get(directory);
+      if (!group) { group = []; cloudGroups.set(directory, group); groups.push(group); }
+      group.push(file);
+    } else groups.push([file]);
+  }
+  let inputs: ScanInput[] = [];
+  let bytes = 0;
+  let total = 0;
+  const names = new Set<string>();
+  for (const group of groups) {
+    signal.throwIfAborted();
+    const prepared = await prepareScan(group);
+    signal.throwIfAborted();
+    for (const input of prepared.inputs) {
+      if (names.has(input.name.trim())) throw new Error('Input names must be unique across the folder.');
+      names.add(input.name.trim());
+      const size = encoder.encode(input.content).byteLength;
+      total += size;
+      if (total > MAX_SCAN_BYTES) throw new Error('Combined inputs exceed 3 GB after AWS bundling. Select fewer or smaller files.');
+      if (inputs.length && bytes + size > MAX_BATCH_BYTES) {
+        yield { inputs, synthetic: false };
+        inputs = []; bytes = 0;
+        signal.throwIfAborted();
+      }
+      inputs.push(input); bytes += size;
+    }
+  }
+  if (inputs.length) yield { inputs, synthetic: false };
 }

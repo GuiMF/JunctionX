@@ -1,4 +1,5 @@
 import type { ScanRequest, ScanResult } from '../types/contract';
+import { MAX_BATCH_BYTES, prepareScan, prepareScanBatches, validateFileSelection } from '../utils/scanInputs';
 
 export function apiUrl(path: string): string {
   const base = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000').replace(/\/+$/, '');
@@ -15,6 +16,10 @@ export async function apiRequest<T>(path: string, options: RequestInit, read: (r
   try {
     const response = await fetch(apiUrl(path), { ...options, signal: controller.signal });
     if (!response.ok) {
+      if (path.startsWith('/api/uploads')) {
+        const body = await response.json().catch(() => null);
+        if (typeof body?.detail === 'string') throw new Error(body.detail);
+      }
       if (response.status === 404) throw new Error('Scan is missing or was evicted (HTTP 404). Scan the files again before exporting.');
       if (response.status === 422) throw new Error('API validation failed (HTTP 422). Check the file types, names and size limits, then retry.');
       throw new Error(`API request failed (HTTP ${response.status}). Please retry.`);
@@ -35,12 +40,44 @@ export function submitScan(request: ScanRequest, signal: AbortSignal): Promise<S
   return apiRequest('/api/scans', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request), signal,
-  }, async (response) => {
-    const scan: ScanResult = await response.json();
-    if (!scan.scan_id || !['completed', 'partial', 'failed'].includes(scan.status) ||
-        !Array.isArray(scan.findings) || !Array.isArray(scan.coverage) || !Array.isArray(scan.errors) || !scan.score) {
-      throw new Error('The API returned an invalid scan result. Check the API version and retry.');
+  }, readScanResult);
+}
+
+async function readScanResult(response: Response): Promise<ScanResult> {
+  const scan: ScanResult = await response.json();
+  if (!scan.scan_id || !['completed', 'partial', 'failed'].includes(scan.status) ||
+      !Array.isArray(scan.findings) || !Array.isArray(scan.coverage) || !Array.isArray(scan.errors) || !scan.score) {
+    throw new Error('The API returned an invalid scan result. Check the API version and retry.');
+  }
+  return scan;
+}
+
+export async function submitFiles(files: File[], signal: AbortSignal, progress: (message: string) => void = () => {}): Promise<ScanResult> {
+  const total = validateFileSelection(files);
+  signal.throwIfAborted();
+  if (total <= MAX_BATCH_BYTES) {
+    const request = await prepareScan(files);
+    signal.throwIfAborted();
+    return submitScan(request, signal);
+  }
+  const { upload_id } = await apiRequest<{ upload_id: string }>('/api/uploads', { method: 'POST', signal }, response => response.json());
+  if (!upload_id) throw new Error('The API did not create an upload. Please retry.');
+  const path = `/api/uploads/${encodeURIComponent(upload_id)}`;
+  let completed = false;
+  try {
+    for await (const batch of prepareScanBatches(files, signal)) {
+      const receipt = await apiRequest<{ received_bytes: number }>(`${path}/batches`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(batch), signal,
+      }, response => response.json());
+      progress(`Uploaded ${Math.round(receipt.received_bytes / 1024 / 1024)} MiB of approximately ${Math.ceil(total / 1024 / 1024)} MiB…`);
     }
-    return scan;
-  });
+    signal.throwIfAborted();
+    progress('Upload complete. Analyzing files…');
+    const result = await apiRequest(`${path}/complete`, { method: 'POST', signal }, readScanResult, 30 * 60_000);
+    completed = true;
+    return result;
+  } finally {
+    // Cancellation uses a fresh signal so the server can discard temporary content.
+    if (!completed) await apiRequest(path, { method: 'DELETE' }, async () => undefined, 10_000).catch(() => {});
+  }
 }

@@ -12,7 +12,9 @@ frontend regression checks and `npm run build` for TypeScript and production bui
 validation. Use Node.js 22+.
 
 The dashboard starts with an empty inventory. Open **Import data**, select supported files, and click **Scan selected files** to submit
-raw inputs to `POST /api/scans`. Related AWS snapshots are bundled together.
+raw inputs to the scan API. Small selections use `POST /api/scans`; folders above
+64 MiB use batched uploads for up to 3 GB combined. Related AWS snapshots are
+bundled together.
 Completed, partial, and failed scans show their own findings, coverage, scores,
 input errors, and export IDs. Exports are enabled once a scan result is available.
 
