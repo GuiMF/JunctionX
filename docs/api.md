@@ -9,7 +9,7 @@ Start with the repository README command. Interactive contract and request examp
 | `GET /api/scans/{scan_id}/export?format=json` | Download the project JSON. |
 | `GET /api/scans/{scan_id}/export?format=cyclonedx` | Download a locally schema-validated CycloneDX 1.6 CBOM. |
 
-`201` means a scan record was created. Inspect its `status`: `completed`, `partial`, or `failed`. An unsupported raw scanner returns a saved failed scan, not an HTTP success claim about scanning. Structurally invalid requests return `422`. Unknown export formats return `422`.
+`201` means a scan record was created. Inspect its `status`: `completed`, `partial`, or `failed`. An unsupported raw scanner returns a saved failed scan, not an HTTP success claim about scanning. Structurally invalid requests return `422`. Validation errors include the error type, location, and message; submitted input content and validation context are omitted to avoid echoing secrets. Unknown export formats return `422`.
 
 For a separately served local frontend, CORS permits `http://localhost:3000`, `http://127.0.0.1:3000`, `http://localhost:5173`, and `http://127.0.0.1:5173` by default. Allowed request methods are `GET` and `POST`, with `Content-Type` headers and no credentials. To configure other origins, use `create_app(cors_origins=["http://localhost:9000"])`; pass `cors_origins=[]` to disable CORS middleware. Arbitrary origins are not allowed by default. CORS controls browser access, not authentication.
 
@@ -63,7 +63,7 @@ Every adapter receives an `AdapterContext` containing the scan's timezone-aware 
 
 The core validates each input independently, assesses findings using its own rules, and checks identity conflicts before committing that input's results. Parser failures, malformed output and conflicting IDs reject that input while retaining earlier successful results. Existing failed/unsupported counts and errors make the scan partial if there is any successful work. Empty, successfully checked inputs can complete without findings; no findings does not itself mean safety.
 
-Tool versions are namespaced as `input-name/tool-name` so different inputs cannot silently overwrite provenance. Coverage units stay separate. With no parser output, a failure uses one `inputs` unit instead of inventing a file/session/resource count. Exception messages expose the exception class, not raw parser text which could contain input secrets.
+Tool versions are namespaced as `input-name/tool-name`, with each segment independently URL-percent-encoded so slashes and percent signs in names cannot silently overwrite another input's provenance. Coverage units stay separate. With no parser output, a failure uses one `inputs` unit instead of inventing a file/session/resource count. Exception messages expose the exception class, not raw parser text which could contain input secrets.
 
 ## Normalized fixtures
 

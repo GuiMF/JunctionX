@@ -211,3 +211,48 @@ def test_comments_and_filenames_cannot_create_crypto_facts():
     result = assess_finding(original)
     assert result.quantum_status == "unknown"
     assert not result.classical_issues
+
+
+@pytest.mark.parametrize("algorithm,group,status", [
+    ("ML-KEM", "ML-KEM-768", "resistant_primitive"),
+    ("DH", "ffdhe2048", "vulnerable"),
+    ("DHE", "ffdhe3072", "vulnerable"),
+    ("EC", "secp256r1", "vulnerable"),
+    ("ECC", "P-384", "vulnerable"),
+    ("P-256", "secp256r1", "vulnerable"),
+    ("secp256r1", "P-256", "vulnerable"),
+    ("ML-KEM", "X25519MLKEM768", "unknown"),
+    ("DH", "X25519", "unknown"),
+    ("ML-KEM-512", "ML-KEM-768", "unknown"),
+])
+def test_compatible_group_families_and_curve_aliases(algorithm, group, status):
+    result = assess_finding(finding(algorithm, "key_establishment", parameters={"named_group": group}))
+    assert result.quantum_status == status
+
+
+@pytest.mark.parametrize("algorithm,digest", [("HMAC-MD5", "SHA256"), ("HMAC-SHA256", "MD5")])
+def test_conflicting_hmac_digest_metadata_cannot_hide_md5(algorithm, digest):
+    result = assess_finding(finding(algorithm, "mac", parameters={"hash_algorithm": digest}))
+    assert result.quantum_status == "unknown"
+    assert "conflict" in result.rationale
+    assert any("HMAC-MD5" in issue for issue in result.classical_issues)
+
+
+def test_conflicting_aes_mode_cannot_hide_ecb():
+    result = assess_finding(finding("AES-256-ECB", "encryption", parameters={"mode": "GCM"}))
+    assert result.quantum_status == "unknown"
+    assert any("ECB" in issue for issue in result.classical_issues)
+
+
+@pytest.mark.parametrize("algorithm,group,status", [
+    ("ML-DSA-65", "secp256r1", "unknown"),
+    ("ML-DSA-65", "ML-DSA-44", "unknown"),
+    ("ML-DSA", "ML-DSA-65", "resistant_primitive"),
+    ("SLH-DSA", "SLH-DSA-SHA2-128s", "resistant_primitive"),
+    ("ECDSA", "secp256r1", "vulnerable"),
+    ("ECDSA", "X25519", "unknown"),
+    ("Ed25519", "secp256r1", "unknown"),
+])
+def test_signature_group_metadata_must_be_compatible(algorithm, group, status):
+    result = assess_finding(finding(algorithm, "signature", parameters={"named_group": group}))
+    assert result.quantum_status == status

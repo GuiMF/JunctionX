@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 
 from api.main import create_app
-from core.models import ScanRequest, ScanResult
+from adapters.normalized import NormalizedFixture
+from core.models import AdapterContext, AdapterResult, Finding, ScanInput, ScanRequest, ScanResult
 from export.cyclonedx import validate_cyclonedx
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,9 +59,12 @@ def test_partial_fixture_keeps_successful_findings_and_explicit_unknown_units():
 
 
 def test_checked_in_contracts_match_models_and_examples():
-    for model in (ScanRequest, ScanResult):
+    for model in (AdapterContext, AdapterResult, Finding, ScanInput, ScanRequest, ScanResult, NormalizedFixture):
         stored = json.loads((ROOT / "schemas" / f"{model.__name__}.schema.json").read_text())
         assert stored == model.model_json_schema()
+    assert json.loads((ROOT / "schemas/openapi.json").read_text()) == create_app().openapi()
+    for model in (ScanRequest, ScanResult):
+        stored = json.loads((ROOT / "schemas" / f"{model.__name__}.schema.json").read_text())
         suffix = "request" if model is ScanRequest else "response"
         for name in ("original", "modified", "partial"):
             example = load(f"scan-{name}.{suffix}.json")

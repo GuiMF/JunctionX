@@ -3,6 +3,7 @@
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -35,6 +36,24 @@ def create_app(
             allow_credentials=False,
         )
     app.state.scan_service = service if service is not None else ScanService()
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(_, exc: RequestValidationError) -> JSONResponse:
+        # FastAPI's default includes the invalid input, which can be an entire
+        # scan containing source code, private keys, or cloud credentials.
+        # Escape lone surrogates in error paths/messages so malformed JSON text
+        # still produces a validation response instead of a serialization 500.
+        def safe_text(value: str) -> str:
+            return value.encode("utf-8", errors="backslashreplace").decode("utf-8")
+
+        return JSONResponse(status_code=422, content={"detail": [
+            {
+                "type": safe_text(error["type"]),
+                "loc": [safe_text(part) if isinstance(part, str) else part for part in error["loc"]],
+                "msg": safe_text(error["msg"]),
+            }
+            for error in exc.errors()
+        ]})
 
     @app.post("/api/scans", response_model=ScanResult, status_code=201)
     def create_scan(request: ScanRequest) -> ScanResult:

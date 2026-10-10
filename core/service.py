@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import hashlib
 from threading import RLock
 from uuid import uuid4
+from urllib.parse import quote
 
 from pydantic import ValidationError
 
@@ -122,7 +123,9 @@ class ScanService:
             errors.extend(result.errors)
             relationships.extend(result.relationships)
             for name, version in result.tool_versions.items():
-                tool_versions[f"{scan_input.name}/{name}"] = version
+                # Encode each segment independently: otherwise input "a/b"
+                # with tool "c" overwrites input "a" with tool "b/c".
+                tool_versions[f"{quote(scan_input.name, safe='')}/{quote(name, safe='')}"] = version
             input_degraded = bool(result.errors) or any(item.failed or item.unsupported for item in result.coverage)
             successful_input |= bool(result.findings) or any(item.assessed or item.unknown for item in result.coverage) or not input_degraded
             degraded |= input_degraded

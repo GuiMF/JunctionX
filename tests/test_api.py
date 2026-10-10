@@ -76,6 +76,32 @@ def test_request_validation_422(client, body):
     assert client.post("/api/scans", json=body).status_code == 422
 
 
+@pytest.mark.parametrize("failure", ["duplicate_names", "extra_field", "oversized_content"])
+def test_validation_errors_do_not_echo_submitted_content(client, failure):
+    secret = "private-key-material-never-echo-this"
+    item = {"name": "test", "source_type": "source", "format": "raw", "content": secret}
+    body = {"inputs": [item]}
+    if failure == "duplicate_names":
+        body["inputs"].append(item.copy())
+    elif failure == "extra_field":
+        body["credentials"] = secret
+    else:
+        item["content"] = secret + "x" * (8 * 1024 * 1024)
+    response = client.post("/api/scans", json=body)
+    assert response.status_code == 422
+    assert secret not in response.text
+    assert all(set(error) == {"type", "loc", "msg"} for error in response.json()["detail"])
+
+
+def test_malformed_unicode_error_location_does_not_crash(client):
+    response = client.post(
+        "/api/scans", content=b'{"inputs": [], "\\ud800": "secret"}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == 422
+    assert "secret" not in response.text
+
+
 def test_openapi_contains_shared_contract(client):
     schema = client.get("/openapi.json").json()
     assert "ScanRequest" in schema["components"]["schemas"]

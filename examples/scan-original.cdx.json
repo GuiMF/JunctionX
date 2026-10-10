@@ -2,7 +2,6 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:c8e98948-adc9-5cd4-85d1-5c8591e9a56d",
   "version": 1,
   "metadata": {
     "properties": [
@@ -32,7 +31,7 @@
       },
       {
         "name": "quantumtrace:ruleset_version",
-        "value": "1.0.0"
+        "value": "1.0.1"
       },
       {
         "name": "quantumtrace:scan_id",
@@ -143,7 +142,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -245,7 +244,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -347,7 +346,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -448,7 +447,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -550,7 +549,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -651,7 +650,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-UNKNOWN@1.0.0"
+          "value": "QT-UNKNOWN@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -752,7 +751,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -855,7 +854,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-AES@1.0.0"
+          "value": "QT-AES@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -956,7 +955,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-UNKNOWN@1.0.0"
+          "value": "QT-UNKNOWN@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -1057,7 +1056,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-HYBRID-MLKEM@1.0.0"
+          "value": "QT-HYBRID-MLKEM@1.0.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -1081,5 +1080,6 @@
         ]
       }
     }
-  ]
+  ],
+  "serialNumber": "urn:uuid:5114f1f8-ce8b-5891-8119-c4247f721c55"
 }

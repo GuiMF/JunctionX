@@ -108,3 +108,26 @@ def test_request_requires_unique_input_names_and_aware_evaluation_time():
         ScanRequest(inputs=[item, item])
     with pytest.raises(ValidationError):
         ScanRequest(inputs=[item], evaluated_at="2026-10-10T00:00:00")
+
+
+@pytest.mark.parametrize("field", ["id", "asset_id", "algorithm", "owner"])
+def test_contract_rejects_unpaired_surrogates_before_json_export(field):
+    with pytest.raises(ValidationError):
+        finding(**{field: "invalid\ud800"})
+
+
+def test_score_uses_equal_asset_weights_and_keeps_all_excluded_populations_visible():
+    observations = [
+        assess_finding(finding()),
+        assess_finding(finding(id="aes128", asset_id="a-2", algorithm="AES", usage="encryption", parameters={"key_bits": 128})),
+        assess_finding(finding(id="aes256", asset_id="a-3", algorithm="AES", usage="encryption", parameters={"key_bits": 256})),
+        assess_finding(finding(id="unknown", asset_id="a-4", algorithm="unknown")),
+        assess_finding(finding(id="offered-rsa", asset_id="a-5", evidence_kind="offered")),
+        finding(id="na", asset_id="a-6", quantum_status="not_applicable"),
+    ]
+    score = score_findings(observations + [observations[0]] * 50)
+    assert score["value"] == 50
+    assert score["total_assets"] == 6
+    assert score["assessed_assets"] == 3
+    assert score["unknown_assets"] == score["offered_only_assets"] == score["not_applicable_assets"] == 1
+    assert score["quantum_vulnerable_assets"] == 1

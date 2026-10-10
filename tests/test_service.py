@@ -161,6 +161,28 @@ def test_registry_rejects_accidental_override():
         registry.register("source", lambda item, context: None)
 
 
+def test_tool_provenance_names_cannot_collide_across_inputs():
+    registry = AdapterRegistry()
+
+    def adapter(item, context):
+        tool = "b/c" if item.name == "a" else "c"
+        return AdapterResult(
+            coverage=[Coverage(source_type=item.source_type, input_name=item.name, unit="files", assessed=1)],
+            tool_versions={tool: item.name},
+        )
+
+    registry.register("source", adapter)
+    scan = run_scan(ScanRequest(inputs=[
+        raw_input("a", "source"), raw_input("a/b", "source"), raw_input("a%2Fb", "source"),
+    ]), registry)
+    assert scan.tool_versions == {
+        "quantumtrace-core": "0.1.0",
+        "a/b%2Fc": "a",
+        "a%2Fb/c": "a/b",
+        "a%252Fb/c": "a%2Fb",
+    }
+
+
 def test_adapter_evaluation_context_is_reproducible_and_isolated():
     from datetime import datetime, timezone
 

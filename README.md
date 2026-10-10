@@ -57,6 +57,9 @@ The generator refreshes JSON schemas, OpenAPI, role examples, before/after reque
 and a validated sample CBOM. Generated examples use fixed timestamps/scan IDs for
 reproducibility; actual scans use their real start time and a fresh scan ID.
 
+GitHub Actions runs tests, the in-process demo, dependency checks, and generated
+artifact drift checks on every push and pull request.
+
 This is a local, synchronous MVP: newest 100 scans in memory, one process,
 no authentication or persistent storage. Restarting clears stored scans.
 Evidence should contain metadata only; adapters must not emit private keys or

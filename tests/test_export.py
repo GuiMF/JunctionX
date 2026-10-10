@@ -155,3 +155,37 @@ def test_conflicting_aes_parameters_remain_unknown(parameters):
     assert component["cryptoProperties"]["algorithmProperties"] == {"primitive": "unknown"}
     assert props(component)["quantumtrace:algorithm"] == "AES-256-GCM"
     assert json.loads(props(component)["quantumtrace:parameters"]) == item.parameters.model_dump()
+
+
+@pytest.mark.parametrize("algorithm", ["P-256", "secp384r1", "P-521"])
+def test_curve_name_does_not_turn_signature_into_key_agreement(algorithm):
+    document = export_cyclonedx(scan([finding(algorithm=algorithm, usage="signature")]))
+    component = document["components"][0]
+    assert component["cryptoProperties"]["algorithmProperties"]["primitive"] == "unknown"
+    assert props(component)["quantumtrace:usage"] == "signature"
+
+    document = export_cyclonedx(scan([finding(algorithm=algorithm, usage="key_establishment")]))
+    assert document["components"][0]["cryptoProperties"]["algorithmProperties"]["primitive"] == "key-agree"
+
+
+@pytest.mark.parametrize("algorithm,usage,primitive", [
+    ("RSA", "signature", "signature"),
+    ("HMAC-SHA256", "mac", "mac"),
+    ("SHA256", "hash", "hash"),
+    ("ML-KEM-768", "key_establishment", "kem"),
+])
+def test_cipher_modes_are_not_projected_onto_non_cipher_primitives(algorithm, usage, primitive):
+    document = export_cyclonedx(scan([finding(algorithm=algorithm, usage=usage, parameters={"mode": "GCM"})]))
+    component = document["components"][0]
+    algorithm_properties = component["cryptoProperties"]["algorithmProperties"]
+    assert algorithm_properties["primitive"] == primitive
+    assert "mode" not in algorithm_properties
+    assert json.loads(props(component)["quantumtrace:parameters"])["mode"] == "GCM"
+
+
+def test_serial_uses_canonical_export_order_and_changes_with_preserved_facts():
+    first, second = finding("f1", "a1"), finding("f2", "a2", algorithm="AES")
+    original = export_cyclonedx(scan([first, second]))
+    assert original == export_cyclonedx(scan([second, first]))
+    changed = first.model_copy(update={"owner": "different-owner"})
+    assert original["serialNumber"] != export_cyclonedx(scan([changed, second]))["serialNumber"]

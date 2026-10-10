@@ -4,7 +4,7 @@ import re
 
 from core.models import Finding
 
-RULESET_VERSION = "1.0.0"
+RULESET_VERSION = "1.0.1"
 NIST_PQC = "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs"
 FIPS203 = "https://csrc.nist.gov/pubs/fips/203/final"
 FIPS204 = "https://csrc.nist.gov/pubs/fips/204/final"
@@ -51,6 +51,43 @@ def _name(value: str | None) -> str:
     return re.sub(r"[-_\s]", "", value or "").upper()
 
 
+def _group_name(value: str | None) -> str:
+    name = _name(value)
+    return {"P256": "SECP256R1", "P384": "SECP384R1", "P521": "SECP521R1"}.get(name, name)
+
+
+def _compatible_key_group(algorithm: str, group: str) -> bool:
+    """A generic family can refine to its members; specific names must agree."""
+    families = {
+        "UNKNOWN": CLASSICAL_GROUPS | HYBRID_GROUPS | (KEMS - {"MLKEM"}),
+        "KEYEXCHANGE": CLASSICAL_GROUPS | HYBRID_GROUPS | (KEMS - {"MLKEM"}),
+        "TLS": CLASSICAL_GROUPS | HYBRID_GROUPS | (KEMS - {"MLKEM"}),
+        "TLS1.3": CLASSICAL_GROUPS | HYBRID_GROUPS | (KEMS - {"MLKEM"}),
+        "TLS1.2": CLASSICAL_GROUPS,
+        "HYBRID": HYBRID_GROUPS,
+        "ECDH": CLASSICAL_EC_GROUPS | HYBRID_GROUPS,
+        "ECDHE": CLASSICAL_EC_GROUPS | HYBRID_GROUPS,
+        "EC": CLASSICAL_EC_GROUPS,
+        "ECC": CLASSICAL_EC_GROUPS,
+        "DH": CLASSICAL_GROUPS - CLASSICAL_EC_GROUPS,
+        "DHE": CLASSICAL_GROUPS - CLASSICAL_EC_GROUPS,
+        "MLKEM": KEMS - {"MLKEM"},
+    }
+    return group in families.get(algorithm, set()) or _group_name(algorithm) == group
+
+
+def _compatible_signature_group(algorithm: str, group: str) -> bool:
+    families = {
+        "EC": CLASSICAL_EC_GROUPS - {"X25519", "X448"},
+        "ECC": CLASSICAL_EC_GROUPS - {"X25519", "X448"},
+        "ECDSA": CLASSICAL_EC_GROUPS - {"X25519", "X448"},
+        "EDDSA": {"ED25519", "ED448"},
+        "MLDSA": {"MLDSA44", "MLDSA65", "MLDSA87"},
+        "SLHDSA": {name for name in SIGNATURES if name.startswith("SLHDSA")},
+    }
+    return group in families.get(algorithm, set()) or algorithm == group
+
+
 def assess_finding(finding: Finding) -> Finding:
     """Return a deep copy; classify normalized facts, never evidence text or filenames.
 
@@ -58,7 +95,7 @@ def assess_finding(finding: Finding) -> Finding:
     and operational issues are independent fields, never silently folded into it.
     """
     algorithm = _name(finding.algorithm)
-    group = _name(finding.parameters.named_group)
+    group = _group_name(finding.parameters.named_group)
     usage = finding.usage
     issues = list(finding.classical_issues)
     refs = list(finding.references)
@@ -76,21 +113,12 @@ def assess_finding(finding: Finding) -> Finding:
     # A contradictory specific algorithm/group pair is deliberately not resolved.
     key_name = algorithm
     if usage == "key_establishment" and group:
-        generic = {"UNKNOWN", "TLS", "TLS1.2", "TLS1.3", "KEYEXCHANGE", "HYBRID", "ECDHE", "ECDH"}
-        if algorithm in {"ECDH", "ECDHE"} and group not in CLASSICAL_EC_GROUPS | HYBRID_GROUPS:
-            key_name = "CONFLICTINGGROUP"
-        elif algorithm == "HYBRID" and group not in HYBRID_GROUPS:
-            key_name = "CONFLICTINGGROUP"
-        elif algorithm == "TLS1.2" and group not in CLASSICAL_GROUPS:
-            key_name = "CONFLICTINGGROUP"
-        elif algorithm in {"TLS", "TLS1.3"} and group not in CLASSICAL_GROUPS | HYBRID_GROUPS | (KEMS - {"MLKEM"}):
-            key_name = "CONFLICTINGGROUP"
-        elif algorithm in generic or algorithm == group:
-            key_name = group
-        else:
-            key_name = "CONFLICTINGGROUP"
+        key_name = group if _compatible_key_group(algorithm, group) else "CONFLICTINGGROUP"
 
-    if key_name in HYBRID_GROUPS and usage == "key_establishment":
+    if usage == "signature" and group and not _compatible_signature_group(algorithm, group):
+        rationale = "The signature algorithm and named-group metadata conflict or their combination is unsupported."
+        recommendation = "Resolve the signing algorithm and its parameter set from direct evidence before assessing it."
+    elif key_name in HYBRID_GROUPS and usage == "key_establishment":
         classify("hybrid", "resilient", "HYBRID-MLKEM",
                  "This exact RFC 10024 group combines classical ECDHE with standardized ML-KEM. "
                  "The assessment covers key establishment only; authentication remains independently assessed.",
@@ -151,19 +179,23 @@ def assess_finding(finding: Finding) -> Finding:
         else:
             rationale = "AES key size is absent, unsupported, or contradicts its name, or mode metadata conflicts; assessment remains unknown."
             recommendation = "Resolve AES key size in bits and any conflicting mode metadata from the actual API or configuration."
-        if mode == "ECB":
+        if "ECB" in {mode, match[2]}:
             issues.append("ECB reveals equality of plaintext blocks; replace with a suitable authenticated encryption construction.")
             refs.append(MODES)
         # CBC/CTR alone are not proof that authentication or IV handling is absent.
     elif algorithm.startswith("HMAC") and algorithm in {"HMAC"} | {"HMAC" + x for x in HASH_NAMES}:
         if usage == "mac":
-            hash_name = _name(finding.parameters.hash_algorithm) or algorithm.removeprefix("HMAC")
+            named_hash = algorithm.removeprefix("HMAC")
+            supplied_hash = _name(finding.parameters.hash_algorithm)
             rule = "HMAC-PARAMETERS"
             rationale = ("HMAC is a symmetric message authentication construction, not a public-key signature. "
                          "Key entropy, tag length, hash choice, and key handling are not fully established by this contract.")
             recommendation = "Verify the underlying hash, secret entropy and handling, and tag length; prefer supported HMAC-SHA-256 or stronger profiles."
             refs.extend(("https://www.rfc-editor.org/rfc/rfc2104.html", HASHES))
-            if hash_name == "MD5":
+            if named_hash and supplied_hash and named_hash != supplied_hash:
+                rationale += " The algorithm name and hash_algorithm metadata conflict."
+                recommendation = "Resolve the conflicting HMAC digest evidence before choosing a supported replacement profile."
+            if "MD5" in {named_hash, supplied_hash}:
                 issues.append("HMAC-MD5 is unsuitable for new designs; MD5 collision attacks alone do not prove HMAC forgery.")
                 refs.append(MD5)
     elif algorithm in {"PBKDF2", "PBKDF2HMAC", "PBKDF2HMACSHA1", "PBKDF2HMACSHA256", "PBKDF2HMACSHA512"} and usage == "kdf":

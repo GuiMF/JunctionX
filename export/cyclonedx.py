@@ -117,7 +117,10 @@ def _crypto_properties(finding: dict) -> dict:
         parameter_set = algorithm.removeprefix("MLKEM") or None
     elif algorithm in HYBRID_GROUPS:
         primitive = "combiner"
-    elif algorithm in CLASSICAL_GROUPS | {"ECDH", "ECDHE", "DH", "DHE"}:
+    elif (algorithm in {"ECDH", "ECDHE", "DH", "DHE", "X25519", "X448"} or
+          (algorithm in CLASSICAL_GROUPS and usage == "key_establishment")):
+        # A curve name alone (for example P-256) does not establish key
+        # agreement: that same curve can also underlie a signature scheme.
         primitive = "key-agree"
     elif algorithm in SIGNATURES | {"ED25519", "ED448", "EDDSA", "ECDSA", "DSA", "RSAPSS"}:
         primitive = "signature"
@@ -141,7 +144,9 @@ def _crypto_properties(finding: dict) -> dict:
     # Parameters are never equated with a classical or quantum security level.
     if parameter_set is not None:
         properties["parameterSetIdentifier"] = parameter_set
-    if mode is not None:
+    if mode is not None and primitive in {"block-cipher", "ae", "unknown"}:
+        # Cipher modes do not describe signatures, hashes, MACs or KEMs.
+        # Preserve contradictory scanner metadata in project properties only.
         mode = mode.lower()
         properties["mode"] = mode if mode in {"cbc", "ecb", "ccm", "gcm", "cfb", "ofb", "ctr", "unknown"} else "other"
     return {"assetType": "algorithm", "algorithmProperties": properties}
@@ -191,12 +196,15 @@ def export_cyclonedx(scan: ScanResult) -> dict:
         "$schema": SCHEMA_URI,
         "bomFormat": "CycloneDX",
         "specVersion": "1.6",
-        "serialNumber": f"urn:uuid:{uuid5(NAMESPACE_URL, 'quantumtrace:' + _json(payload))}",
         "version": 1,
         "metadata": metadata,
         "components": components,
     }
     if edges:
         document["dependencies"] = [{"ref": ref, "dependsOn": sorted(targets)} for ref, targets in sorted(edges.items())]
+    # Hash the actual canonical export, after sorting components and edges.
+    # Reordering input findings must not give an otherwise identical BOM a new
+    # identity; all original finding fields are retained in its properties.
+    document["serialNumber"] = f"urn:uuid:{uuid5(NAMESPACE_URL, 'quantumtrace:' + _json(document))}"
     validate_cyclonedx(document)
     return document

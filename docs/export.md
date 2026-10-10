@@ -24,6 +24,10 @@ Family-like names such as `AES-SOMETHING` are not accepted as known primitives. 
 their original name and primitive `unknown`. Unsupported modes become `other`
 while the original value remains in project properties. A key length is never
 reported as a security-strength value. No NIST quantum level is inferred.
+An ambiguous curve/group name such as `P-256` becomes `key-agree` only for
+key-establishment usage; a signature observation is not relabeled as key
+agreement. Cipher modes on known non-cipher primitives are retained only in
+project properties, rather than attached to standard signature/hash/KEM fields.
 
 Exact evidence files become standard component `evidence.occurrences`; their
 locator, detail, and evidence kind remain in `additionalContext`. All finding
@@ -43,8 +47,11 @@ with multiple algorithm components remain in the project relationship list.
 Omitted dependency nodes mean unknown dependencies, not proven absence.
 
 The report timestamp is the scan's evaluation timestamp. A UUIDv5 serial number
-is generated from the full canonical scan content; identical scans produce
-identical output and changed content gets a different serial number. No wall
+is generated from the canonical exported content; identical reports produce
+identical output and changed exported content gets a different serial number.
+Finding input order does not affect the serial because components are sorted
+by finding ID. Order in other lists is retained as part of their evidence or
+metadata. No wall
 clock, random ID, external service, or file beyond the vendored schema is used
 while exporting.
 

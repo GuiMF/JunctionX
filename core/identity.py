@@ -42,11 +42,15 @@ def deduplicate_findings(findings: Iterable[Finding]) -> list[Finding]:
     The same ID may legitimately change facts across before/after scans.
     """
     groups: dict[str, list[Finding]] = {}
+    owners: dict[str, set[str]] = {}
     for finding in findings:
         group = groups.setdefault(finding.id, [])
         if group and _facts(group[0]) != _facts(finding):
             raise ValueError(f"Conflicting facts for finding ID {finding.id}")
-        if len({f.owner for f in [*group, finding] if f.owner}) > 1:
+        known_owners = owners.setdefault(finding.id, set())
+        if finding.owner:
+            known_owners.add(finding.owner)
+        if len(known_owners) > 1:
             raise ValueError(f"Conflicting owners for finding ID {finding.id}")
         group.append(finding)
     result = []

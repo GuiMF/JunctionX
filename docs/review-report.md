@@ -72,19 +72,20 @@ properties. Schema validation establishes structure, not detector accuracy.
 
 ## Verification results
 
-**142 tests pass** in the final fresh-environment run. The regression suite covers models and IDs, assessment rules, scoring, parser
+**180 tests pass** after the PR review. The regression suite covers models and IDs, assessment rules, scoring, parser
 failures, bad adapter output, concurrent result storage, the HTTP API, exports,
 generated schemas, and all three example source types. It also verifies that
 adapter mutation cannot change another input's evaluation time.
 
-The breakdown is 63 assessment cases, 22 export cases, 35 API/service cases,
-18 contract/identity/scoring cases, and 4 complete example-flow cases. The API
+The breakdown is 83 assessment cases, 30 export cases, 40 API/service cases,
+23 contract/identity/scoring cases, and 4 complete example-flow cases. The API
 cases include browser preflight requests for explicit local development origins
 and rejection of other origins. Generated schemas and examples reproduce exactly.
 
 The pinned dependencies were installed into a separate fresh Python 3.12
-environment using downloaded wheels. The suite and in-process HTTP demo passed
-there, and `pip check` reported no broken requirements. One upstream
+environment using downloaded wheels for the initial 142-test release. That suite
+and the in-process HTTP demo passed there. The expanded suite and demo passed in
+the project environment after review, and `pip check` reported no broken requirements. One upstream
 Starlette/httpx deprecation warning remains; it does not fail the suite.
 
 The synthetic demonstration produced:
@@ -103,6 +104,37 @@ The execution sandbox denied binding `127.0.0.1:8014`, so an actual listening
 server could not be verified here. HTTP routes were exercised through FastAPI's
 in-process ASGI client instead. The remaining local check is to run the documented
 server command in a normal terminal and run the live demo against it.
+
+## PR review fixes
+
+Three subagents independently reviewed the API/service, assessment rules, and
+CBOM export. The parent reviewed contracts, scoring, identity, integration, and
+the fixes themselves. The review added 38 regression cases and corrected:
+
+| Issue | Result after the fix |
+| --- | --- |
+| HTTP 422 validation errors echoed complete input contents | Error responses retain type, location, and message while omitting submitted values and exception context |
+| Tool-version names collided when input or tool names contained slashes | Each namespace segment is independently percent-encoded, preserving both versions |
+| Conflicting signature metadata could claim resilience | Unsupported or contradictory algorithm/group pairs remain unknown |
+| Conflicting AES/HMAC metadata hid ECB or MD5 issues | Both claims remain visible, including the weakness, without a resilient verdict from contradictions |
+| Compatible algorithm-family/group combinations became unknown | ML-KEM, DH/DHE, EC/ECC, and equivalent curve aliases now refine consistently |
+| Curve-only signature findings exported as key agreement | Ambiguous curve use retains unknown primitive; cipher modes no longer attach to signatures, hashes, MACs or KEMs |
+| Reordering findings changed an otherwise identical CBOM serial | The serial derives from canonical exported content after sorting |
+| Duplicate owner checks repeatedly traversed all prior observations | Owner tracking is incremental; conflicts are still rejected in any order |
+
+The ruleset is now `1.0.1`; generated responses and CBOM were refreshed. A local
+10,000-observation duplicate probe fell from approximately 0.73 seconds to 0.05
+seconds; this is a small local measurement, not a production benchmark.
+
+GitHub Actions now runs the test suite, dependency check, in-process demo, and
+generated-schema/example drift check on pushes and pull requests. Action revisions
+are pinned and workflow permissions are read-only.
+
+One assessment limitation remains explicit: generated and detector-provided issue
+lists do not carry separate provenance. After changing facts, reassess fresh
+adapter output, not an edited previously assessed result; otherwise historical
+issue/reference strings intentionally remain. The engine does not guess which
+supplied issues to delete.
 
 ## What remains for the team
 
