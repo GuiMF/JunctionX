@@ -169,6 +169,11 @@ class Scanner:
         self.conditional = 0
         self.immutable: set[str] = set()
         self.configured: dict[tuple[int, str], set[object]] = {}
+        if language == "go":
+            from adapters.source_go_semantics import analyze
+            summaries, findings = analyze(self.ts)
+            self.env.update({name: Value("go-kdf", summary) for name, summary in summaries.items()})
+            self.findings.extend(findings)
 
     def resolve(self, ts: list[Token]) -> object:
         if not ts:
@@ -267,6 +272,16 @@ class Scanner:
         vals = [self.value(a) for a in args]
         arg = lambda i: vals[i] if i < len(vals) else None
         token = name[0]
+        if self.language == "go" and isinstance(ref, Value) and ref.kind == "go-kdf":
+            if len(args) != 4:
+                return None
+            digest, iteration_index, length_index = ref.data
+            length = _positive(arg(length_index))
+            result = self.emit(token, "PBKDF2", "kdf", "local.PBKDF2",
+                               iterations=_positive(arg(iteration_index)),
+                               key_bits=length * 8 if length else None, hash_algorithm=digest)
+            result.data.rule = "go-pbkdf2-structure"
+            return result
         if isinstance(ref, Value) and ref.kind == "api":
             api = str(ref.data)
             if self.language == "java":
@@ -473,7 +488,7 @@ class Scanner:
                 pending = []
                 if function:
                     self.env = {name: value for name, value in self.env.items()
-                                if name in self.immutable or isinstance(value, Value) and value.kind == "api"}
+                                if name in self.immutable or isinstance(value, Value) and value.kind in {"api", "go-kdf"}}
                     a = texts.index("(")
                     b = self.close(header, a)
                     if self.language == "go" and texts.index("func") + 1 == a:

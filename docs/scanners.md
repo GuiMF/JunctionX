@@ -30,8 +30,8 @@ Use `--synthetic` for organizer and other synthetic examples.
 
 ## Detection and evidence
 
-The bounded detector is pinned as `quantumtrace-source 0.1.1`, rules
-`source-api-v2`. Python uses the standard-library AST. Java and Go use lexical
+The bounded detector is pinned as `quantumtrace-source 0.2.0`, rules
+`source-api-v3`. Python uses the standard-library AST. Java and Go use lexical
 tokens and supported API patterns, not compilers or whole-program analysis.
 See [Python AST documentation](https://docs.python.org/3.12/library/ast.html).
 
@@ -76,11 +76,12 @@ HMAC remains a MAC, and Ed25519 remains a classical signature.
 - No interprocedural key-size inference, external dependency/source resolution,
   reachability proof or comprehensive data-flow analysis. A function default does
   not establish that every call uses that default. Local bindings can be unknown.
-- Bare AES block creation does not establish a mode. Handwritten Go ECB loops and
-  handwritten PBKDF2 are evaluation gaps rather than fabricated matches.
+- Bare AES block creation does not establish a mode. The additional Go rules
+  recognize the strict ECB and PBKDF2 idioms described below; alternative
+  handwritten implementations can remain undetected.
 - Python signature calls require a resolved cryptographic receiver; an untyped
-  function parameter with padding arguments alone does not prove the API. Such
-  organizer calls stay in the evaluation denominator as misses.
+  function parameter with padding arguments alone does not prove the API.
+  Bounded local RSA key provenance can now establish that receiver.
 - Imports and APIs can be dynamically replaced at runtime; all evidence remains
   a static declaration. Unsupported wrappers and language constructs can be missed.
 
@@ -89,6 +90,45 @@ Explicitly supplied `AdapterRegistry()` instances remain empty; call
 default service registers source discovery and the cloud adapter integrated on
 main. The default API also registers the PCAP adapter from main. Normalized fixture imports
 keep their existing synthetic behavior.
+
+## Bounded RSA flow and handwritten Go idioms
+
+Python adds RSA signature observations when direct calls to module-local,
+undecorated synchronous functions establish a receiver's key provenance. It
+supports explicit arguments, simple return values and tuple unpacking; it does
+not carry key sizes across function boundaries. All analyzed contexts for an
+added occurrence must agree. Ambiguous calls, escaping callbacks, recursion,
+unsupported wrappers and exhausted budgets suppress the supplemental findings
+while retaining the original API scan. Limits are eight call levels, 256 calls
+and 50,000 supplemental AST visits. This pass adds RSA observations only;
+existing Ed25519 discovery is unchanged. AST and binding rules follow the
+[Python AST documentation](https://docs.python.org/3.12/library/ast.html) and
+[Python execution model](https://docs.python.org/3.12/reference/executionmodel.html).
+
+Go recognizes a strict independent-block idiom: a resolved AES cipher encrypts
+matching, nonoverlapping block slices into a fresh output buffer, in a loop with
+no extra operations, followed by returning that output. The Encrypt call gets
+its own ECB observation; the original NewCipher observation remains mode-unknown.
+This follows the independent block transform in
+[NIST SP 800-38A, section 6.1](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf).
+
+The Go PBKDF2 recognizer matches a complete statement structure with linked
+identifiers: HMAC over salt and a four-byte big-endian block counter, repeated
+HMAC over the prior result, XOR accumulation, block concatenation and final
+truncation. It supports SHA-1, SHA-256 and SHA-512 implementations of this idiom.
+A resolved call to the recognized function produces the KDF observation, with
+iterations and output size only when explicit call arguments resolve. The
+internal HMAC observations remain. Files above 50,000 tokens skip the supplemental
+Go analysis and retain ordinary API discovery. These requirements follow
+[RFC 8018, section 5.2](https://www.rfc-editor.org/rfc/rfc8018.html#section-5.2).
+
+These are bounded structural recognizers, not general algorithm equivalence
+proofs. Import aliases, local identifier renaming, comments and formatting do
+not establish or remove algorithm identity. Changed dependencies, shadowed
+builtins, additional operations and unsupported structures are rejected.
+Independent regressions exercise those near misses as well as positive variants.
+No filename or organizer-specific identifier controls recognition, and corpus
+contents and labels remain unchanged. See the [implementation plan](source-improvement-plan.md).
 
 ## CryptoScan reuse trial (S1)
 
@@ -404,17 +444,15 @@ signature usage because the algorithm is a signature primitive. Parameters do
 not propagate across functions, and Python's generic webhook sign/verify methods
 are outside the explicit API occurrence inventory.
 
-The organizer manifest deliberately retains semantic facts beyond the
-bounded API rules: handwritten PBKDF2 at `go/auth-gateway/main.go:55`, and the ECB
-block loop at `go/batch-pipeline/main.go:29`. The ECB label is separate from the
-bare NewCipher observation, which by itself has no mode. These known gaps remain
-in the headline recall denominator. Review also exposed a false-positive risk in
-inferring Python RSA signatures from padding arguments on an untyped receiver.
-The detector now requires a resolved cryptographic receiver. The two original RSA
-signature labels at `python/license_token.py:11` and `:16` remain as known-gap
-misses; their expected algorithm, usage and parameter labels were not removed or
-changed. A separately named `supported_subset` reports
-recall without known-gap labels; it must not replace the headline result.
+The organizer manifest retains four originally unsupported facts: handwritten
+PBKDF2 at `go/auth-gateway/main.go:55`, the separate ECB block observation at
+`go/batch-pipeline/main.go:29`, and RSA signatures at
+`python/license_token.py:11` and `:16`. Version 0.2.0 recognizes all four through
+the bounded analysis above. The manifest's historical `known_gap` annotations,
+hashes, algorithms, usages and parameter labels are unchanged. Consequently,
+the report's `known_gaps` list is historical metadata; current misses are listed
+in `false_negatives`. The separately named `supported_subset` still excludes
+those four historical labels and must not replace the full headline result.
 
 ## Metrics and interpretation
 
@@ -437,25 +475,38 @@ cannot be inferred from this subset check or these small corpora.
 
 ## Recorded results
 
-Recorded on 2026-10-10 using `quantumtrace-source` 0.1.0 and `source-api-v1`,
-then revalidated unchanged with 0.1.1 / `source-api-v2` after the PR #6 additions:
+Recorded on 2026-10-10 against unchanged manifests and source hashes. The 0.1.1
+baseline uses `source-api-v2`; version 0.2.0 uses `source-api-v3`:
 
-| Corpus | Assessed files | Expected | TP | FP | FN | Precision | Full recall |
+| Corpus / version | Assessed files | Expected | TP | FP | FN | Precision | Full recall |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Synthetic holdout | 9/9 | 26 | 26 | 0 | 0 | 100% | 100% |
-| Organizer | 24/24 | 52 | 48 | 0 | 4 | 100% | 92.31% |
+| Synthetic holdout / 0.1.1 | 9/9 | 26 | 26 | 0 | 0 | 100% | 100% |
+| Organizer / 0.1.1 | 24/24 | 52 | 48 | 0 | 4 | 100% | 92.31% |
+| Synthetic holdout / 0.2.0 | 9/9 | 26 | 26 | 0 | 0 | 100% | 100% |
+| Organizer / 0.2.0 | 24/24 | 52 | 52 | 0 | 0 | 100% | 100% |
 
-The organizer's four false negatives are the handwritten PBKDF2/ECB facts and
-two untyped Python RSA signature calls described above. Supported-subset recall
-is 48/48 (100%); the headline result remains 48/52. There were no scan errors in
-either corpus.
+The four additions are the handwritten PBKDF2/ECB facts and two Python RSA
+signature calls described above. All 48 original organizer findings retain
+their IDs, asset IDs, algorithms, usages, parameters, confidence and evidence
+locations. Detector version metadata changes intentionally. There were no scan
+errors in either corpus.
 
 All 25 checked parameter fields across 16 matched holdout occurrences were
-correct. All 50 checked parameter fields across 25 matched organizer occurrences
-were correct. The organizer has 29 parameter-labelled expected occurrences;
-the four missing semantic occurrences were not part of parameter accuracy.
+correct before and after. Organizer parameter checks increased from 50 fields
+across 25 matched occurrences to 59 fields across all 29 labelled occurrences;
+all were correct. Inferred RSA signatures retain unknown key sizes.
 
-Validation: `.venv/bin/python -m pytest tests/test_source_evaluation.py -q`
-passed all 8 tests. The documented evaluation command produced these counts
-against the hash-pinned organizer files. Run it again after detector changes;
-these recorded values are a snapshot, not the evaluation oracle.
+Reproduce the benchmark with:
+
+```sh
+.venv/bin/python -m scripts.evaluate_source \
+  --organizer-root ../JunctionX-QuantumTrace/sample-repos
+.venv/bin/python -m pytest tests/test_source_evaluation.py \
+  tests/test_source_python_flow.py tests/test_source_go_semantics.py \
+  tests/test_source_semantic_adversarial.py -q
+```
+
+The second command includes independent counterexamples and transformed positive
+cases. The external organizer checkout is optional and is never required by CI.
+These results describe the fixed small corpora, not general production accuracy.
+The recorded values are a snapshot, not the evaluation oracle.

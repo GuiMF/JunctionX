@@ -1,7 +1,8 @@
 """Bounded Python AST discovery, with no source execution or import loading.
 
 Bindings follow lexical scope and source order. Only explicit, local facts are
-resolved: this is not an interprocedural type checker or a runtime proof.
+resolved. A separate bounded pass follows direct local calls for key provenance;
+this is not an interprocedural type checker or a runtime proof.
 """
 
 from __future__ import annotations
@@ -467,12 +468,246 @@ class _Scanner(ast.NodeVisitor):
             self._invalidate_body(case.body)
 
 
+
+@dataclass(frozen=True)
+class _Function:
+    node: ast.FunctionDef
+
+
+class _FlowLimit(Exception):
+    """An unresolved recursive or oversized call graph invalidates flow evidence."""
+
+
+class _KeyFlow(_Scanner):
+    """Add signature evidence from bounded direct, module-local calls.
+
+    This pass deliberately carries key *kind* across call boundaries, not key
+    size or arbitrary constants. Only RSA signatures are admitted by this initial
+    rollout. A source occurrence is admitted only if every analyzed call
+    context agrees. Uncalled functions retain the baseline scan.
+    No code is executed, imported, or inferred from names or padding objects.
+    """
+
+    MAX_DEPTH = 8
+    MAX_CALLS = 256
+    MAX_VISITS = 50_000
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.globals: dict[str, object] = self.env
+        self.active: list[ast.FunctionDef] = []
+        self.frame = 0
+        self.next_frame = 0
+        self.calls = 0
+        self.visits = 0
+        self.failed = False
+        self.cache: dict[tuple[int, int], object] = {}
+        self.observations: dict[tuple[int, int], list[Detection | None]] = {}
+
+    @staticmethod
+    def _eligible(node: ast.AST) -> bool:
+        excluded = (ast.Yield, ast.YieldFrom, ast.Global, ast.Nonlocal,
+                    ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+        return (isinstance(node, ast.FunctionDef) and not node.decorator_list
+                and not any(isinstance(child, excluded) for statement in node.body for child in ast.walk(statement)))
+
+    def visit_Module(self, node: ast.Module) -> None:
+        # If a local callable escapes or is referenced by a body we cannot
+        # analyze, its call contexts are incomplete. Decline supplemental
+        # evidence for the file, including aliases hidden in containers.
+        parents = {child: parent for parent in ast.walk(node) for child in ast.iter_child_nodes(parent)}
+        if len(parents) > self.MAX_VISITS:
+            raise _FlowLimit
+        definitions = [child for child in parents if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        names = {child.name for child in definitions}
+        eligible = {child for child in definitions if self._eligible(child)}
+        for child in parents:
+            if not isinstance(child, ast.Name) or not isinstance(child.ctx, ast.Load) or child.id not in names:
+                continue
+            parent = parents[child]
+            if not isinstance(parent, ast.Call) or parent.func is not child:
+                self.failed = True
+                return
+            ancestor = parent
+            while ancestor in parents:
+                ancestor = parents[ancestor]
+                if isinstance(ancestor, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)) and ancestor not in eligible:
+                    self.failed = True
+                    return
+        self._body(node.body)
+
+    def visit(self, node: ast.AST) -> object:
+        self.visits += 1
+        if self.visits > self.MAX_VISITS:
+            raise _FlowLimit
+        return super().visit(node)
+
+    def _cross_boundary(self, value: object) -> object:
+        if isinstance(value, _Function):
+            self.failed = True
+        if isinstance(value, _Object) and value.kind in {"RSA", "Ed25519"}:
+            return _Object(value.kind)
+        if isinstance(value, tuple):
+            return tuple(self._cross_boundary(item) for item in value)
+        return None
+
+    def _value(self, node: ast.AST | None) -> object:
+        if isinstance(node, ast.Tuple):
+            return tuple(self._value(item) for item in node.elts)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            function = self.env.get(node.func.id)
+            # Aliases and indirect callbacks are outside this bounded model.
+            if isinstance(function, _Function) and function.node.name == node.func.id:
+                cache_key = (self.frame, id(node))
+                if cache_key not in self.cache:
+                    try:
+                        self.cache[cache_key] = self._invoke(function.node, node)
+                    except _FlowLimit:
+                        self.failed = True
+                        if self.active:
+                            raise
+                        self.cache[cache_key] = None
+                return self.cache[cache_key]
+        return super()._value(node)
+
+    def _bind(self, target: ast.AST, value: object = None) -> None:
+        if isinstance(value, _Function):
+            self.failed = True  # An escaping callable has untracked contexts.
+        if isinstance(target, (ast.Tuple, ast.List)) and isinstance(value, tuple):
+            if len(target.elts) == len(value) and not any(isinstance(item, ast.Starred) for item in target.elts):
+                for item, fact in zip(target.elts, value):
+                    self._bind(item, fact)
+                return
+        super()._bind(target, value)
+
+    def _function(self, node: ast.FunctionDef | ast.AsyncFunctionDef | ast.Lambda) -> None:
+        if isinstance(node, ast.Lambda):
+            return
+        for expression in [*node.decorator_list, *node.args.defaults, *node.args.kw_defaults]:
+            if expression is not None:
+                self.visit(expression)
+        self.env[node.name] = None
+        # Closures, decorators, coroutines and generators need different call
+        # semantics; do not interpret them as ordinary executed function bodies.
+        if not self.active and self._eligible(node):
+            self.env[node.name] = _Function(node)
+
+    visit_FunctionDef = _function
+    visit_AsyncFunctionDef = _function
+    visit_Lambda = _function
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        # Class bodies and descriptors are covered only by the baseline pass.
+        self.env[node.name] = None
+
+    def _arguments(self, function: ast.FunctionDef, call: ast.Call) -> dict[str, object] | None:
+        spec = function.args
+        if spec.vararg or spec.kwarg or any(isinstance(arg, ast.Starred) for arg in call.args):
+            return None
+        if any(keyword.arg is None for keyword in call.keywords):
+            return None
+        positional = [*spec.posonlyargs, *spec.args]
+        if len(call.args) > len(positional):
+            return None
+        values = {arg.arg: self._cross_boundary(self._value(value))
+                  for arg, value in zip(positional, call.args)}
+        allowed = {arg.arg for arg in [*spec.args, *spec.kwonlyargs]}
+        for keyword in call.keywords:
+            if keyword.arg not in allowed or keyword.arg in values:
+                return None
+            values[keyword.arg] = self._cross_boundary(self._value(keyword.value))
+        required = positional[:len(positional) - len(spec.defaults)]
+        required += [arg for arg, default in zip(spec.kwonlyargs, spec.kw_defaults) if default is None]
+        if any(arg.arg not in values for arg in required):
+            return None
+        # Defaults are evaluated at definition time. Omitted defaults remain
+        # unknown instead of incorrectly evaluating them in the caller's scope.
+        for arg in [*positional, *spec.kwonlyargs]:
+            values.setdefault(arg.arg, None)
+        return values
+
+    def _invoke(self, function: ast.FunctionDef, call: ast.Call) -> object:
+        if function in self.active or len(self.active) >= self.MAX_DEPTH or self.calls >= self.MAX_CALLS:
+            raise _FlowLimit
+        self.calls += 1
+        arguments = self._arguments(function, call)
+        if arguments is None:
+            # A skipped call can hide unknown contexts for transitive callees.
+            self.failed = True
+            return None
+        outer, previous_frame = self.env, self.frame
+        if not self.active:
+            self.globals = self.env
+        bindings = _BoundNames()
+        for statement in function.body:
+            bindings.visit(statement)
+        self.env = dict(self.globals)
+        for name in bindings.names | bindings.external:
+            self.env[name] = None
+        self.env.update(arguments)
+        self.next_frame += 1
+        self.frame = self.next_frame
+        self.active.append(function)
+        try:
+            self._body(function.body)
+            returns = [child for statement in function.body for child in ast.walk(statement) if isinstance(child, ast.Return)]
+            if len(returns) == 1 and function.body[-1] is returns[0]:
+                return self._cross_boundary(self._value(returns[0].value))
+            return None
+        finally:
+            self.active.pop()
+            self.env, self.frame = outer, previous_frame
+
+    def _body(self, statements: list[ast.stmt]) -> None:
+        for statement in statements:
+            self.visit(statement)
+            if isinstance(statement, (ast.Return, ast.Raise, ast.Break, ast.Continue)):
+                break
+
+    def visit_Return(self, node: ast.Return) -> None:
+        if node.value is not None:
+            self.visit(node.value)
+
+    def visit_Call(self, node: ast.Call) -> None:
+        if any(isinstance(self._value(arg), _Function) for arg in [*node.args, *(kw.value for kw in node.keywords)]):
+            self.failed = True
+        signature = isinstance(node.func, ast.Attribute) and node.func.attr in {"sign", "verify"}
+        if signature:
+            self.observations.setdefault((node.lineno, node.col_offset + 1), []).append(None)
+        super().visit_Call(node)
+
+    def _emit(self, node: ast.Call, algorithm: str, usage: str, api: str,
+              rule: str, **parameters: object) -> None:
+        if rule == "python-signature":
+            self.observations[(node.lineno, node.col_offset + 1)][-1] = Detection(
+                node.lineno, node.col_offset + 1, algorithm, usage,
+                Parameters(**parameters), api=api, rule=rule)
+
+    def additions(self) -> list[Detection]:
+        if self.failed:
+            return []
+        result = []
+        for observations in self.observations.values():
+            first = observations[0]
+            if first is not None and first.algorithm == "RSA" and all(item == first for item in observations):
+                result.append(first)
+        return result
+
+
 def detect(text: str) -> list[Detection]:
     """Return explicit supported API occurrences; reject syntax without source echo."""
     try:
         tree = ast.parse(text)
         scanner = _Scanner()
         scanner.visit(tree)
+        flow = _KeyFlow()
+        try:
+            flow.visit(tree)
+        except (_FlowLimit, RecursionError):
+            # Supplemental analysis must never erase baseline API evidence.
+            flow.failed = True
+        existing = {(item.line, item.column) for item in scanner.findings if item.usage == "signature"}
+        scanner.findings.extend(item for item in flow.additions() if (item.line, item.column) not in existing)
     except (SyntaxError, ValueError, TypeError, RecursionError):
         raise SourceParseError("Python source could not be parsed or analyzed") from None
     return sorted(scanner.findings, key=lambda finding: (finding.line, finding.column, finding.slot))

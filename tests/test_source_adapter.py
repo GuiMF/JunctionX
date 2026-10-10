@@ -34,7 +34,7 @@ def test_default_api_raw_source_export_and_metadata_only():
         assert finding["algorithm"] == "MD5" and finding["evidence_kind"] == "declared"
         assert finding["evidence"][0]["file"] == "example.py"
         assert finding["evidence"][0]["locator"].startswith("line:2:")
-        assert "source-api-v2" in finding["evidence"][0]["detail"]
+        assert "source-api-v3" in finding["evidence"][0]["detail"]
         assert secret not in response.text
         cbom = client.get(f'/api/scans/{scan["scan_id"]}/export?format=cyclonedx')
         assert cbom.status_code == 200 and secret not in cbom.text
