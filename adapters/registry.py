@@ -34,7 +34,7 @@ class AdapterRegistry:
 
 def default_registry() -> AdapterRegistry:
     """Built-in scanners; explicitly supplied registries remain opt-in."""
-    from adapters.cloud_adapter import cloud_adapter
+    from adapters.cloud import cloud_adapter
     from adapters.source import scan_source
 
     registry = AdapterRegistry()

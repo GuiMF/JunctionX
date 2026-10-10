@@ -1,0 +1,146 @@
+{
+  "asset_id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/partner-api-alb/4d5e6f7081920314/ee55ff6600aa11bb",
+  "name": "partner-api-alb",
+  "description": "Synthetic cloud snapshots before and after a listener policy change.",
+  "original": {
+    "policy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+    "tls_version": "TLSv1.2 / TLSv1.3",
+    "quantum_status": "unknown",
+    "wire_status": "unverified",
+    "findings": [
+      {
+        "schema_version": "1.0",
+        "id": "e1bf032f2e32a45fb739dbb1e75177033df1aac660aa0bdc9e90976bb3182426",
+        "asset_id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/partner-api-alb/4d5e6f7081920314/ee55ff6600aa11bb",
+        "source_type": "cloud",
+        "algorithm": "unknown",
+        "parameters": {
+          "key_bits": null,
+          "mode": null,
+          "named_group": null,
+          "hash_algorithm": null,
+          "iterations": null,
+          "configured_tls_policy": {
+            "name": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+            "protocols": [
+              "TLSv1.2",
+              "TLSv1.3"
+            ],
+            "cipher_suites": [
+              "TLS_AES_128_GCM_SHA256",
+              "TLS_AES_256_GCM_SHA384",
+              "TLS_CHACHA20_POLY1305_SHA256",
+              "ECDHE-ECDSA-AES128-GCM-SHA256",
+              "ECDHE-RSA-AES128-GCM-SHA256",
+              "ECDHE-ECDSA-AES128-SHA256",
+              "ECDHE-RSA-AES128-SHA256",
+              "ECDHE-ECDSA-AES256-GCM-SHA384",
+              "ECDHE-RSA-AES256-GCM-SHA384",
+              "ECDHE-ECDSA-AES256-SHA384",
+              "ECDHE-RSA-AES256-SHA384"
+            ],
+            "hybrid_pq_capable": false,
+            "hybrid_groups": [],
+            "classical_fallback": true,
+            "negotiated_group": null,
+            "reference": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
+            "mapping_version": "cloud-1.1"
+          }
+        },
+        "usage": "key_establishment",
+        "evidence_kind": "configured",
+        "evidence": [
+          {
+            "file": "cloud.json",
+            "locator": "/load_balancer_listeners.json/LoadBalancers/3/Listeners/0/SslPolicy",
+            "detail": "\"ELBSecurityPolicy-TLS13-1-2-2021-06\""
+          }
+        ],
+        "confidence": "low",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [],
+        "owner": null,
+        "observed_at": "2026-09-14T09:35:51Z",
+        "rule_id": "QT-UNKNOWN@1.0.2",
+        "rationale": "The normalized algorithm, parameters, or usage are insufficient for a supported assessment. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
+        "recommendation": "Confirm the algorithm and usage from direct evidence; retain unresolved facts as unknown.",
+        "references": [
+          "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html"
+        ]
+      }
+    ]
+  },
+  "upgraded": {
+    "policy": "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09",
+    "tls_version": "TLSv1.2 / TLSv1.3",
+    "quantum_status": "unknown",
+    "wire_status": "unverified",
+    "findings": [
+      {
+        "schema_version": "1.0",
+        "id": "e1bf032f2e32a45fb739dbb1e75177033df1aac660aa0bdc9e90976bb3182426",
+        "asset_id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/partner-api-alb/4d5e6f7081920314/ee55ff6600aa11bb",
+        "source_type": "cloud",
+        "algorithm": "unknown",
+        "parameters": {
+          "key_bits": null,
+          "mode": null,
+          "named_group": null,
+          "hash_algorithm": null,
+          "iterations": null,
+          "configured_tls_policy": {
+            "name": "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09",
+            "protocols": [
+              "TLSv1.2",
+              "TLSv1.3"
+            ],
+            "cipher_suites": [
+              "TLS_AES_128_GCM_SHA256",
+              "TLS_AES_256_GCM_SHA384",
+              "TLS_CHACHA20_POLY1305_SHA256",
+              "ECDHE-ECDSA-AES128-GCM-SHA256",
+              "ECDHE-RSA-AES128-GCM-SHA256",
+              "ECDHE-ECDSA-AES256-GCM-SHA384",
+              "ECDHE-RSA-AES256-GCM-SHA384"
+            ],
+            "hybrid_pq_capable": true,
+            "hybrid_groups": [
+              "SecP256r1MLKEM768",
+              "SecP384r1MLKEM1024",
+              "X25519MLKEM768"
+            ],
+            "classical_fallback": true,
+            "negotiated_group": null,
+            "reference": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
+            "mapping_version": "cloud-1.1"
+          }
+        },
+        "usage": "key_establishment",
+        "evidence_kind": "configured",
+        "evidence": [
+          {
+            "file": "cloud.json",
+            "locator": "/load_balancer_listeners.json/LoadBalancers/3/Listeners/0/SslPolicy",
+            "detail": "\"ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09\""
+          }
+        ],
+        "confidence": "low",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [],
+        "owner": null,
+        "observed_at": "2026-09-14T09:35:51Z",
+        "rule_id": "QT-UNKNOWN@1.0.2",
+        "rationale": "The normalized algorithm, parameters, or usage are insufficient for a supported assessment. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
+        "recommendation": "Confirm the algorithm and usage from direct evidence; retain unresolved facts as unknown.",
+        "references": [
+          "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html"
+        ]
+      }
+    ]
+  },
+  "summary_note": "Only the fixture configuration changed. Negotiation is unverified in both snapshots; the certificate remains unchanged and classical fallback remains available."
+}

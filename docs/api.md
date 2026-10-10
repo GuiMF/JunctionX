@@ -38,15 +38,14 @@ Inputs are inline content, never local paths or remote URLs. `name` is an identi
 
 Limits: 1–16 inputs; unique names; at most 8 MiB of encoded content per input and 16 MiB combined. `evaluated_at` is optional and requires a timezone; by default it is the scan start time. Evaluation time is distinct from evidence observation time. A supplied `synthetic` flag and label persist.
 
-## Scanner owner handoff
+## Adapter registration
 
-The default service includes raw Python/Java/Go [source discovery](source-discovery.md)
-and `adapters.cloud_adapter.cloud_adapter` for raw cloud snapshots.
+The default service includes raw Python/Java/Go [source discovery](scanners.md)
+and `adapters.cloud.cloud_adapter` for raw cloud snapshots.
 The default API additionally registers `adapters.network.parse_pcap_adapter` for
 PCAP inputs; direct `ScanService` callers can register it explicitly if needed.
 Explicitly supplied registries remain empty until populated. Unregistered scanners
-produce `unsupported_adapter` with one unsupported `inputs` coverage unit. Register
-each teammate's callable explicitly:
+produce `unsupported_adapter` with one unsupported `inputs` coverage unit. Register custom adapters explicitly:
 
 ```python
 from adapters.registry import AdapterRegistry
@@ -56,7 +55,7 @@ from core.service import ScanService
 
 def source_adapter(item: ScanInput, context: AdapterContext) -> AdapterResult:
     # Scan item.content here, then return validated facts and per-input coverage.
-    raise NotImplementedError("Connect the source owner's scanner")
+    raise NotImplementedError("Implement the custom source scanner")
 
 registry = AdapterRegistry()
 registry.register("source", source_adapter)
@@ -74,7 +73,7 @@ Cloud raw content accepts a single AWS-style snapshot or a JSON object keyed by
 `load_balancer_listeners.json`, whose values are the snapshot objects. Submit all
 three together to resolve certificate links in the same adapter invocation. These
 are raw metadata exports, not `quantumtrace.normalized.v1` fixtures. See
-[the cloud guide](cloud-adapter.md) for a runnable API example.
+[the cloud guide](scanners.md) for a runnable API example.
 
 Every adapter receives an `AdapterContext` containing the scan's timezone-aware `evaluated_at`. Use this value for expiry and other time-dependent posture checks rather than reading the wall clock. The service gives each invocation independent copies of its input and context; mutations cannot change another adapter's evaluation time or the request.
 

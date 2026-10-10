@@ -1,32 +1,23 @@
-# React + TypeScript + Vite
+# QuantumTrace dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+From this directory:
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm ci
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vite prints the local URL, normally `http://localhost:5173`. Run `npm test` for
+frontend regression checks and `npm run build` for TypeScript and production build
+validation. Use Node.js 22+.
+
+The dashboard displays backend-generated fixtures imported from `../examples/`.
+File selection is local only; live scan submission is not connected yet. JSON and
+CBOM downloads work for the demo without a running API. Live CBOM retrieval uses
+`http://127.0.0.1:8000`.
+
+API types in `src/types/generated.ts` come from the Python models. From the repo
+root, run `.venv/bin/python -m scripts.generate_contract` after changing models or
+demo inputs. `src/types/ui.ts` contains presentation-only types.
+
+See the [root README](../README.md) for backend startup, scans and project guides.

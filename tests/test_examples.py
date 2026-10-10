@@ -8,6 +8,8 @@ from api.main import create_app
 from adapters.normalized import NormalizedFixture
 from core.models import AdapterContext, AdapterResult, Finding, ScanInput, ScanRequest, ScanResult
 from export.cyclonedx import validate_cyclonedx
+from scripts.generate_contract import build_migration
+from scripts.generate_web import generate_types
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -59,6 +61,7 @@ def test_partial_fixture_keeps_successful_findings_and_explicit_unknown_units():
 
 
 def test_checked_in_contracts_match_models_and_examples():
+    assert (ROOT / "web/src/types/generated.ts").read_text() == generate_types()
     for model in (AdapterContext, AdapterResult, Finding, ScanInput, ScanRequest, ScanResult, NormalizedFixture):
         stored = json.loads((ROOT / "schemas" / f"{model.__name__}.schema.json").read_text())
         assert stored == model.model_json_schema()
@@ -71,3 +74,20 @@ def test_checked_in_contracts_match_models_and_examples():
             model.model_validate(example)
             Draft202012Validator(stored).validate(example)
     validate_cyclonedx(load("scan-original.cdx.json"))
+
+
+def test_migration_example_comes_from_cloud_scans_without_inventing_negotiation():
+    migration = build_migration()
+    assert load("migration.json") == migration
+    before = migration["original"]["findings"][0]
+    after = migration["upgraded"]["findings"][0]
+    assert before["id"] == after["id"]
+    assert before["asset_id"] == after["asset_id"] == migration["asset_id"]
+    assert before["parameters"]["configured_tls_policy"]["hybrid_pq_capable"] is False
+    assert after["parameters"]["configured_tls_policy"]["hybrid_pq_capable"] is True
+    for state in ("original", "upgraded"):
+        assert migration[state]["wire_status"] == "unverified"
+        assert migration[state]["quantum_status"] == "unknown"
+        finding = Finding.model_validate(migration[state]["findings"][0])
+        assert finding.evidence_kind == "configured"
+        assert finding.parameters.named_group is None

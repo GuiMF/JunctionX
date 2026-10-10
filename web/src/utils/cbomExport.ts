@@ -1,5 +1,5 @@
 import type { ScanResult } from '../types/contract';
-import { mockCycloneDxCbom } from '../fixtures/mockCbom';
+import mockCycloneDxCbom from '../../../examples/scan-original.cdx.json';
 import { mockScanResult } from '../fixtures/mockData';
 
 export function exportProjectJson(scanResult: ScanResult) {

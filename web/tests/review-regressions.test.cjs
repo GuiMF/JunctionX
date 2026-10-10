@@ -22,13 +22,25 @@ const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { CoverageCards } = require('../src/components/CoverageCards.tsx');
 const { RiskPostureBanner } = require('../src/components/RiskPostureBanner.tsx');
-const { mockScanResult } = require('../src/fixtures/mockData.ts');
-const { mockCycloneDxCbom } = require('../src/fixtures/mockCbom.ts');
+const { MigrationView } = require('../src/components/MigrationView.tsx');
+const { mockScanResult, mockMigrationComparison } = require('../src/fixtures/mockData.ts');
+const mockCycloneDxCbom = require('../../examples/scan-original.cdx.json');
 const { exportCycloneDxCbom } = require('../src/utils/cbomExport.ts');
 
 afterEach(() => mock.restoreAll());
 const plain = (html) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 const render = (component, props) => renderToStaticMarkup(React.createElement(component, props));
+
+test('migration renders generated configuration evidence without claiming observed negotiation', () => {
+  const html = plain(render(MigrationView, { comparison: mockMigrationComparison }));
+  assert.match(html, /Synthetic cloud snapshots/);
+  assert.equal((html.match(/Unverified \(Needs PCAP\)/g) || []).length, 2);
+  assert.doesNotMatch(html, /Classical ECDHE Observed/);
+  for (const state of ['original', 'upgraded']) {
+    assert.ok(html.includes(mockMigrationComparison[state].policy));
+    assert.equal(mockMigrationComparison[state].findings[0].quantum_status, 'unknown');
+  }
+});
 
 test('coverage keeps sessions, packets and failed inputs separate, combining only matching units', () => {
   const base = { source_type: 'pcap', input_name: 'capture', unknown: 0, unsupported: 0, failed: 0 };

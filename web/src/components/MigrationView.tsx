@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2, AlertTriangle, ShieldCheck, HelpCircle } from 'lucide-react';
-import type { MigrationComparison } from '../types/contract';
+import type { MigrationComparison } from '../types/ui';
 
 interface MigrationViewProps {
   comparison: MigrationComparison;
@@ -43,7 +43,7 @@ export const MigrationView: React.FC<MigrationViewProps> = ({ comparison }) => {
                 1. Original State (Pre-Migration)
               </span>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                Quantum Vulnerable
+                Classical Policy Configuration
               </span>
             </div>
 
@@ -61,7 +61,7 @@ export const MigrationView: React.FC<MigrationViewProps> = ({ comparison }) => {
               </div>
               <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
                 <span className="text-slate-500 block mb-0.5 text-[11px]">Wire Negotiation</span>
-                <span className="text-rose-300 font-semibold font-mono">Classical ECDHE Observed</span>
+                <span className="text-rose-300 font-semibold font-mono">Unverified (Needs PCAP)</span>
               </div>
             </div>
 
@@ -139,7 +139,7 @@ export const MigrationView: React.FC<MigrationViewProps> = ({ comparison }) => {
           <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 flex items-center gap-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-slate-300">
-              Update Terraform / AWS CLI listener policy to <code className="text-cyan-300">ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09</code>.
+              After checking client compatibility, evaluate the listener policy <code className="text-cyan-300">{comparison.upgraded.policy}</code>.
             </span>
           </div>
           <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 flex items-center gap-3">

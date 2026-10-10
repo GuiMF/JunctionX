@@ -13,6 +13,8 @@ from core.models import (
 )
 from core.service import run_scan
 from export.cyclonedx import export_cyclonedx
+from adapters.cloud_demo import build_demo
+from scripts.generate_web import write_types
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALUATED_AT = datetime(2026, 10, 10, 12, tzinfo=timezone.utc)
@@ -102,7 +104,36 @@ def build_examples() -> dict[str, ScanRequest]:
     return requests
 
 
+def build_migration():
+    """Use real cloud parsing for the UI comparison, with no invented negotiation."""
+    change = build_demo()["changes"][0]
+    states = {}
+    for state, directory in (("original", "cloud-posture"), ("upgraded", "tests/fixtures/cloud-modified")):
+        snapshots = {file.name: json.loads(file.read_text()) for file in (ROOT / directory).glob("*.json")}
+        scan = run_scan(ScanRequest(
+            inputs=[ScanInput(name="cloud.json", source_type="cloud", format="raw", content=json.dumps(snapshots))],
+            evaluated_at=EVALUATED_AT, synthetic=True,
+        ))
+        if scan.status != "completed":
+            raise ValueError("Migration fixture scan failed")
+        findings = [f for f in scan.findings if f.asset_id == change["asset_id"]]
+        policy = findings[0].parameters.configured_tls_policy
+        states[state] = {
+            "policy": policy.name, "tls_version": " / ".join(policy.protocols),
+            "quantum_status": findings[0].quantum_status, "wire_status": "unverified",
+            "findings": [finding.model_dump(mode="json") for finding in findings],
+        }
+    return {
+        "asset_id": change["asset_id"], "name": "partner-api-alb",
+        "description": "Synthetic cloud snapshots before and after a listener policy change.",
+        **states,
+        "summary_note": "Only the fixture configuration changed. Negotiation is unverified in both snapshots; the certificate remains unchanged and classical fallback remains available.",
+    }
+
+
 def main():
+    write_types(ROOT)
+    write_json(ROOT / "examples/migration.json", build_migration())
     for model in (Finding, AdapterContext, AdapterResult, ScanInput, ScanRequest, ScanResult, NormalizedFixture):
         write_json(ROOT / "schemas" / f"{model.__name__}.schema.json", model.model_json_schema())
     write_json(ROOT / "schemas" / "openapi.json", app.openapi())

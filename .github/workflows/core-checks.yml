@@ -17,13 +17,21 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
       - run: python -m pip install -r requirements.txt
       - run: python -m pip check
       - run: python -m pytest -q
       - run: python -m scripts.demo --in-process
       - run: python -m scripts.evaluate_source
       - run: python -m scripts.scan_source tests/fixtures/source --synthetic --output reports/source.json --cyclonedx-dir reports/source-cbom
+      - run: npm ci --prefix web
+      - run: npm test --prefix web
+      - run: npm run build --prefix web
       - name: Verify generated contracts and examples are current
         run: |
           python -m scripts.generate_contract
-          git diff --exit-code -- schemas examples
+          git diff --exit-code -- schemas examples web/src/types/generated.ts

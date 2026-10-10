@@ -225,9 +225,9 @@ Replace the owner blanks with teammate names. Each owner implements and checks t
 
 **Handoff:** Deliver linked listener/certificate examples, owner-tagged KMS examples, and original/modified demo fixtures.
 
-**Cloud integration:** See [cloud handoff](docs/cloud-handoff.md), [raw API input](docs/cloud-adapter.md), and [generated examples](docs/cloud-demo.json). The registered adapter uses Person 4's shared contract; raw service/API tests cover inventory, posture, provenance and JSON/CycloneDX exports. Network/source and the final frontend remain separate team handoffs.
+**Cloud integration:** See [cloud handoff](docs/scanners.md), [raw API input](docs/scanners.md), and [generated migration example](examples/migration.json). The registered adapter uses Person 4's shared contract; raw service/API tests cover inventory, posture, provenance and JSON/CycloneDX exports. Network/source and the final frontend remain separate team handoffs.
 
-**Certificate renewal demo:** A separate [synthetic reimport comparison](docs/cloud-renewal-demo.json)
+**Certificate renewal demo:** A separate [synthetic reimport comparison](docs/scanners.md)
 removes expiry and SHA-1 posture issues without changing certificate identity or
 claiming PQ authentication. Run `python3 -B -m adapters.cloud_demo --certificate-renewal`.
 Import [cloud progress](docs/cloud-progress.json) into the HTML board to show C1–C5 completion;

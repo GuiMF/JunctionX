@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 import pytest
 from pydantic import ValidationError
 
-from adapters.cloud_adapter import cloud_adapter
+from adapters.cloud import cloud_adapter
 from adapters.registry import AdapterRegistry
 from api.main import create_app
 from core.models import AdapterContext, AdapterResult, ConfiguredTLSPolicy, ScanInput, ScanRequest, ScanResult
