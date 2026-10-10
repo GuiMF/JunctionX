@@ -40,10 +40,11 @@ Limits: 1–16 inputs; unique names; at most 8 MiB of encoded content per input 
 
 ## Scanner owner handoff
 
-The default application registers `adapters.cloud_adapter.cloud_adapter` for raw
-cloud snapshots. Network and source scanners remain unregistered and produce
-`unsupported_adapter` with one unsupported `inputs` coverage unit. A custom
-`ScanService` keeps its explicitly supplied registry. Register each teammate's callable explicitly:
+The default service includes raw Python/Java/Go [source discovery](source-discovery.md)
+and `adapters.cloud_adapter.cloud_adapter` for raw cloud snapshots.
+Explicitly supplied registries remain empty until populated. Unregistered scanners
+produce `unsupported_adapter` with one unsupported `inputs` coverage unit. Register
+each teammate's callable explicitly:
 
 ```python
 from adapters.registry import AdapterRegistry

@@ -22,10 +22,10 @@
       "encoding": "utf-8"
     },
     {
-      "name": "unimplemented.py",
-      "source_type": "source",
+      "name": "unimplemented.pcap",
+      "source_type": "pcap",
       "format": "raw",
-      "content": "print('not scanned')",
+      "content": "unparsed capture",
       "encoding": "utf-8"
     }
   ],

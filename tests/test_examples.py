@@ -66,7 +66,7 @@ def test_checked_in_contracts_match_models_and_examples():
     for model in (ScanRequest, ScanResult):
         stored = json.loads((ROOT / "schemas" / f"{model.__name__}.schema.json").read_text())
         suffix = "request" if model is ScanRequest else "response"
-        for name in ("original", "modified", "partial"):
+        for name in ("original", "modified", "partial", "source"):
             example = load(f"scan-{name}.{suffix}.json")
             model.model_validate(example)
             Draft202012Validator(stored).validate(example)

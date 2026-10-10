@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0",
+  "scan_id": "example-scan-source",
+  "status": "completed",
+  "started_at": "2026-10-10T12:00:00Z",
+  "evaluated_at": "2026-10-10T12:00:00Z",
+  "ruleset_version": "1.0.2",
+  "tool_versions": {
+    "quantumtrace-core": "0.1.0",
+    "synthetic%2Fhandoff.py/quantumtrace-source": "0.1.0",
+    "synthetic%2Fhandoff.py/source-rules": "source-api-v1"
+  },
+  "input_hashes": {
+    "synthetic/handoff.py": "8990f5d137b53f808650acb483b4a5322adf88bbe278b4fb730f65b1962183f0"
+  },
+  "findings": [
+    {
+      "schema_version": "1.0",
+      "id": "finding-042860cf36cb4cf7bcfe26a680934679",
+      "asset_id": "asset-8bda517d726b83a652f91fdb9edc14ef",
+      "source_type": "source",
+      "algorithm": "AES",
+      "parameters": {
+        "key_bits": null,
+        "mode": "GCM",
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null,
+        "configured_tls_policy": null
+      },
+      "usage": "encryption",
+      "evidence_kind": "declared",
+      "evidence": [
+        {
+          "file": "synthetic/handoff.py",
+          "locator": "line:8:column:12",
+          "detail": "API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.0; rule source-api-v1/python-aes; source declaration only; runtime execution unverified"
+        }
+      ],
+      "confidence": "medium",
+      "quantum_status": "unknown",
+      "challenge_tier": "unknown",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": null,
+      "rule_id": "QT-UNKNOWN@1.0.2",
+      "rationale": "AES key size is absent, unsupported, or contradicts its name, or mode metadata conflicts; assessment remains unknown. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Resolve AES key size in bits and any conflicting mode metadata from the actual API or configuration.",
+      "references": []
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finding-26d807f15db346497c969f91df826050",
+      "asset_id": "asset-08acd6b2c72ec53011524106fb9ce50e",
+      "source_type": "source",
+      "algorithm": "AES",
+      "parameters": {
+        "key_bits": 256,
+        "mode": "GCM",
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null,
+        "configured_tls_policy": null
+      },
+      "usage": "encryption",
+      "evidence_kind": "declared",
+      "evidence": [
+        {
+          "file": "synthetic/handoff.py",
+          "locator": "line:6:column:1",
+          "detail": "API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.0; rule source-api-v1/python-aes; source declaration only; runtime execution unverified"
+        }
+      ],
+      "confidence": "medium",
+      "quantum_status": "resistant_primitive",
+      "challenge_tier": "resilient",
+      "classical_issues": [],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": null,
+      "rule_id": "QT-AES@1.0.2",
+      "rationale": "AES-256 is a symmetric primitive. Generic quantum search does not establish a practical break. This classification does not establish key-exchange or authentication resistance. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Verify authenticated encryption, nonce uniqueness, key handling, and separately assess key establishment and signatures. Consider AES-256 where policy requires additional margin.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finding-993e4be905866837e3b5d79beb2f2b1b",
+      "asset_id": "asset-7350bf41455f6bebc84d193099092f99",
+      "source_type": "source",
+      "algorithm": "RSA",
+      "parameters": {
+        "key_bits": 1024,
+        "mode": null,
+        "named_group": null,
+        "hash_algorithm": null,
+        "iterations": null,
+        "configured_tls_policy": null
+      },
+      "usage": "unknown",
+      "evidence_kind": "declared",
+      "evidence": [
+        {
+          "file": "synthetic/handoff.py",
+          "locator": "line:4:column:1",
+          "detail": "API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.1.0; rule source-api-v1/python-rsa-generation; source declaration only; runtime execution unverified"
+        }
+      ],
+      "confidence": "medium",
+      "quantum_status": "vulnerable",
+      "challenge_tier": "critical",
+      "classical_issues": [
+        "RSA key below 2048 bits; unsuitable for new protection under the pinned transition policy."
+      ],
+      "posture_issues": [],
+      "owner": null,
+      "observed_at": null,
+      "rule_id": "QT-RSA-UNKNOWN-USAGE@1.0.2",
+      "rationale": "The declared RSA primitive relies on factoring and is quantum-vulnerable; key generation alone does not establish how the key is used. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
+      "recommendation": "Confirm whether this key signs, encrypts, or establishes keys before choosing a compatible post-quantum replacement. Do not substitute a KEM for a signature.",
+      "references": [
+        "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs",
+        "https://csrc.nist.gov/pubs/sp/800/131/a/r2/final"
+      ]
+    }
+  ],
+  "coverage": [
+    {
+      "source_type": "source",
+      "input_name": "synthetic/handoff.py",
+      "unit": "files",
+      "assessed": 1,
+      "unknown": 0,
+      "unsupported": 0,
+      "failed": 0
+    }
+  ],
+  "errors": [],
+  "relationships": [],
+  "assets": [],
+  "snapshots": [],
+  "score": {
+    "policy_version": "1.0.0",
+    "label": "Project quantum exposure heuristic (0–100; higher means more exposure)",
+    "value": 50.0,
+    "weights": {
+      "critical": 100,
+      "medium": 50,
+      "resilient": 0
+    },
+    "denominator": "Unique assessed asset IDs with non-offered, known quantum assessments; worst tier per asset",
+    "assessed_assets": 2,
+    "total_assets": 3,
+    "unknown_assets": 1,
+    "assets_with_unknowns": 1,
+    "offered_only_assets": 0,
+    "not_applicable_assets": 0,
+    "quantum_vulnerable_assets": 1,
+    "hybrid_assets": 0,
+    "classical_issue_assets": 1,
+    "posture_issue_assets": 0,
+    "assets_by_evidence_kind": {
+      "declared": 3
+    },
+    "limitations": "Inventory heuristic, not a probability, NIST metric, or application security certification. Unknown and offered-only assets are excluded, never counted as safe. Coverage units remain separate. Business criticality is not inferred."
+  },
+  "label": "Synthetic source handoff: risky, resistant primitive, unknown parameters",
+  "synthetic": true
+}

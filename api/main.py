@@ -9,8 +9,6 @@ from fastapi.responses import JSONResponse
 
 from core.models import ScanRequest, ScanResult
 from core.service import ScanService
-from adapters.cloud_adapter import cloud_adapter
-from adapters.registry import AdapterRegistry
 from export.cyclonedx import export_cyclonedx
 
 
@@ -22,7 +20,8 @@ def create_app(
         version="1.0.0",
         description=(
             "Synchronous local integration API. Results are held in bounded process memory. "
-            "Normalized inputs are labelled synthetic fixtures; raw inputs need registered scanners."
+            "Normalized inputs are labelled synthetic fixtures. Raw Python/Java/Go source and cloud snapshots are supported; "
+            "other raw inputs need registered scanners."
         ),
     )
     origins = cors_origins if cors_origins is not None else [
@@ -37,11 +36,7 @@ def create_app(
             allow_headers=["Content-Type"],
             allow_credentials=False,
         )
-    if service is None:
-        registry = AdapterRegistry()
-        registry.register("cloud", cloud_adapter)
-        service = ScanService(registry=registry)
-    app.state.scan_service = service
+    app.state.scan_service = service if service is not None else ScanService()
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(_, exc: RequestValidationError) -> JSONResponse:

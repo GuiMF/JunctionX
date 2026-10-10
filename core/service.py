@@ -10,7 +10,7 @@ from urllib.parse import quote
 from pydantic import ValidationError
 
 from adapters.normalized import import_normalized, input_bytes
-from adapters.registry import AdapterRegistry
+from adapters.registry import AdapterRegistry, default_registry
 from core.assessment import RULESET_VERSION, assess_finding
 from core.identity import deduplicate_findings
 from core.models import AdapterContext, AdapterResult, Coverage, ScanError, ScanInput, ScanRequest, ScanResult
@@ -56,7 +56,7 @@ class ScanService:
     def __init__(
         self, registry: AdapterRegistry | None = None, store: ScanStore | None = None
     ) -> None:
-        self.registry = registry if registry is not None else AdapterRegistry()
+        self.registry = registry if registry is not None else default_registry()
         self.store = store if store is not None else ScanStore()
 
     def get_scan(self, scan_id: str) -> ScanResult | None:

@@ -4,7 +4,7 @@ import re
 
 from core.models import Finding
 
-RULESET_VERSION = "1.0.1"
+RULESET_VERSION = "1.0.2"
 NIST_PQC = "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs"
 FIPS203 = "https://csrc.nist.gov/pubs/fips/203/final"
 FIPS204 = "https://csrc.nist.gov/pubs/fips/204/final"
@@ -140,6 +140,16 @@ def assess_finding(finding: Finding) -> Finding:
                  "A draft or pre-standard identifier is not treated as standardized ML-KEM or a verified hybrid group.",
                  "Identify the exact group/version and migrate to a supported standardized group after compatibility checks.",
                  IANA, FIPS203)
+    elif key_name == "RSA" and usage == "unknown":
+        classify("vulnerable", "critical", "RSA-UNKNOWN-USAGE",
+                 "The declared RSA primitive relies on factoring and is quantum-vulnerable; "
+                 "key generation alone does not establish how the key is used.",
+                 "Confirm whether this key signs, encrypts, or establishes keys before choosing "
+                 "a compatible post-quantum replacement. Do not substitute a KEM for a signature.",
+                 NIST_PQC)
+        if finding.parameters.key_bits is not None and finding.parameters.key_bits < 2048:
+            issues.append("RSA key below 2048 bits; unsuitable for new protection under the pinned transition policy.")
+            refs.append(TRANSITION)
     elif ((key_name in CLASSICAL_GROUPS and usage == "key_establishment") or
           (key_name in CLASSICAL_USES and usage in CLASSICAL_USES[key_name])):
         if usage == "signature":
