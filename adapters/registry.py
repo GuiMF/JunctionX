@@ -30,3 +30,14 @@ class AdapterRegistry:
     def get(self, source_type: str) -> Adapter | None:
         with self._lock:
             return self._adapters.get(source_type)
+
+
+def default_registry() -> AdapterRegistry:
+    """Built-in scanners; explicitly supplied registries remain opt-in."""
+    from adapters.cloud_adapter import cloud_adapter
+    from adapters.source import scan_source
+
+    registry = AdapterRegistry()
+    registry.register("source", scan_source)
+    registry.register("cloud", cloud_adapter)
+    return registry

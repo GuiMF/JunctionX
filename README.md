@@ -1,8 +1,8 @@
-# QuantumTrace core backend
+# QuantumTrace discovery backend
 
 Task 04 connects discovery adapters to deterministic cryptographic assessments,
 an asset-based score, and JSON/CycloneDX reports. This branch implements the
-shared backend and the raw cloud adapter; teammates supply the network and source scanners.
+shared backend, raw cloud snapshots, PCAP discovery and task 02 source discovery.
 
 ## Run locally
 
@@ -29,8 +29,19 @@ In another terminal, exercise all three synthetic inputs and save both exports:
 
 Read `reports/demo-summary.json`, `reports/scan.json`, and `reports/scan.cdx.json`.
 These are explicitly labelled integration fixtures, not organizer-input scans.
-Raw cloud snapshots are supported. Raw network/source inputs return
-`unsupported_adapter` until a teammate's scanner is registered.
+Raw Python, Java and Go inputs use the built-in source scanner, and raw cloud
+snapshots use the cloud adapter. The default API also registers the PCAP adapter;
+packet parsing requires TShark on the host.
+
+Scan local source and export validated CBOMs:
+
+```sh
+.venv/bin/python -m scripts.scan_source tests/fixtures/source --synthetic \
+  --output reports/source.json --cyclonedx-dir reports/source-cbom
+```
+
+See [source discovery](docs/source-discovery.md) for supported APIs, evidence,
+limits, the CryptoScan trial, and the [labelled evaluation](docs/source-evaluation.md).
 
 If the environment blocks opening local ports, exercise the same HTTP routes
 without a server socket with `.venv/bin/python -m scripts.demo --in-process`.
@@ -38,6 +49,7 @@ without a server socket with `.venv/bin/python -m scripts.demo --in-process`.
 ## Review and integrate
 
 - [Implementation plan](docs/implementation-plan.md) maps E1–E5 to deliverables.
+- [Source plan](docs/source-implementation-plan.md) and [plan review](docs/source-plan-review.md) cover S1–S5.
 - [Review report](docs/review-report.md) explains changes, validation, and remaining handoffs.
 - [Shared contract](docs/contract.md) explains fields, IDs, and adapter responsibilities.
 - [API and adapter integration](docs/api.md) gives endpoints and registration code.

@@ -9,8 +9,6 @@ from fastapi.responses import JSONResponse
 
 from core.models import ScanRequest, ScanResult
 from core.service import ScanService
-from adapters.cloud_adapter import cloud_adapter
-from adapters.registry import AdapterRegistry
 from export.cyclonedx import export_cyclonedx
 from adapters.network import parse_pcap_adapter
 
@@ -23,7 +21,8 @@ def create_app(
         version="1.0.0",
         description=(
             "Synchronous local integration API. Results are held in bounded process memory. "
-            "Normalized inputs are labelled synthetic fixtures; raw inputs need registered scanners."
+            "Normalized inputs are labelled synthetic fixtures. Raw Python/Java/Go source, "
+            "cloud snapshots and PCAP inputs are supported by the default application."
         ),
     )
     origins = cors_origins if cors_origins is not None else [
@@ -39,10 +38,8 @@ def create_app(
             allow_credentials=False,
         )
     if service is None:
-        registry = AdapterRegistry()
-        registry.register("cloud", cloud_adapter)
-        registry.register("pcap", parse_pcap_adapter)
-        service = ScanService(registry=registry)
+        service = ScanService()
+        service.registry.register("pcap", parse_pcap_adapter)
     app.state.scan_service = service
 
     @app.exception_handler(RequestValidationError)

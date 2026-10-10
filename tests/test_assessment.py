@@ -15,6 +15,15 @@ def finding(algorithm="RSA", usage="signature", **changes):
     })
 
 
+def test_rsa_generation_unknown_usage_is_vulnerable_without_usage_specific_advice():
+    result = assess_finding(finding("RSA", "unknown", parameters={"key_bits": 1024}))
+    assert result.quantum_status == "vulnerable" and result.usage == "unknown"
+    assert result.rule_id == f"QT-RSA-UNKNOWN-USAGE@{RULESET_VERSION}"
+    assert "Confirm whether" in result.recommendation
+    assert "ML-KEM" not in result.recommendation
+    assert any("2048" in issue for issue in result.classical_issues)
+
+
 @pytest.mark.parametrize("usage,expected,forbidden", [
     ("signature", "ML-DSA", "ML-KEM"),
     ("key_establishment", "ML-KEM", "ML-DSA"),
@@ -45,7 +54,7 @@ def test_classical_asymmetric_is_not_pqc(algorithm, usage):
 
 @pytest.mark.parametrize("algorithm,usage", [
     ("ML-KEM-768", "signature"), ("ML-DSA-65", "key_establishment"),
-    ("Ed25519", "encryption"), ("AES", "signature"), ("RSA", "unknown"),
+    ("Ed25519", "encryption"), ("AES", "signature"), ("ECDH", "unknown"),
     ("RSA", "mac"), ("HMAC-SHA256", "signature"),
 ])
 def test_mismatched_or_unknown_usage_is_not_certified(algorithm, usage):

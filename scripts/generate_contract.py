@@ -80,9 +80,25 @@ def build_examples() -> dict[str, ScanRequest]:
     write_json(fixtures_dir / "cloud-modified-example.json", envelope.model_dump(mode="json"))
     requests["scan-modified"] = modified
     partial = requests["scan-original"].model_copy(deep=True)
-    partial.label = "Synthetic partial scan with unavailable raw scanner"
-    partial.inputs.append(ScanInput(name="unimplemented.py", source_type="source", format="raw", content="print('not scanned')"))
+    partial.label = "Synthetic partial scan with unsupported source language"
+    partial.inputs.append(ScanInput(name="unsupported.rs", source_type="source", format="raw", content="// unsupported source language"))
     requests["scan-partial"] = partial
+    requests["scan-source"] = ScanRequest(
+        inputs=[ScanInput(
+            name="synthetic/handoff.py", source_type="source", format="raw",
+            content=(
+                "import os\n"
+                "from cryptography.hazmat.primitives.asymmetric import rsa\n"
+                "from cryptography.hazmat.primitives.ciphers.aead import AESGCM\n"
+                "rsa.generate_private_key(public_exponent=65537, key_size=1024)\n"
+                "key = os.urandom(32)\n"
+                "AESGCM(key)\n"
+                "def unresolved(external_key):\n"
+                "    return AESGCM(external_key)\n"
+            ),
+        )], evaluated_at=EVALUATED_AT, synthetic=True,
+        label="Synthetic source handoff: risky, resistant primitive, unknown parameters",
+    )
     return requests
 
 
@@ -97,8 +113,8 @@ def main():
         scan.scan_id = f"example-{name}"
         scan.started_at = EVALUATED_AT
         write_json(ROOT / "examples" / f"{name}.response.json", scan.model_dump(mode="json"))
-        if name == "scan-original":
-            write_json(ROOT / "examples" / "scan-original.cdx.json", export_cyclonedx(scan))
+        if name in {"scan-original", "scan-source"}:
+            write_json(ROOT / "examples" / f"{name}.cdx.json", export_cyclonedx(scan))
 
 
 if __name__ == "__main__":

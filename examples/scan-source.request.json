@@ -1,0 +1,14 @@
+{
+  "inputs": [
+    {
+      "name": "synthetic/handoff.py",
+      "source_type": "source",
+      "format": "raw",
+      "content": "import os\nfrom cryptography.hazmat.primitives.asymmetric import rsa\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\nrsa.generate_private_key(public_exponent=65537, key_size=1024)\nkey = os.urandom(32)\nAESGCM(key)\ndef unresolved(external_key):\n    return AESGCM(external_key)\n",
+      "encoding": "utf-8"
+    }
+  ],
+  "evaluated_at": "2026-10-10T12:00:00Z",
+  "label": "Synthetic source handoff: risky, resistant primitive, unknown parameters",
+  "synthetic": true
+}

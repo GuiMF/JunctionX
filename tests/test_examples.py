@@ -53,8 +53,8 @@ def test_partial_fixture_keeps_successful_findings_and_explicit_unknown_units():
         scan = client.post("/api/scans", json=load("scan-partial.request.json")).json()
     assert scan["status"] == "partial"
     assert len(scan["findings"]) == 10
-    assert scan["errors"][0]["code"] == "unsupported_adapter"
-    assert scan["coverage"][-1]["unit"] == "inputs"
+    assert scan["errors"][0]["code"] == "unsupported_language"
+    assert scan["coverage"][-1]["unit"] == "files"
     assert scan["coverage"][-1]["unsupported"] == 1
 
 
@@ -66,7 +66,7 @@ def test_checked_in_contracts_match_models_and_examples():
     for model in (ScanRequest, ScanResult):
         stored = json.loads((ROOT / "schemas" / f"{model.__name__}.schema.json").read_text())
         suffix = "request" if model is ScanRequest else "response"
-        for name in ("original", "modified", "partial"):
+        for name in ("original", "modified", "partial", "source"):
             example = load(f"scan-{name}.{suffix}.json")
             model.model_validate(example)
             Draft202012Validator(stored).validate(example)
