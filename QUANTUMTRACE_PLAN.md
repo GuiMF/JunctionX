@@ -200,7 +200,7 @@ Replace the owner blanks with teammate names. Each owner implements and checks t
 
 ### Person 03 — Cloud posture
 
-**Owner:** ____________________
+**Owner:** Santiago
 
 **Best fit:** JSON / APIs · Cloud security
 
@@ -210,11 +210,11 @@ Replace the owner blanks with teammate names. Each owner implements and checks t
 
 **Dependencies:** Use Person 4’s schema. Join only explicit identifiers; do not manufacture code-to-cloud or network-to-cloud links.
 
-- [ ] **C1 · Parse all three supplied exports (0–3h)** — Load the 10 KMS keys, six load balancers, and five certificates. Preserve ARNs, usage, state, owner tags, evidence JSON pointer, and export timestamp. Treat them as synthetic snapshots, not live AWS state.
-- [ ] **C2 · Resolve real relationships (3–6h)** — Join listener CertificateArn to certificate records. Preserve KMS team tags. Keep missing references as unresolved. Similar names are not evidence of a dependency.
-- [ ] **C3 · Map algorithm and policy meaning (6–10h)** — Map KeySpec and KeyUsage separately. Build an explicit, sourced lookup for the supplied ALB and NLB policies using the appropriate AWS documentation. Unknown policies remain unknown. Do not infer policy contents from the year or name alone.
-- [ ] **C4 · Separate posture from quantum risk (10–14h)** — Report expiry, weak signatures, HTTP redirect versus plaintext forwarding, rotation, and pending deletion separately from quantum exposure. Parameterize evaluation time and display snapshot freshness. Do not claim configured algorithms were observed on the wire.
-- [ ] **C5 · Prepare the migration demonstration (14–18h)** — For partner-api-alb, explain the existing non-PQ TLS 1.3 policy and a compatible current AWS hybrid-PQ alternative. Rescan a clearly labelled modified fixture. Show PQ-capable configuration while observed negotiation remains unverified.
+- [x] **C1 · Parse all three supplied exports (0–3h)** — Load the 10 KMS keys, six load balancers, and five certificates. Preserve ARNs, usage, state, owner tags, evidence JSON pointer, and export timestamp. Treat them as synthetic snapshots, not live AWS state.
+- [x] **C2 · Resolve real relationships (3–6h)** — Join listener CertificateArn to certificate records. Preserve KMS team tags. Keep missing references as unresolved. Similar names are not evidence of a dependency.
+- [x] **C3 · Map algorithm and policy meaning (6–10h)** — Map KeySpec and KeyUsage separately. Build an explicit, sourced lookup for the supplied ALB and NLB policies using the appropriate AWS documentation. Unknown policies remain unknown. Do not infer policy contents from the year or name alone.
+- [x] **C4 · Separate posture from quantum risk (10–14h)** — Report expiry, weak signatures, HTTP redirect versus plaintext forwarding, rotation, and pending deletion separately from quantum exposure. Parameterize evaluation time and display snapshot freshness. Do not claim configured algorithms were observed on the wire.
+- [x] **C5 · Prepare the migration demonstration (14–18h)** — For partner-api-alb, explain the existing non-PQ TLS 1.3 policy and a compatible current AWS hybrid-PQ alternative. Rescan a clearly labelled modified fixture. Show PQ-capable configuration while observed negotiation remains unverified.
 
 **Acceptance criteria**
 
@@ -224,6 +224,14 @@ Replace the owner blanks with teammate names. Each owner implements and checks t
 - Changing a policy updates configuration assessment without fabricating network evidence.
 
 **Handoff:** Deliver linked listener/certificate examples, owner-tagged KMS examples, and original/modified demo fixtures.
+
+**Local completion:** See [cloud handoff](docs/cloud-handoff.md) and [generated examples](docs/cloud-demo.json). The final Person 4 contract and team integration remain pending.
+
+**Certificate renewal demo:** A separate [synthetic reimport comparison](docs/cloud-renewal-demo.json)
+removes expiry and SHA-1 posture issues without changing certificate identity or
+claiming PQ authentication. Run `python3 -B -m adapters.cloud_demo --certificate-renewal`.
+Import [cloud progress](docs/cloud-progress.json) into the HTML board to show C1–C5 completion;
+export any existing team progress first because import replaces local state.
 
 ### Person 04 — Core & integration
 
