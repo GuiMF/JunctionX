@@ -56,7 +56,7 @@
       "items": {
         "$ref": "#/$defs/ScanInput"
       },
-      "maxItems": 16,
+      "maxItems": 1024,
       "minItems": 1,
       "title": "Inputs",
       "type": "array"

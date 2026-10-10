@@ -851,7 +851,7 @@
               "$ref": "#/components/schemas/ScanInput"
             },
             "type": "array",
-            "maxItems": 16,
+            "maxItems": 1024,
             "minItems": 1,
             "title": "Inputs"
           },

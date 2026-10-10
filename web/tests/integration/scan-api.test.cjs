@@ -67,3 +67,17 @@ test('real adapter failures produce partial and failed scans, preserving success
   assert.equal(failed.scan.findings.length, 0);
   assert.ok(failed.scan.errors.length > 0);
 });
+
+test('folder scans preserve every relative path through discovery, evidence and exports beyond 16 files', async () => {
+  const files = Array.from({ length: 24 }, (_, i) => Object.defineProperty(
+    new File(['import hashlib\nhashlib.md5(b"data")'], 'crypto.py'),
+    'webkitRelativePath', { value: `project/service-${i}/crypto.py` },
+  ));
+  const { scan, exports } = scanAndExport(await prepareScan(files));
+  assert.equal(scan.status, 'completed');
+  assert.equal(scan.coverage.length, 24);
+  assert.deepEqual(scan.coverage.map(item => item.input_name), files.map(file => file.webkitRelativePath));
+  assert.equal(new Set(scan.findings.flatMap(finding => finding.evidence.map(e => e.file))).size, 24);
+  assert.deepEqual(exports.json, scan);
+  assert.equal(exports.cyclonedx.components.length, 24);
+});

@@ -139,7 +139,7 @@ class AdapterContext(ContractModel):
 
 
 class ScanRequest(ContractModel):
-    inputs: list[ScanInput] = Field(min_length=1, max_length=16)
+    inputs: list[ScanInput] = Field(min_length=1, max_length=1024)
     evaluated_at: AwareDatetime | None = None
     label: Text | None = None
     synthetic: bool = False
