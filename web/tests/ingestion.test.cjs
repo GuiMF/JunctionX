@@ -75,17 +75,17 @@ test('unsupported, ambiguous, malformed and non-UTF-8 files have actionable erro
 });
 
 test('count, names and encoded byte limits apply before reading and after AWS bundling', async () => {
-  await assert.rejects(prepareScan([]), /1–16/);
-  await assert.rejects(prepareScan(Array.from({ length: 17 }, (_, i) => file(`${i}.py`))), /1–16/);
+  await assert.rejects(prepareScan([]), /1–10000/);
+  await assert.rejects(prepareScan(Array.from({ length: 10001 }, (_, i) => file(`${i}.py`))), /1–10000/);
   await assert.rejects(prepareScan([file(), file()]), /unique/);
-  const huge = { name: 'huge.pcap', size: 6 * 1024 * 1024 + 1, arrayBuffer() { throw Error('must not read'); } };
-  await assert.rejects(prepareScan([huge]), /8 MiB encoded/);
-  const input = { name: 'a.py', source_type: 'source', format: 'raw', content: 'é'.repeat(4 * 1024 * 1024) };
+  const huge = { name: 'huge.pcap', size: 48 * 1024 * 1024 + 1, arrayBuffer() { throw Error('must not read'); } };
+  await assert.rejects(prepareScan([huge]), /64 MiB encoded/);
+  const input = { name: 'a.py', source_type: 'source', format: 'raw', content: 'é'.repeat(32 * 1024 * 1024) };
   validateInputs([input]);
-  assert.throws(() => validateInputs([{ ...input, content: input.content + 'é' }]), /8 MiB/);
-  assert.throws(() => validateInputs([input, { ...input, name: 'b.py' }, { ...input, name: 'c.py', content: 'x' }]), /16 MiB/);
-  const snapshot = JSON.stringify({ Keys: [], padding: ' '.repeat(4 * 1024 * 1024) });
-  await assert.rejects(prepareScan([file('keys.json', snapshot), file('certs.json', snapshot.replace('Keys', 'Certificates'))]), /8 MiB/);
+  assert.throws(() => validateInputs([{ ...input, content: input.content + 'é' }]), /64 MiB/);
+  assert.throws(() => validateInputs([...Array.from({ length: 4 }, (_, i) => ({ ...input, name: `${i}.py` })), { ...input, name: 'extra.py', content: 'x' }]), /256 MiB/);
+  const snapshot = JSON.stringify({ Keys: [], padding: ' '.repeat(32 * 1024 * 1024) });
+  await assert.rejects(prepareScan([file('keys.json', snapshot), file('certs.json', snapshot.replace('Keys', 'Certificates'))]), /64 MiB/);
 });
 
 test('successful scan updates the active result and evidence, closes import, and exports both formats from a custom API port', async (t) => {
@@ -157,8 +157,8 @@ test('invalid and oversized selections never submit and allow replacing the file
   await select([file('unknown.txt')]);
   assert.match(container.querySelector('[role=alert]').textContent, /files were not added.*supported files/);
   assert.equal(button('Scan selected files').disabled, true, 'unsupported selection cannot be submitted');
-  await select([{ name: 'big.py', size: 9 * 1024 * 1024 }]); await click('Scan selected files');
-  assert.match(container.querySelector('[role=alert]').textContent, /8 MiB/);
+  await select([{ name: 'big.py', size: 65 * 1024 * 1024 }]); await click('Scan selected files');
+  assert.match(container.querySelector('[role=alert]').textContent, /64 MiB/);
   assert.equal(fetch.mock.callCount(), 0);
   assert.equal(document.querySelector('input[type=file]').disabled, false);
 });
@@ -215,4 +215,60 @@ test('reset during file reading prevents submission and clears the pending selec
 
 test('unreadable local files explain how to recover without submitting', async () => {
   await assert.rejects(prepareScan([{ name: 'gone.py', size: 10, arrayBuffer: async () => { throw new Error('unavailable'); } }]), /gone.py: could not read.*select it again/);
+});
+
+const folderFile = (path, content) => Object.defineProperty(file(path.split('/').pop(), content), 'webkitRelativePath', { value: path });
+
+test('folder picker filters unsupported files, preserves duplicate basenames and submits over 16 files', async (t) => {
+  let submitted;
+  mock.method(global, 'fetch', async (_url, options) => {
+    submitted = JSON.parse(options.body);
+    return { ok: true, json: async () => response() };
+  });
+  const container = await mount(t);
+  await click('Import data');
+  const input = document.querySelector('input[webkitdirectory]');
+  assert.ok(input, 'folder input requests recursive selection');
+  const sources = Array.from({ length: 24 }, (_, i) => folderFile(`project/service-${i}/crypto.py`));
+  Object.defineProperty(input, 'files', { value: [...sources,
+    folderFile('project/package.json', '{"name":"project"}'),
+    folderFile('project/README.md', '# Docs'),
+    folderFile('project/aws/keys.json', '{"Keys":[]}'),
+  ] });
+  await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
+  assert.match(container.textContent, /27 files discovered · 25 compatible · 2 skipped/);
+  assert.match(container.textContent, /project\/service-23\/crypto.py/);
+  assert.equal(button('Scan selected files').disabled, false);
+  await click('Scan selected files');
+  assert.equal(submitted.inputs.length, 25);
+  assert.deepEqual(submitted.inputs.slice(0, 24).map(input => input.name), sources.map(file => file.webkitRelativePath));
+  assert.equal(submitted.inputs[24].name, 'project/aws/keys.json');
+});
+
+test('AWS snapshots in separate folders do not collide or get bundled across environments', async () => {
+  const { inputs } = await prepareScan([
+    folderFile('project/dev/keys.json', '{"Keys":[]}'),
+    folderFile('project/dev/certs.json', '{"Certificates":[]}'),
+    folderFile('project/prod/keys.json', '{"Keys":[]}'),
+    folderFile('project/prod/certs.json', '{"Certificates":[]}'),
+  ]);
+  assert.deepEqual(inputs.map(input => input.name), ['project/dev/aws-snapshots.json', 'project/prod/aws-snapshots.json']);
+  assert.ok(inputs.every(input => Object.keys(JSON.parse(input.content)).length === 2));
+});
+
+test('folder checks block scanning and ignore results after closing the dialog', async (t) => {
+  let finishRead;
+  const container = await mount(t);
+  await select([file()]);
+  const input = document.querySelector('input[webkitdirectory]');
+  Object.defineProperty(input, 'files', { value: [{ name: 'slow.json', size: 10, webkitRelativePath: 'project/slow.json',
+    arrayBuffer: () => new Promise(resolve => { finishRead = resolve; }) }] });
+  await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
+  assert.equal(button('Scan selected files').disabled, true);
+  assert.match(container.textContent, /Checking folders/);
+  await click('Close import dialog');
+  await click('Import data');
+  await act(async () => finishRead(new TextEncoder().encode('{"Keys":[]}').buffer));
+  assert.equal(button('Scan selected files').disabled, true);
+  assert.doesNotMatch(container.textContent, /slow.json/);
 });

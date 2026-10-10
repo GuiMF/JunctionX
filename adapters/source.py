@@ -7,8 +7,8 @@ from adapters.source_common import RULESET_VERSION, SCANNER_VERSION, SourceParse
 from core.identity import stable_asset_id, stable_finding_id
 from core.models import AdapterContext, AdapterResult, Coverage, Evidence, Finding, ScanError, ScanInput
 
-MAX_SOURCE_BYTES = 1024 * 1024
-MAX_FINDINGS = 5000
+MAX_SOURCE_BYTES = 16 * 1024 * 1024
+MAX_FINDINGS = 20_000
 
 
 def scan_source(item: ScanInput, context: AdapterContext) -> AdapterResult:
@@ -36,7 +36,7 @@ def scan_source(item: ScanInput, context: AdapterContext) -> AdapterResult:
     try:
         raw = input_bytes(item)
         if len(raw) > MAX_SOURCE_BYTES:
-            return failure("source_limit_exceeded", "Source files are limited to 1 MiB each")
+            return failure("source_limit_exceeded", "Source files are limited to 16 MiB each")
         source = raw.decode("utf-8-sig")
     except (UnicodeError, ValueError):
         return failure("invalid_source_encoding", "Source content must decode as UTF-8")
@@ -45,7 +45,7 @@ def scan_source(item: ScanInput, context: AdapterContext) -> AdapterResult:
     except (SourceParseError, SyntaxError, RecursionError, ValueError):
         return failure("source_parse_error", "Source could not be processed by the bounded language parser")
     if len(detections) > MAX_FINDINGS:
-        return failure("source_limit_exceeded", "Source files are limited to 5000 detected occurrences")
+        return failure("source_limit_exceeded", "Source files are limited to 20000 detected occurrences")
     findings = []
     for detection in detections:
         identity = f"{item.name}:line:{detection.line}:column:{detection.column}:{detection.slot}"

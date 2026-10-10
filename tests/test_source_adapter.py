@@ -88,6 +88,25 @@ def test_adapter_bounds_invalid_utf8_and_explicit_registry():
     assert scan.errors[0].code == "unsupported_adapter"
 
 
+def test_source_accepts_sixteen_mib_and_more_than_five_thousand_findings():
+    code = 'import hashlib\nhashlib.md5(b"data")\n#'
+    result = scan_source(source(code + 'x' * (MAX_SOURCE_BYTES - len(code))), CONTEXT)
+    assert not result.errors
+    assert len(result.findings) == 1
+    result = scan_source(source('import hashlib\n' + 'hashlib.md5(b"data")\n' * 5001), CONTEXT)
+    assert not result.errors
+    assert len(result.findings) == 5001
+
+
+def test_source_still_rejects_excessive_findings(monkeypatch):
+    from adapters.source import MAX_FINDINGS
+
+    monkeypatch.setattr('adapters.source_python.detect', lambda _: [None] * (MAX_FINDINGS + 1))
+    result = scan_source(source('pass'), CONTEXT)
+    assert result.errors[0].code == 'source_limit_exceeded'
+    assert '20000' in result.errors[0].message
+
+
 def test_ids_stable_when_algorithm_or_key_size_changes():
     before = scan_source(source("import hashlib\nhashlib.md5(data)"), CONTEXT).findings[0]
     after = scan_source(source("import hashlib\nhashlib.sha256(data)"), CONTEXT).findings[0]

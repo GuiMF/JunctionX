@@ -8,6 +8,10 @@ from pydantic import (
     AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, model_validator,
 )
 
+MAX_SCAN_INPUTS = 10_000
+MAX_INPUT_BYTES = 64 * 1024 * 1024
+MAX_SCAN_BYTES = 256 * 1024 * 1024
+
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 Count = Annotated[int, Field(strict=True, ge=0)]
 Positive = Annotated[int, Field(strict=True, gt=0)]
@@ -130,7 +134,7 @@ class ScanInput(ContractModel):
     name: Text
     source_type: SourceType
     format: Literal["normalized", "raw"]
-    content: str = Field(max_length=8 * 1024 * 1024)
+    content: str = Field(max_length=MAX_INPUT_BYTES)
     encoding: Literal["utf-8", "base64"] = "utf-8"
 
 
@@ -139,7 +143,7 @@ class AdapterContext(ContractModel):
 
 
 class ScanRequest(ContractModel):
-    inputs: list[ScanInput] = Field(min_length=1, max_length=16)
+    inputs: list[ScanInput] = Field(min_length=1, max_length=MAX_SCAN_INPUTS)
     evaluated_at: AwareDatetime | None = None
     label: Text | None = None
     synthetic: bool = False
@@ -149,10 +153,10 @@ class ScanRequest(ContractModel):
         names = [item.name for item in self.inputs]
         if len(names) != len(set(names)):
             raise ValueError("Input names must be unique within a scan")
-        if any(len(item.content.encode("utf-8")) > 8 * 1024 * 1024 for item in self.inputs):
-            raise ValueError("Each input must be at most 8 MiB encoded")
-        if sum(len(item.content.encode("utf-8")) for item in self.inputs) > 16 * 1024 * 1024:
-            raise ValueError("Combined input contents must be at most 16 MiB encoded")
+        if any(len(item.content.encode("utf-8")) > MAX_INPUT_BYTES for item in self.inputs):
+            raise ValueError("Each input must be at most 64 MiB encoded")
+        if sum(len(item.content.encode("utf-8")) for item in self.inputs) > MAX_SCAN_BYTES:
+            raise ValueError("Combined input contents must be at most 256 MiB encoded")
         return self
 
 

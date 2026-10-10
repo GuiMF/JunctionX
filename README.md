@@ -50,21 +50,26 @@ TShark installed on the host. Source and cloud scans do not require TShark.
 ## Dashboard workflow
 
 Open **Import data** and select `.py`, `.java`, `.go`, `.pcap`, `.pcapng`, `.cap`, or AWS snapshot `.json`
-files, then click **Scan selected files**. Source and cloud files must be UTF-8;
+files, or use **Browse folder** (or drop a folder) to recursively discover compatible
+files in every subfolder, then click **Scan selected files**. Folder discovery shows
+compatible/skipped counts and skips unrelated extensions and non-AWS JSON. Relative
+paths are preserved in the selection, evidence and exports, so same-named files in
+different subfolders remain distinct. Source and cloud files must be UTF-8;
 captures are encoded as base64. JSON must contain a `Keys`, `Certificates`, or
 `LoadBalancers` snapshot, or the [documented AWS bundle](docs/api.md). Select related
-AWS snapshots together: the dashboard bundles them into one input so certificate
-references resolve. Select only one snapshot of each kind per scan; scan different
-environments separately.
+AWS snapshots in the same folder: the dashboard bundles each folder into one input so certificate
+references resolve. Select only one snapshot of each kind per folder; keep different environments
+in separate folders. Individually selected files are grouped together.
 
-Select 1–16 files with unique names. Encoded inputs are limited to 8 MiB each and
-16 MiB combined, including base64 expansion and the combined AWS bundle. Invalid
-selections explain how to correct them before submission. The previous result stays
+Select 1–10,000 files with unique relative paths. Encoded inputs are limited to 64 MiB each and
+256 MiB combined, including base64 expansion and the combined AWS bundle. Invalid
+selections explain how to correct them before submission. Source files separately
+allow up to 16 MiB and 20,000 detected occurrences per file. The previous result stays
 visible while scanning. A returned `partial` or `failed` result replaces it and
 shows per-input errors; `201` alone does not mean all inputs succeeded.
 
 Use **Retry scan** after fixing a connection problem, or reselect corrected files.
-Scans time out after 60 seconds; exports after 10 seconds. **Cancel scan** or
+Scans time out after 5 minutes; exports after 10 seconds. **Cancel scan** or
 **Load demo dataset** discards pending results in the browser (server work may continue).
 Reset restores the offline demo and its JSON/CBOM exports. Live exports use the
 active scan ID; if it was evicted or the API restarted, scan the files again.
