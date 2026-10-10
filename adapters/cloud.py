@@ -126,6 +126,8 @@ def _validate_record(record, identifier):
                   "SignatureAlgorithm", "Protocol", "SslPolicy", "Type"):
         if field in record and not isinstance(record[field], str):
             raise ValueError(f"{field} must be a string")
+    if "SslPolicy" in record and not record["SslPolicy"].strip():
+        raise ValueError("SslPolicy must not be blank")
     for field in ("NotBefore", "NotAfter", "ValidTo", "DeletionDate"):
         if field in record:
             _date(record[field])

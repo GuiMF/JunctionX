@@ -184,6 +184,27 @@ def test_single_snapshot_base64_does_not_require_other_files():
     assert scan.input_hashes[item.name] == hashlib.sha256(content).hexdigest()
 
 
+@pytest.mark.parametrize("policy_name", ["", " \t\n"])
+def test_api_blank_policy_preserves_other_resources(policy_name):
+    item = raw_cloud()
+    value = json.loads(item.content)
+    listener = value["load_balancer_listeners.json"]["LoadBalancers"][0]["Listeners"][0]
+    listener["SslPolicy"] = policy_name
+    item.content = json.dumps(value)
+    with TestClient(create_app()) as client:
+        response = client.post("/api/scans", json=request(item).model_dump(mode="json"))
+    assert response.status_code == 201
+    scan = response.json()
+    assert scan["status"] == "partial"
+    assert len(scan["assets"]) == 27 and len(scan["findings"]) == 26
+    assert all(asset["asset_id"] != listener["ListenerArn"] for asset in scan["assets"])
+    assert all(finding["asset_id"] != listener["ListenerArn"] for finding in scan["findings"])
+    assert scan["coverage"][0]["assessed"] == 27 and scan["coverage"][0]["failed"] == 1
+    assert len(scan["errors"]) == 1
+    assert scan["errors"][0]["code"] == "invalid_cloud_input"
+    assert scan["errors"][0]["message"].endswith("/load_balancer_listeners.json/LoadBalancers/0/Listeners/0")
+
+
 def test_unknown_policy_and_bad_snapshot_preserve_valid_data_and_exports():
     item = raw_cloud()
     value = json.loads(item.content)
