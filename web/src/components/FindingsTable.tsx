@@ -1,259 +1,86 @@
 import React, { useState } from 'react';
-import { Search, ArrowUpRight, Network, FileText, Cloud, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Search, ArrowRight, Network, FileCode2, Cloud, AlertCircle, ShieldAlert, ListFilter, X } from 'lucide-react';
 import type { Finding, SourceType, ChallengeTier, EvidenceKind } from '../types/contract';
 
 interface FindingsTableProps {
   findings: Finding[];
   onSelectFinding: (finding: Finding) => void;
+  selectedFindingId?: string;
 }
+const tierStyles: Record<ChallengeTier, string> = {
+  critical: 'border-rose-200 bg-rose-50 text-rose-600',
+  medium: 'border-amber-200 bg-amber-50 text-amber-700',
+  resilient: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  unknown: 'border-slate-200 bg-slate-100 text-slate-600',
+};
+const sourceLabels: Record<SourceType, string> = { pcap: 'Network', source: 'Source code', cloud: 'Cloud' };
+const sourceStyles: Record<SourceType, string> = { pcap: 'text-sky-700', source: 'text-violet-700', cloud: 'text-cyan-700' };
+const evidenceStyles: Record<EvidenceKind, string> = { observed: 'border-sky-200 bg-sky-50 text-sky-800', offered: 'border-amber-200 bg-amber-50 text-amber-800', configured: 'border-cyan-200 bg-cyan-50 text-cyan-800', declared: 'border-violet-200 bg-violet-50 text-violet-800' };
+const sourceIcons = { pcap: Network, source: FileCode2, cloud: Cloud };
+const evidenceDescriptions: Record<EvidenceKind, string> = {
+  observed: 'Seen in captured traffic',
+  offered: 'Advertised capability; not necessarily negotiated',
+  configured: 'Present in cloud configuration; runtime behavior not verified',
+  declared: 'Present in source code',
+};
+const filterClass = 'h-9 rounded border border-slate-300 bg-white pl-2.5 pr-6 text-[13px] text-slate-600 focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600';
 
-export const FindingsTable: React.FC<FindingsTableProps> = ({ findings, onSelectFinding }) => {
+export const FindingsTable: React.FC<FindingsTableProps> = ({ findings, onSelectFinding, selectedFindingId }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSource, setSelectedSource] = useState<string>('all');
-  const [selectedTier, setSelectedTier] = useState<string>('all');
-  const [selectedEvidenceKind, setSelectedEvidenceKind] = useState<string>('all');
-  const [selectedOwner, setSelectedOwner] = useState<string>('all');
-
-  const owners = Array.from(new Set(findings.map((f) => f.owner).filter(Boolean))) as string[];
-
-  const filteredFindings = findings.filter((f) => {
-    const matchesSearch =
-      searchTerm === '' ||
-      f.algorithm.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      f.asset_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (f.owner && f.owner.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      f.evidence.some((e) => e.file.toLowerCase().includes(searchTerm.toLowerCase()) || e.locator.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesSource = selectedSource === 'all' || f.source_type === selectedSource;
-    const matchesTier = selectedTier === 'all' || f.challenge_tier === selectedTier;
-    const matchesEvidence = selectedEvidenceKind === 'all' || f.evidence_kind === selectedEvidenceKind;
-    const matchesOwner = selectedOwner === 'all' || f.owner === selectedOwner;
-
-    return matchesSearch && matchesSource && matchesTier && matchesEvidence && matchesOwner;
+  const [selectedSource, setSelectedSource] = useState('all');
+  const [selectedTier, setSelectedTier] = useState('all');
+  const [selectedEvidenceKind, setSelectedEvidenceKind] = useState('all');
+  const [selectedOwner, setSelectedOwner] = useState('all');
+  const owners = Array.from(new Set(findings.flatMap((finding) => finding.owner ? [finding.owner] : []))).sort();
+  const query = searchTerm.trim().toLowerCase();
+  const filteredFindings = findings.filter((finding) => {
+    const searchable = [finding.algorithm, finding.asset_id, finding.owner ?? '', ...finding.evidence.flatMap((evidence) => [evidence.file, evidence.locator])];
+    return (!query || searchable.some((value) => value.toLowerCase().includes(query)))
+      && (selectedSource === 'all' || finding.source_type === selectedSource)
+      && (selectedTier === 'all' || finding.challenge_tier === selectedTier)
+      && (selectedEvidenceKind === 'all' || finding.evidence_kind === selectedEvidenceKind)
+      && (selectedOwner === 'all' || (selectedOwner === '__unassigned' ? !finding.owner : finding.owner === selectedOwner));
   });
-
-  const getSourceIcon = (source: SourceType) => {
-    switch (source) {
-      case 'pcap':
-        return (
-          <span title="Network Capture">
-            <Network className="w-3.5 h-3.5 text-cyan-400" />
-          </span>
-        );
-      case 'source':
-        return (
-          <span title="Source Code">
-            <FileText className="w-3.5 h-3.5 text-amber-400" />
-          </span>
-        );
-      case 'cloud':
-        return (
-          <span title="Cloud Resource">
-            <Cloud className="w-3.5 h-3.5 text-indigo-400" />
-          </span>
-        );
-    }
-  };
-
-  const getTierBadge = (tier: ChallengeTier) => {
-    switch (tier) {
-      case 'critical':
-        return <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">Critical</span>;
-      case 'medium':
-        return <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">Medium</span>;
-      case 'resilient':
-        return <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30">Resilient</span>;
-      default:
-        return <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-500/15 text-slate-300 border border-slate-500/30">Unknown</span>;
-    }
-  };
-
-  const getEvidenceKindBadge = (kind: EvidenceKind) => {
-    const colors: Record<EvidenceKind, string> = {
-      observed: 'text-emerald-400 bg-emerald-950/60 border-emerald-800/60',
-      offered: 'text-amber-400 bg-amber-950/60 border-amber-800/60',
-      configured: 'text-cyan-400 bg-cyan-950/60 border-cyan-800/60',
-      declared: 'text-purple-400 bg-purple-950/60 border-purple-800/60'
-    };
-    return (
-      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${colors[kind]}`}>
-        {kind}
-      </span>
-    );
-  };
+  const activeFilters = [selectedSource, selectedTier, selectedEvidenceKind, selectedOwner].filter((value) => value !== 'all').length + (query ? 1 : 0);
+  const resetFilters = () => { setSearchTerm(''); setSelectedSource('all'); setSelectedTier('all'); setSelectedEvidenceKind('all'); setSelectedOwner('all'); };
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-      {/* Filters Toolbar */}
-      <div className="p-4 border-b border-slate-800 bg-slate-950/30 space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by algorithm, asset, owner, or locator..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value)}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500"
-            >
-              <option value="all">All Sources</option>
-              <option value="pcap">PCAP Network</option>
-              <option value="source">Source Code</option>
-              <option value="cloud">AWS Cloud</option>
-            </select>
-
-            <select
-              value={selectedTier}
-              onChange={(e) => setSelectedTier(e.target.value)}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500"
-            >
-              <option value="all">All Tiers</option>
-              <option value="critical">Critical</option>
-              <option value="medium">Medium</option>
-              <option value="resilient">Resilient</option>
-              <option value="unknown">Unknown</option>
-            </select>
-
-            <select
-              value={selectedEvidenceKind}
-              onChange={(e) => setSelectedEvidenceKind(e.target.value)}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500"
-            >
-              <option value="all">All Evidence Kinds</option>
-              <option value="observed">Observed (Wire)</option>
-              <option value="offered">Offered (ClientHello)</option>
-              <option value="configured">Configured (Cloud)</option>
-              <option value="declared">Declared (Source)</option>
-            </select>
-
-            <select
-              value={selectedOwner}
-              onChange={(e) => setSelectedOwner(e.target.value)}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500"
-            >
-              <option value="all">All Owners</option>
-              {owners.map((owner) => (
-                <option key={owner} value={owner}>
-                  {owner}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-slate-400">
-          <span>Showing <strong className="text-white">{filteredFindings.length}</strong> of {findings.length} findings</span>
-          {(searchTerm || selectedSource !== 'all' || selectedTier !== 'all' || selectedEvidenceKind !== 'all' || selectedOwner !== 'all') && (
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedSource('all');
-                setSelectedTier('all');
-                setSelectedEvidenceKind('all');
-                setSelectedOwner('all');
-              }}
-              className="text-emerald-400 hover:underline"
-            >
-              Reset filters
-            </button>
-          )}
-        </div>
+    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white" aria-labelledby="inventory-heading">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+        <div className="flex items-center gap-2.5"><h2 id="inventory-heading" className="text-[15px] font-semibold text-slate-900">Cryptographic inventory</h2><span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[13px] text-slate-500">{findings.length}</span></div>
       </div>
-
-      {/* Table */}
+      <div className="space-y-3 border-b border-slate-200 px-5 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[220px] flex-1"><Search aria-hidden="true" className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" /><input aria-label="Search findings" type="search" placeholder="Search algorithms, assets, owners…" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="h-9 w-full rounded border border-slate-300 bg-white pl-8 pr-3 text-[13px] text-slate-900 placeholder:text-slate-500 focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600" /></div>
+          <ListFilter aria-hidden="true" className="ml-1 hidden h-4 w-4 text-slate-500 xl:block" />
+          <select aria-label="Filter by source" value={selectedSource} onChange={(event) => setSelectedSource(event.target.value)} className={filterClass}><option value="all">All sources</option><option value="pcap">Network</option><option value="source">Source code</option><option value="cloud">Cloud</option></select>
+          <select aria-label="Filter by quantum tier" value={selectedTier} onChange={(event) => setSelectedTier(event.target.value)} className={filterClass}><option value="all">All tiers</option><option value="critical">Critical</option><option value="medium">Medium</option><option value="resilient">Resilient</option><option value="unknown">Unknown</option></select>
+          <select aria-label="Filter by evidence kind" value={selectedEvidenceKind} onChange={(event) => setSelectedEvidenceKind(event.target.value)} className={filterClass}><option value="all">All evidence</option><option value="observed">Observed</option><option value="offered">Offered</option><option value="configured">Configured</option><option value="declared">Declared</option></select>
+          <select aria-label="Filter by owner" value={selectedOwner} onChange={(event) => setSelectedOwner(event.target.value)} className={filterClass}><option value="all">All owners</option><option value="__unassigned">Unassigned</option>{owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}</select>
+        </div>
+        {activeFilters > 0 && <div className="flex items-center justify-between text-[13px] text-slate-500" aria-live="polite"><span>{filteredFindings.length} of {findings.length} findings · {activeFilters} active {activeFilters === 1 ? 'filter' : 'filters'}</span><button onClick={resetFilters} className="inline-flex items-center gap-1 font-medium text-sky-700 hover:text-sky-900"><X className="h-3 w-3" />Clear filters</button></div>}
+      </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-slate-800 bg-slate-950/50 text-slate-400 uppercase text-[10px] tracking-wider">
-              <th className="py-3 px-4">Tier</th>
-              <th className="py-3 px-4">Algorithm & Usage</th>
-              <th className="py-3 px-4">Source</th>
-              <th className="py-3 px-4">Evidence Kind</th>
-              <th className="py-3 px-4">Primary Locator</th>
-              <th className="py-3 px-4">Owner</th>
-              <th className="py-3 px-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/60">
-            {filteredFindings.map((finding) => (
-              <tr
-                key={finding.id}
-                onClick={() => onSelectFinding(finding)}
-                className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
-              >
-                <td className="py-3 px-4 whitespace-nowrap">
-                  {getTierBadge(finding.challenge_tier)}
-                </td>
-                <td className="py-3 px-4">
-                  <div className="font-semibold text-slate-200 font-mono text-xs group-hover:text-emerald-400 transition-colors">
-                    {finding.algorithm}
-                  </div>
-                  <div className="text-[11px] text-slate-400 capitalize">
-                    {finding.usage.replace('_', ' ')}
-                    {finding.classical_issues && finding.classical_issues.length > 0 && (
-                      <span className="ml-2 inline-flex items-center text-amber-400 text-[10px]" title="Classical weakness detected">
-                        <AlertCircle className="w-2.5 h-2.5 mr-0.5 inline" /> Classical flaw
-                      </span>
-                    )}
-                    {finding.posture_issues && finding.posture_issues.length > 0 && (
-                      <span className="ml-2 inline-flex items-center text-purple-400 text-[10px]" title="Posture issue detected">
-                        <ShieldAlert className="w-2.5 h-2.5 mr-0.5 inline" /> Posture issue
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="py-3 px-4 whitespace-nowrap">
-                  <div className="flex items-center gap-1.5 text-slate-300 font-mono capitalize">
-                    {getSourceIcon(finding.source_type)}
-                    <span>{finding.source_type}</span>
-                  </div>
-                </td>
-                <td className="py-3 px-4 whitespace-nowrap">
-                  {getEvidenceKindBadge(finding.evidence_kind)}
-                </td>
-                <td className="py-3 px-4 font-mono text-slate-400 text-[11px] max-w-[220px] truncate" title={finding.evidence[0]?.locator}>
-                  {finding.evidence[0]?.locator || 'N/A'}
-                </td>
-                <td className="py-3 px-4 whitespace-nowrap text-slate-300">
-                  {finding.owner ? (
-                    <span className="bg-slate-800 px-2 py-0.5 rounded text-[11px] font-mono text-slate-300 border border-slate-700">
-                      {finding.owner}
-                    </span>
-                  ) : (
-                    <span className="text-slate-500 italic text-[11px]">Unassigned</span>
-                  )}
-                </td>
-                <td className="py-3 px-4 text-right whitespace-nowrap">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectFinding(finding);
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-300 text-xs font-medium transition-colors"
-                  >
-                    Evidence <ArrowUpRight className="w-3 h-3" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filteredFindings.length === 0 && (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">
-                  No findings match the selected filters.
-                </td>
-              </tr>
-            )}
+        <table className="w-full min-w-[900px] border-collapse text-left text-[13px]">
+          <thead className="border-b border-sky-100 bg-sky-50/60 text-[12px] uppercase tracking-[0.06em] text-slate-500"><tr><th scope="col" className="px-5 py-2.5 font-semibold">Quantum tier</th><th scope="col" className="px-3 py-2.5 font-semibold">Algorithm / usage</th><th scope="col" className="px-3 py-2.5 font-semibold">Asset / location</th><th scope="col" className="px-3 py-2.5 font-semibold">Source</th><th scope="col" className="px-3 py-2.5 font-semibold">Evidence</th><th scope="col" className="px-3 py-2.5 font-semibold">Owner</th><th scope="col" className="px-4 py-2.5 text-right font-semibold">Inspect</th></tr></thead>
+          <tbody className="divide-y divide-slate-100">
+            {filteredFindings.map((finding) => {
+              const SourceIcon = sourceIcons[finding.source_type];
+              return <tr key={finding.id} onClick={() => onSelectFinding(finding)} className={`group cursor-pointer hover:bg-slate-50 ${selectedFindingId === finding.id ? 'bg-sky-50' : 'bg-white'}`}>
+                <td className="whitespace-nowrap px-5 py-3"><span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[12px] font-semibold capitalize ${tierStyles[finding.challenge_tier]}`}>{finding.challenge_tier}</span></td>
+                <td className="px-3 py-3"><div className="whitespace-nowrap font-mono text-[13px] font-medium text-slate-900 group-hover:text-sky-700">{finding.algorithm}</div><div className="mt-1 flex items-center gap-1.5 text-[12px] text-slate-500"><span className="capitalize">{finding.usage.replace(/_/g, ' ')}</span>{finding.classical_issues.length > 0 && <span title="Classical weakness detected" aria-label="Classical weakness detected"><AlertCircle className="h-3 w-3 text-amber-600" /></span>}{finding.posture_issues.length > 0 && <span title="Operational issue detected" aria-label="Operational issue detected"><ShieldAlert className="h-3 w-3 text-slate-500" /></span>}</div></td>
+                <td className="max-w-[240px] px-3 py-3"><div title={finding.asset_id} className="truncate font-mono text-[13px] text-slate-700">{finding.asset_id}</div><div title={finding.evidence[0]?.locator} className="mt-1 truncate font-mono text-[12px] text-slate-500">{finding.evidence[0]?.locator || 'No locator available'}</div></td>
+                <td className="whitespace-nowrap px-3 py-3"><div className={`flex items-center gap-1.5 text-[13px] ${sourceStyles[finding.source_type]}`}><SourceIcon className="h-4 w-4" />{sourceLabels[finding.source_type]}</div></td>
+                <td className="px-3 py-3"><span title={evidenceDescriptions[finding.evidence_kind]} className={`rounded border px-2 py-1 font-mono text-[12px] capitalize ${evidenceStyles[finding.evidence_kind]}`}>{finding.evidence_kind}</span></td>
+                <td className="whitespace-nowrap px-3 py-3 text-[13px] text-slate-500">{finding.owner || 'Unassigned'}</td>
+                <td className="px-4 py-3 text-right"><button aria-label={`View evidence for ${finding.algorithm} on ${finding.asset_id}`} onClick={(event) => { event.stopPropagation(); onSelectFinding(finding); }} className="inline-flex h-7 w-7 items-center justify-center rounded border border-transparent text-slate-500 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500"><ArrowRight className="h-4 w-4" /></button></td>
+              </tr>;
+            })}
+            {filteredFindings.length === 0 && <tr><td colSpan={7} className="px-5 py-14 text-center"><Search className="mx-auto mb-3 h-6 w-6 text-slate-300" /><p className="font-medium text-slate-700">No matching findings</p><p className="mt-1 text-slate-500">Try a different search or clear your filters.</p>{activeFilters > 0 && <button onClick={resetFilters} className="mt-3 text-sky-700 hover:underline">Clear filters</button>}</td></tr>}
           </tbody>
         </table>
       </div>
-    </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50/70 px-5 py-2.5 text-[13px] text-slate-500"><span aria-live="polite">Showing {filteredFindings.length} of {findings.length} findings</span></div>
+    </section>
   );
 };

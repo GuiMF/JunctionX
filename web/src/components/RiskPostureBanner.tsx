@@ -1,5 +1,5 @@
 import React from 'react';
-import { Atom, ShieldAlert, KeyRound, AlertTriangle, HelpCircle, Radio } from 'lucide-react';
+import { ShieldAlert, KeyRound, AlertTriangle, HelpCircle, Radio, Layers, Settings2 } from 'lucide-react';
 import type { Finding, ExposureScore } from '../types/contract';
 
 interface RiskPostureBannerProps {
@@ -17,7 +17,7 @@ export const RiskPostureBanner: React.FC<RiskPostureBannerProps> = ({ findings, 
   }
 
   let quantumVulnerableAssets = 0;
-  let hybridReadyAssets = 0;
+  let hybridAssets = 0;
   let classicalIssueAssets = 0;
   let postureIssueAssets = 0;
   let offeredOnlyAssets = 0;
@@ -33,8 +33,8 @@ export const RiskPostureBanner: React.FC<RiskPostureBannerProps> = ({ findings, 
     if (active.some((f) => f.quantum_status === 'vulnerable')) {
       quantumVulnerableAssets++;
     }
-    if (active.some((f) => f.quantum_status === 'hybrid' || f.quantum_status === 'resistant_primitive')) {
-      hybridReadyAssets++;
+    if (active.some((f) => f.quantum_status === 'hybrid')) {
+      hybridAssets++;
     }
     if (active.some((f) => f.classical_issues && f.classical_issues.length > 0)) {
       classicalIssueAssets++;
@@ -50,90 +50,65 @@ export const RiskPostureBanner: React.FC<RiskPostureBannerProps> = ({ findings, 
 
   // Use backend score values if available, else derived
   const vuln = score?.quantum_vulnerable_assets ?? quantumVulnerableAssets;
-  const hybrid = score?.hybrid_assets ?? hybridReadyAssets;
+  const hybrid = score?.hybrid_assets ?? hybridAssets;
   const classical = score?.classical_issue_assets ?? classicalIssueAssets;
   const posture = score?.posture_issue_assets ?? postureIssueAssets;
   const offered = score?.offered_only_assets ?? offeredOnlyAssets;
   const unknowns = score?.assets_with_unknowns ?? assetsWithUnknowns;
   const exposureScore = score?.value;
 
+  const finiteScore = typeof exposureScore === 'number' && Number.isFinite(exposureScore);
+  const scoreWidth = finiteScore ? Math.min(100, Math.max(0, exposureScore)) : 0;
+  const metrics = [
+    { label: 'Quantum Vulnerable', value: vuln, icon: ShieldAlert, color: 'text-rose-700', surface: 'bg-rose-50/70' },
+    { label: 'Hybrid key establishment', value: hybrid, icon: KeyRound, color: 'text-emerald-700', surface: 'bg-emerald-50/70' },
+    { label: 'Classical Weakness', value: classical, icon: AlertTriangle, color: 'text-amber-700', surface: 'bg-amber-50/70' },
+    { label: 'Posture Issues', value: posture, icon: Settings2, color: 'text-violet-700', surface: 'bg-violet-50/70' },
+    { label: 'Assets with unknowns', value: unknowns, icon: HelpCircle, color: 'text-slate-600', surface: 'bg-slate-50' },
+    { label: 'Offered Only', value: offered, icon: Radio, color: 'text-sky-700', surface: 'bg-sky-50/70' },
+  ];
+
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 shadow-sm">
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Atom className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-sm font-semibold text-white tracking-tight">
-              Cryptographic Posture & Risk Decomposition
-            </h2>
-            {typeof exposureScore === 'number' && (
-              <span className="ml-2 text-xs font-mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800/80 px-2 py-0.5 rounded-full">
-                Exposure Score: {exposureScore}/100
-              </span>
+    <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+      <div className="grid xl:grid-cols-[260px_1fr]">
+        <div className="border-b border-slate-200 bg-slate-50/60 p-5 xl:border-b-0 xl:border-r">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-slate-500" aria-hidden="true" />
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-600">Quantum exposure</h2>
+          </div>
+          <div className="mt-3 flex items-baseline gap-1.5" aria-label={finiteScore ? `Exposure Score: ${exposureScore}/100` : 'Exposure score unavailable'}>
+            <span className="font-mono text-[44px] font-semibold leading-none tracking-[-0.06em] text-slate-900">{finiteScore ? exposureScore : '—'}</span>
+            <span className="font-mono text-[15px] text-slate-500">/ 100</span>
+          </div>
+          <div className="mt-4 h-1.5 overflow-hidden rounded-sm bg-slate-200" aria-hidden="true">
+            <div className="h-full bg-rose-500" style={{ width: `${scoreWidth}%` }} />
+          </div>
+          <p className="mt-2 text-[13px] text-slate-500">Higher means more exposure</p>
+          <div className="mt-4 flex items-center gap-1.5 border-t border-slate-200 pt-3 text-[13px] text-slate-600">
+            <Layers className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+            {typeof score?.assessed_assets === 'number' ? (
+              <span><strong className="font-mono font-semibold text-slate-900">{score.assessed_assets}</strong> assessed / <strong className="font-mono font-semibold text-slate-900">{score.total_assets ?? assetsMap.size}</strong> total assets</span>
+            ) : (
+              <span><strong className="font-mono font-semibold text-slate-900">{assetsMap.size}</strong> unique assets in inventory</span>
             )}
           </div>
-          <p className="text-xs text-slate-400">
-            Deduplicated asset counts separating Shor vulnerability from classical flaws, operational posture, and unselected offers.
-          </p>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          {/* Quantum Vulnerable */}
-          <div className="flex items-center gap-2 bg-rose-950/40 border border-rose-900/60 px-3 py-1.5 rounded-lg">
-            <ShieldAlert className="w-4 h-4 text-rose-400" />
-            <div>
-              <span className="text-[10px] text-rose-300 uppercase font-semibold block leading-tight">Quantum Vulnerable</span>
-              <span className="text-xs font-mono font-bold text-rose-200">{vuln} Assets</span>
-            </div>
-          </div>
-
-          {/* Hybrid / PQC Ready (Negotiated or Configured only) */}
-          <div className="flex items-center gap-2 bg-teal-950/40 border border-teal-900/60 px-3 py-1.5 rounded-lg">
-            <KeyRound className="w-4 h-4 text-teal-400" />
-            <div>
-              <span className="text-[10px] text-teal-300 uppercase font-semibold block leading-tight">PQC Active</span>
-              <span className="text-xs font-mono font-bold text-teal-200">{hybrid} Assets</span>
-            </div>
-          </div>
-
-          {/* Classical Weaknesses */}
-          <div className="flex items-center gap-2 bg-amber-950/40 border border-amber-900/60 px-3 py-1.5 rounded-lg">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <div>
-              <span className="text-[10px] text-amber-300 uppercase font-semibold block leading-tight">Classical Weakness</span>
-              <span className="text-xs font-mono font-bold text-amber-200">{classical} Assets</span>
-            </div>
-          </div>
-
-          {/* Operational Posture Issues */}
-          {posture > 0 && (
-            <div className="flex items-center gap-2 bg-purple-950/40 border border-purple-900/60 px-3 py-1.5 rounded-lg">
-              <div>
-                <span className="text-[10px] text-purple-300 uppercase font-semibold block leading-tight">Posture Issues</span>
-                <span className="text-xs font-mono font-bold text-purple-200">{posture} Assets</span>
+        <div className="grid grid-cols-2 sm:grid-cols-3">
+          {metrics.map((metric, index) => {
+            const Icon = metric.icon;
+            return (
+              <div key={metric.label} className={`min-w-0 p-5 ${metric.surface} ${index < 3 ? 'sm:border-b sm:border-slate-100' : ''} ${index % 3 !== 2 ? 'sm:border-r sm:border-slate-100' : ''}`}>
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Icon className={`h-4 w-4 shrink-0 ${metric.color}`} aria-hidden="true" />
+                  <h3 className="text-[13px] font-medium text-slate-600">{metric.label}</h3>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <strong className={`font-mono text-2xl font-semibold leading-none tracking-tight ${metric.color}`}>{metric.value}</strong>
+                  <span className="text-[13px] text-slate-500">Assets</span>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Offered-Only Capabilities */}
-          {offered > 0 && (
-            <div className="flex items-center gap-2 bg-sky-950/40 border border-sky-900/60 px-3 py-1.5 rounded-lg" title="Client advertised only; unverified or classical negotiation">
-              <Radio className="w-3.5 h-3.5 text-sky-400" />
-              <div>
-                <span className="text-[10px] text-sky-300 uppercase font-semibold block leading-tight">Offered Only</span>
-                <span className="text-xs font-mono font-bold text-sky-200">{offered} Assets</span>
-              </div>
-            </div>
-          )}
-
-          {/* Unknown / Hidden */}
-          <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/60 px-3 py-1.5 rounded-lg">
-            <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-tight">Assets with unknowns</span>
-              <span className="text-xs font-mono font-bold text-slate-300">{unknowns} Assets</span>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

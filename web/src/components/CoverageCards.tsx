@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, FileCode, Cloud, HelpCircle, AlertOctagon, XCircle } from 'lucide-react';
+import { Network, FileCode, Cloud } from 'lucide-react';
 import type { CoverageItem, CoverageUnit, SourceType } from '../types/contract';
 
 interface CoverageCardsProps {
@@ -29,96 +29,84 @@ export const CoverageCards: React.FC<CoverageCardsProps> = ({ coverage }) => {
       title: 'Network Traffic',
       icon: Network,
       stats: aggregate('pcap'),
-      label: 'PCAP Dissection (TShark)',
-      color: 'text-cyan-400',
-      bgColor: 'bg-cyan-500/10',
-      borderColor: 'border-cyan-500/20'
+      label: 'TLS handshakes · PCAP',
+      accent: 'border-t-sky-400',
+      iconStyle: 'border-sky-200 bg-sky-50 text-sky-700',
     },
     {
       title: 'Source Code',
       icon: FileCode,
       stats: aggregate('source'),
-      label: 'Python, Java, Go Repositories',
-      color: 'text-amber-400',
-      bgColor: 'bg-amber-500/10',
-      borderColor: 'border-amber-500/20'
+      label: 'Python · Java · Go',
+      accent: 'border-t-sky-400',
+      iconStyle: 'border-violet-200 bg-violet-50 text-violet-700',
     },
     {
       title: 'Cloud Infrastructure',
       icon: Cloud,
       stats: aggregate('cloud'),
-      label: 'AWS KMS, ALB, ACM Certificates',
-      color: 'text-indigo-400',
-      bgColor: 'bg-indigo-500/10',
-      borderColor: 'border-indigo-500/20'
+      label: 'AWS KMS · ALB · ACM',
+      accent: 'border-t-sky-400',
+      iconStyle: 'border-cyan-200 bg-cyan-50 text-cyan-700',
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-3">
       {cards.map((card) => {
         const Icon = card.icon;
 
         return (
           <div
             key={card.title}
-            className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden"
+            className={`rounded-md border border-t-[3px] border-slate-200 bg-white p-3 ${card.accent}`}
           >
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg ${card.bgColor} ${card.color} ${card.borderColor} border`}>
-                    <Icon className="w-4 h-4" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`rounded border p-2 ${card.iconStyle}`}>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-200">{card.title}</h3>
-                    <p className="text-[11px] text-slate-400">{card.label}</p>
+                    <h3 className="text-[15px] font-semibold text-slate-900">{card.title}</h3>
+                    <p className="mt-0.5 text-[13px] text-slate-500">{card.label}</p>
                   </div>
                 </div>
               </div>
 
               {card.stats.length === 0 && (
-                <p className="text-xs text-slate-400 mt-3">No coverage reported.</p>
+                <p className="mt-4 border-t border-slate-100 pt-3 text-[13px] text-slate-500">No coverage reported.</p>
               )}
-              {card.stats.map((stats) => (
-                <section key={stats.unit} aria-label={`${card.title}: ${stats.unit}`} className="mt-3 pt-3 border-t border-slate-800/80">
-                  <div className="text-sm font-mono text-white mb-2">
-                    <strong>{stats.assessed + stats.unknown + stats.unsupported + stats.failed}</strong>{' '}
-                    <span className="text-slate-400">{stats.unit}</span>
+              {card.stats.map((stats) => {
+                const total = stats.assessed + stats.unknown + stats.unsupported + stats.failed;
+                const segments = [
+                  { label: 'Assessed', value: stats.assessed, color: 'bg-sky-500', text: 'text-sky-700' },
+                  { label: 'Unknown', value: stats.unknown, color: 'bg-amber-400', text: 'text-amber-700' },
+                  { label: 'Unsupp.', value: stats.unsupported, color: 'bg-slate-300', text: 'text-slate-500' },
+                  { label: 'Failed', value: stats.failed, color: 'bg-rose-500', text: stats.failed > 0 ? 'text-rose-600' : 'text-slate-500' },
+                ];
+                return (
+                <section key={stats.unit} aria-label={`${card.title}: ${stats.unit}`} className="mt-3 border-t border-slate-100 pt-2">
+                  <div className="mb-2 flex items-baseline gap-1.5 text-slate-900">
+                    <strong className="font-mono text-2xl font-semibold tracking-tight">{total}</strong>{' '}
+                    <span className="text-[13px] text-slate-500">{stats.unit}</span>
                   </div>
-                  {/* 4-way disjoint coverage breakdown: Assessed, Unknown, Unsupported, Failed */}
-                  <div className="grid grid-cols-4 gap-1.5 text-center">
-                    <div className="bg-slate-950/40 rounded-lg p-1.5 border border-slate-800/50">
-                      <span className="text-[9px] text-emerald-400 font-medium block">Assessed</span>
-                      <span className="text-xs font-mono font-bold text-slate-200">{stats.assessed}</span>
-                    </div>
-                    <div className="bg-slate-950/40 rounded-lg p-1.5 border border-slate-800/50">
-                      <span className="text-[9px] text-amber-400 font-medium flex items-center justify-center gap-0.5">
-                        <HelpCircle className="w-2.5 h-2.5" /> Unknown
-                      </span>
-                      <span className="text-xs font-mono font-bold text-slate-200">{stats.unknown}</span>
-                    </div>
-                    <div className="bg-slate-950/40 rounded-lg p-1.5 border border-slate-800/50">
-                      <span className="text-[9px] text-slate-400 font-medium flex items-center justify-center gap-0.5">
-                        <AlertOctagon className="w-2.5 h-2.5" /> Unsupp.
-                      </span>
-                      <span className="text-xs font-mono font-bold text-slate-200">{stats.unsupported}</span>
-                    </div>
-                    <div
-                      className={`rounded-lg p-1.5 border ${
-                        stats.failed > 0
-                          ? 'bg-rose-950/40 border-rose-800 text-rose-300'
-                          : 'bg-slate-950/40 border-slate-800/50 text-slate-400'
-                      }`}
-                    >
-                      <span className="text-[9px] font-medium flex items-center justify-center gap-0.5">
-                        <XCircle className="w-2.5 h-2.5" /> Failed
-                      </span>
-                      <span className="text-xs font-mono font-bold">{stats.failed}</span>
-                    </div>
+                  <div className="mb-3 flex h-1.5 overflow-hidden rounded-sm bg-slate-100" aria-hidden="true">
+                    {segments.map((segment) => (
+                      <div key={segment.label} className={segment.color} style={{ width: `${total > 0 ? (segment.value / total) * 100 : 0}%` }} />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {segments.map((segment) => (
+                      <div key={segment.label}>
+                        <span className={`block text-[12px] font-medium ${segment.text}`} title={segment.label === 'Unsupp.' ? 'Unsupported' : undefined}>{segment.label}</span>
+                        <span className="mt-1.5 block font-mono text-xl font-medium leading-7 text-slate-900">{segment.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </section>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

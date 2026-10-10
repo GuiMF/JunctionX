@@ -12,10 +12,11 @@ frontend regression checks and `npm run build` for TypeScript and production bui
 validation. Use Node.js 22+.
 
 The dashboard starts in demo mode with backend-generated fixtures from
-`../examples/`. Select supported files and click **Scan Selected Files** to submit
+`../examples/`. Open **Import data**, select supported files, and click **Scan selected files** to submit
 raw inputs to `POST /api/scans`. Related AWS snapshots are bundled together.
 Completed, partial, and failed scans show their own findings, coverage, scores,
-input errors, and export IDs. Reset restores the offline demo; migration remains
+input errors, and export IDs. **Load demo dataset** in the import dialog restores
+the offline demo; migration remains
 a labeled synthetic comparison.
 
 Start the API with `./scripts/run-local.sh` from the repository root. Scans and

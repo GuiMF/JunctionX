@@ -4,8 +4,8 @@ QuantumTrace discovers cryptographic facts in Python/Java/Go source, saved netwo
 captures and AWS JSON snapshots. A shared rule engine assesses findings, calculates
 asset exposure, and exports JSON or a schema-validated CycloneDX 1.6 CBOM.
 
-The React dashboard starts with clearly labeled demo fixtures. Select source,
-AWS snapshot, or capture files and click **Scan Selected Files** to analyze them
+The React dashboard starts with synthetic demo fixtures. Open **Import data**, select source,
+AWS snapshot, or capture files and click **Scan selected files** to analyze them
 with the local API, inspect the returned findings, and export the active scan.
 
 ## Run locally
@@ -49,8 +49,8 @@ TShark installed on the host. Source and cloud scans do not require TShark.
 
 ## Dashboard workflow
 
-Select `.py`, `.java`, `.go`, `.pcap`, `.pcapng`, `.cap`, or AWS snapshot `.json`
-files, then click **Scan Selected Files**. Source and cloud files must be UTF-8;
+Open **Import data** and select `.py`, `.java`, `.go`, `.pcap`, `.pcapng`, `.cap`, or AWS snapshot `.json`
+files, then click **Scan selected files**. Source and cloud files must be UTF-8;
 captures are encoded as base64. JSON must contain a `Keys`, `Certificates`, or
 `LoadBalancers` snapshot, or the [documented AWS bundle](docs/api.md). Select related
 AWS snapshots together: the dashboard bundles them into one input so certificate
@@ -63,9 +63,9 @@ selections explain how to correct them before submission. The previous result st
 visible while scanning. A returned `partial` or `failed` result replaces it and
 shows per-input errors; `201` alone does not mean all inputs succeeded.
 
-Use **Retry Scan** after fixing a connection problem, or reselect corrected files.
-Scans time out after 60 seconds; exports after 10 seconds. **Cancel Scan** or
-**Reset Data** discards pending results in the browser (server work may continue).
+Use **Retry scan** after fixing a connection problem, or reselect corrected files.
+Scans time out after 60 seconds; exports after 10 seconds. **Cancel scan** or
+**Load demo dataset** discards pending results in the browser (server work may continue).
 Reset restores the offline demo and its JSON/CBOM exports. Live exports use the
 active scan ID; if it was evicted or the API restarted, scan the files again.
 The migration tab is a separate, labeled synthetic demo comparison.
