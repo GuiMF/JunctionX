@@ -1,0 +1,125 @@
+{
+  "fixture_format": "quantumtrace.normalized.v1",
+  "result": {
+    "findings": [
+      {
+        "schema_version": "1.0",
+        "id": "finding-12d701235a71dc82def5d27cbf1e4f13",
+        "asset_id": "asset-8ff1a0f49750812b29386b9321c3aa83",
+        "source_type": "pcap",
+        "algorithm": "X25519",
+        "parameters": {
+          "key_bits": null,
+          "mode": null,
+          "named_group": null,
+          "hash_algorithm": null,
+          "iterations": null
+        },
+        "usage": "key_establishment",
+        "evidence_kind": "observed",
+        "evidence": [
+          {
+            "file": "synthetic/pcap-example",
+            "locator": "frame 18; stream 1",
+            "detail": "Synthetic adapter observation: X25519 for key_establishment; not a real scan."
+          }
+        ],
+        "confidence": "high",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [],
+        "owner": null,
+        "observed_at": "2026-10-10T12:00:00Z",
+        "rule_id": null,
+        "rationale": null,
+        "recommendation": null,
+        "references": []
+      },
+      {
+        "schema_version": "1.0",
+        "id": "finding-f10313c2fe618558541601a1d8926d1f",
+        "asset_id": "asset-8ff1a0f49750812b29386b9321c3aa83",
+        "source_type": "pcap",
+        "algorithm": "X25519MLKEM768",
+        "parameters": {
+          "key_bits": null,
+          "mode": null,
+          "named_group": null,
+          "hash_algorithm": null,
+          "iterations": null
+        },
+        "usage": "key_establishment",
+        "evidence_kind": "offered",
+        "evidence": [
+          {
+            "file": "synthetic/pcap-example",
+            "locator": "frame 15; stream 1",
+            "detail": "Synthetic adapter observation: X25519MLKEM768 for key_establishment; not a real scan."
+          }
+        ],
+        "confidence": "high",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [],
+        "owner": null,
+        "observed_at": "2026-10-10T12:00:00Z",
+        "rule_id": null,
+        "rationale": null,
+        "recommendation": null,
+        "references": []
+      },
+      {
+        "schema_version": "1.0",
+        "id": "finding-e6febb541a370d1e013ce99779157046",
+        "asset_id": "asset-8ff1a0f49750812b29386b9321c3aa83",
+        "source_type": "pcap",
+        "algorithm": "unknown",
+        "parameters": {
+          "key_bits": null,
+          "mode": null,
+          "named_group": null,
+          "hash_algorithm": null,
+          "iterations": null
+        },
+        "usage": "signature",
+        "evidence_kind": "observed",
+        "evidence": [
+          {
+            "file": "synthetic/pcap-example",
+            "locator": "stream 1; encrypted TLS 1.3 authentication unavailable",
+            "detail": "Synthetic adapter observation: unknown for signature; not a real scan."
+          }
+        ],
+        "confidence": "high",
+        "quantum_status": "unknown",
+        "challenge_tier": "unknown",
+        "classical_issues": [],
+        "posture_issues": [],
+        "owner": null,
+        "observed_at": "2026-10-10T12:00:00Z",
+        "rule_id": null,
+        "rationale": null,
+        "recommendation": null,
+        "references": []
+      }
+    ],
+    "coverage": [
+      {
+        "source_type": "pcap",
+        "input_name": "network-example.json",
+        "unit": "sessions",
+        "assessed": 1,
+        "unknown": 0,
+        "unsupported": 0,
+        "failed": 0
+      }
+    ],
+    "errors": [],
+    "relationships": [],
+    "tool_versions": {
+      "synthetic-example-builder": "1.0.0"
+    }
+  }
+}

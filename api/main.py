@@ -1,0 +1,93 @@
+"""Run locally with: uvicorn api.main:app --host 127.0.0.1 --port 8000."""
+
+from typing import Literal
+
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from core.models import ScanRequest, ScanResult
+from core.service import ScanService
+from export.cyclonedx import export_cyclonedx
+
+
+def create_app(
+    service: ScanService | None = None, *, cors_origins: list[str] | None = None
+) -> FastAPI:
+    app = FastAPI(
+        title="QuantumTrace local scan API",
+        version="1.0.0",
+        description=(
+            "Synchronous local integration API. Results are held in bounded process memory. "
+            "Normalized inputs are labelled synthetic fixtures; raw inputs need registered scanners."
+        ),
+    )
+    origins = cors_origins if cors_origins is not None else [
+        "http://localhost:3000", "http://127.0.0.1:3000",
+        "http://localhost:5173", "http://127.0.0.1:5173",
+    ]
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Content-Type"],
+            allow_credentials=False,
+        )
+    app.state.scan_service = service if service is not None else ScanService()
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(_, exc: RequestValidationError) -> JSONResponse:
+        # FastAPI's default includes the invalid input, which can be an entire
+        # scan containing source code, private keys, or cloud credentials.
+        # Escape lone surrogates in error paths/messages so malformed JSON text
+        # still produces a validation response instead of a serialization 500.
+        def safe_text(value: str) -> str:
+            return value.encode("utf-8", errors="backslashreplace").decode("utf-8")
+
+        return JSONResponse(status_code=422, content={"detail": [
+            {
+                "type": safe_text(error["type"]),
+                "loc": [safe_text(part) if isinstance(part, str) else part for part in error["loc"]],
+                "msg": safe_text(error["msg"]),
+            }
+            for error in exc.errors()
+        ]})
+
+    @app.post("/api/scans", response_model=ScanResult, status_code=201)
+    def create_scan(request: ScanRequest) -> ScanResult:
+        return app.state.scan_service.run_scan(request)
+
+    def require_scan(scan_id: str) -> ScanResult:
+        scan = app.state.scan_service.get_scan(scan_id)
+        if scan is None:
+            raise HTTPException(status_code=404, detail="Scan not found or evicted from local memory")
+        return scan
+
+    @app.get("/api/scans/{scan_id}", response_model=ScanResult)
+    def get_scan(scan_id: str) -> ScanResult:
+        return require_scan(scan_id)
+
+    @app.get("/api/scans/{scan_id}/export")
+    def get_export(
+        scan_id: str,
+        format: Literal["json", "cyclonedx"] = Query(default="json"),
+    ) -> JSONResponse:
+        scan = require_scan(scan_id)
+        document = (
+            export_cyclonedx(scan)
+            if format == "cyclonedx"
+            else scan.model_dump(mode="json")
+        )
+        suffix = "cdx.json" if format == "cyclonedx" else "json"
+        return JSONResponse(
+            content=document,
+            media_type="application/vnd.cyclonedx+json" if format == "cyclonedx" else "application/json",
+            headers={"Content-Disposition": f'attachment; filename="{scan.scan_id}.{suffix}"'},
+        )
+
+    return app
+
+
+app = create_app()
