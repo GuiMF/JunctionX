@@ -81,10 +81,9 @@ policy names retain null capabilities.
 
 Run `.venv/bin/python -m pytest -q` for cloud unit tests, raw service/API tests,
 JSON/CycloneDX validation and the existing core suite. Browser tests may be skipped
-when Chrome/Chromium is absent. GitHub Actions runs these trusted local fixtures
-with `--no-sandbox` to allow Chrome to start in its restricted runner environment;
-local runs keep Chrome's normal sandbox. This setting is confined to the test
-process, not the application or cloud adapter.
+when Chrome/Chromium is absent. Tests prefer installed Google Chrome over Chromium
+and retain the browser sandbox. The runner's Chromium aborted or timed out before
+page validation; this was a test environment issue, not an established board bug.
 
 ## Standalone directory report
 

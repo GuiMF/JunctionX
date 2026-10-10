@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 import shutil
 import re
 import subprocess
@@ -8,7 +7,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CHROME = (shutil.which("chromium") or shutil.which("google-chrome")
+CHROME = (shutil.which("google-chrome") or shutil.which("chromium")
           or shutil.which("chromium-browser"))
 if not CHROME:
     mac_chrome = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
@@ -36,10 +35,8 @@ class BoardTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             page = Path(temp) / "board.html"
             page.write_text(html.replace("</body>", script + "</body>"))
-            # CI's restricted Chrome sandbox cannot start; only trusted local board fixtures are loaded.
-            sandbox_flags = ["--no-sandbox"] if os.environ.get("GITHUB_ACTIONS") == "true" else []
             result = subprocess.run(
-                [CHROME, *sandbox_flags, "--headless", "--no-first-run", "--no-default-browser-check",
+                [CHROME, "--headless", "--no-first-run", "--no-default-browser-check",
                  f"--user-data-dir={temp}/profile", "--virtual-time-budget=2000",
                  "--dump-dom", page.as_uri()],
                 capture_output=True, text=True, timeout=30,
