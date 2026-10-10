@@ -143,3 +143,30 @@ def test_cors_can_be_disabled_or_explicitly_configured():
     response = configured.options("/api/scans/test", headers=headers)
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:9000"
+
+
+def test_raw_pcap_scan(client):
+    import base64
+    content = base64.b64encode(b"dummy pcap bytes").decode("utf-8")
+    body = {
+        "inputs": [
+            {
+                "name": "network.pcap",
+                "source_type": "pcap",
+                "format": "raw",
+                "content": content,
+                "encoding": "base64"
+            }
+        ]
+    }
+    # This will fail to open a real pcap because of dummy bytes, 
+    # but the API should accept it and adapter should return an error result, 
+    # proving it's registered and running.
+    response = client.post("/api/scans", json=body)
+    assert response.status_code == 201
+    scan = response.json()
+    assert scan["status"] in ["completed", "partial", "failed"]
+    # Verify the pcap coverage or errors exist
+    has_pcap_coverage = any(c["source_type"] == "pcap" for c in scan.get("coverage", []))
+    has_pcap_error = any(e["source_type"] == "pcap" for e in scan.get("errors", []))
+    assert has_pcap_coverage or has_pcap_error
