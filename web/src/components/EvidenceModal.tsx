@@ -1,183 +1,79 @@
-import React from 'react';
-import { X, ExternalLink, ShieldAlert, CheckCircle, FileText, Network, Cloud, ShieldCheck } from 'lucide-react';
-import type { Finding } from '../types/contract';
+import React, { useEffect, useRef } from 'react';
+import { X, ExternalLink, ShieldAlert, ArrowRight, FileText, Network, Cloud, ScanLine } from 'lucide-react';
+import type { Finding, EvidenceKind } from '../types/contract';
 
-interface EvidenceModalProps {
-  finding: Finding | null;
-  onClose: () => void;
-}
+interface EvidenceModalProps { finding: Finding | null; onClose: () => void; }
+const evidenceDescriptions: Record<EvidenceKind, string> = {
+  observed: 'Observed in captured traffic.',
+  offered: 'Advertised by a client. This does not establish the negotiated algorithm.',
+  configured: 'Present in cloud configuration. Runtime negotiation has not been verified by this evidence.',
+  declared: 'Declared in source code. This does not establish runtime execution.',
+};
+const tierStyles = {
+  critical: 'border-rose-200 bg-rose-50 text-rose-600', medium: 'border-amber-200 bg-amber-50 text-amber-700',
+  resilient: 'border-emerald-200 bg-emerald-50 text-emerald-700', unknown: 'border-slate-200 bg-slate-100 text-slate-600',
+};
 
 export const EvidenceModal: React.FC<EvidenceModalProps> = ({ finding, onClose }) => {
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const isOpen = !!finding;
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); onCloseRef.current(); }
+      if (event.key !== 'Tab') return;
+      const elements = Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]') ?? []);
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !drawerRef.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !drawerRef.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => { document.removeEventListener('keydown', handleKeyDown); document.body.style.overflow = previousOverflow; previousFocus?.focus(); };
+  }, [isOpen]);
   if (!finding) return null;
-
-  const getSourceIcon = (source: string) => {
-    switch (source) {
-      case 'pcap':
-        return <Network className="w-4 h-4 text-cyan-400" />;
-      case 'source':
-        return <FileText className="w-4 h-4 text-amber-400" />;
-      case 'cloud':
-        return <Cloud className="w-4 h-4 text-indigo-400" />;
-      default:
-        return null;
-    }
-  };
-
-  const getTierBadge = (tier: string) => {
-    switch (tier) {
-      case 'critical':
-        return <span className="px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">Critical Exposure</span>;
-      case 'medium':
-        return <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">Medium Risk</span>;
-      case 'resilient':
-        return <span className="px-2 py-0.5 rounded text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">PQ Resilient</span>;
-      default:
-        return <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-500/20 text-slate-300 border border-slate-500/30">Unknown Status</span>;
-    }
-  };
+  const SourceIcon = finding.source_type === 'pcap' ? Network : finding.source_type === 'source' ? FileText : Cloud;
+  const sourceLabel = finding.source_type === 'pcap' ? 'Network capture' : finding.source_type === 'source' ? 'Source code' : 'Cloud configuration';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-slate-800 border border-slate-700">
-              {getSourceIcon(finding.source_type)}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white font-mono">{finding.algorithm}</h3>
-                {getTierBadge(finding.challenge_tier)}
-              </div>
-              <p className="text-xs text-slate-400 font-mono mt-0.5">Asset ID: {finding.asset_id}</p>
-            </div>
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby="evidence-title" aria-describedby="evidence-description" className="flex h-full w-full max-w-[600px] flex-col border-l border-slate-300 bg-white shadow-xl">
+        <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-3.5">
+          <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-600"><ScanLine className="h-4 w-4 text-sky-600" />Evidence inspector</div>
+          <button ref={closeRef} aria-label="Close evidence inspector" onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500"><X className="h-4 w-4" /></button>
+        </header>
+        <div className="flex-1 overflow-y-auto px-6 py-6 text-[15px]">
+          <div className="mb-6">
+            <div className="mb-3 flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-[13px] text-slate-500"><SourceIcon className="h-3.5 w-3.5" />{sourceLabel}</span><span className={`rounded border px-2 py-0.5 text-[13px] font-semibold capitalize ${tierStyles[finding.challenge_tier]}`}>{finding.challenge_tier} tier</span></div>
+            <h2 id="evidence-title" className="break-words font-mono text-xl font-semibold tracking-tight text-slate-900">{finding.algorithm}</h2>
+            <p id="evidence-description" className="mt-2 break-all font-mono text-[13px] text-slate-500">{finding.asset_id}</p>
+            <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-[13px]">
+              <div><dt className="mb-1 text-slate-500">Usage</dt><dd className="capitalize text-slate-800">{finding.usage.replace(/_/g, ' ')}</dd></div>
+              <div><dt className="mb-1 text-slate-500">Owner</dt><dd className="text-slate-800">{finding.owner || 'Unassigned'}</dd></div>
+              <div><dt className="mb-1 text-slate-500">Quantum classification</dt><dd className="capitalize text-slate-800">{finding.quantum_status.replace(/_/g, ' ')}</dd></div>
+              <div><dt className="mb-1 text-slate-500">Confidence</dt><dd className="capitalize text-slate-800">{finding.confidence}</dd></div>
+            </dl>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <section className="mb-6"><h3 className="mb-2 text-[13px] font-semibold text-slate-900">Why it matters</h3><p className="leading-relaxed text-slate-600">{finding.rationale || 'No assessment rationale available.'}</p><p className="mt-2 font-mono text-[12px] text-slate-500">RULE {finding.rule_id || 'Not available'}</p></section>
+          <section className="mb-6">
+            <div className="mb-2 flex items-center justify-between"><h3 className="text-[13px] font-semibold text-slate-900">Traceable evidence</h3><span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 font-mono text-[12px] capitalize text-sky-700">{finding.evidence_kind}</span></div>
+            <p className="mb-3 text-[13px] leading-relaxed text-slate-500">{evidenceDescriptions[finding.evidence_kind]}</p>
+            <div className="space-y-3">{finding.evidence.map((evidence, index) => <div key={index} className="overflow-hidden rounded-md border border-slate-200"><div className="space-y-1 border-b border-slate-200 bg-slate-50 px-3 py-2.5 font-mono text-[12px]"><p className="break-all text-slate-600"><span className="mr-2 text-slate-500">FILE</span>{evidence.file}</p><p className="break-all text-sky-700"><span className="mr-2 text-slate-500">LOCATOR</span>{evidence.locator}</p></div><pre className="overflow-x-auto whitespace-pre-wrap break-words bg-slate-50/50 p-3 font-mono text-[13px] leading-5 text-slate-700">{evidence.detail}</pre></div>)}</div>
+            {finding.evidence.length === 0 && <p className="rounded border border-slate-200 bg-slate-50 p-3 text-[13px] text-slate-500">No evidence records available.</p>}
+          </section>
+          {finding.classical_issues.length > 0 && <section className="mb-6"><h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-amber-700"><ShieldAlert className="h-3.5 w-3.5" />Classical weaknesses</h3><ul className="space-y-2">{finding.classical_issues.map((issue, index) => <li key={index} className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] leading-relaxed text-amber-800">{issue}</li>)}</ul></section>}
+          {finding.posture_issues.length > 0 && <section className="mb-6"><h3 className="mb-2 text-[13px] font-semibold text-slate-900">Operational issues</h3><ul className="space-y-2">{finding.posture_issues.map((issue, index) => <li key={index} className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] leading-relaxed text-slate-600">{issue}</li>)}</ul></section>}
+          <section className="mb-6 rounded-md border border-sky-200 bg-sky-50 p-4"><h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-sky-800"><ArrowRight className="h-3.5 w-3.5" />Recommended action</h3><p className="text-[13px] leading-relaxed text-sky-900">{finding.recommendation || 'No specific migration action defined.'}</p></section>
+          {finding.references.length > 0 && <section><h3 className="mb-2 text-[13px] font-semibold text-slate-900">Standards & references</h3><div className="space-y-2">{finding.references.map((url, index) => <a key={index} href={url} target="_blank" rel="noreferrer" className="flex items-start gap-1.5 break-all font-mono text-[12px] leading-4 text-sky-700 hover:underline"><ExternalLink className="mt-0.5 h-3 w-3 shrink-0" />{url}</a>)}</div></section>}
         </div>
-
-        {/* Content body */}
-        <div className="p-6 overflow-y-auto space-y-5 text-sm">
-          {/* Evidence Card */}
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Verifiable Evidence</span>
-              <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-900 px-2 py-0.5 rounded">
-                Kind: {finding.evidence_kind}
-              </span>
-            </div>
-            {finding.evidence.map((ev, index) => (
-              <div key={index} className="space-y-2 mt-2">
-                <div className="flex items-center gap-2 text-xs font-mono text-slate-300 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-                  <span className="text-slate-500">File:</span>
-                  <span className="text-cyan-300 font-semibold">{ev.file}</span>
-                  <span className="text-slate-600">|</span>
-                  <span className="text-slate-500">Locator:</span>
-                  <span className="text-amber-300 font-semibold">{ev.locator}</span>
-                </div>
-                <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-800 text-xs text-slate-300 font-mono leading-relaxed whitespace-pre-wrap">
-                  {ev.detail}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Rationale & Classification */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Detection & Rationale</h4>
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
-              <p className="mb-2 font-medium text-slate-200">{finding.rationale}</p>
-              <div className="text-[11px] text-slate-500 font-mono">
-                Evaluated by Rule: <span className="text-slate-400">{finding.rule_id || 'N/A'}</span> | Confidence:{' '}
-                <span className="text-slate-400 uppercase">{finding.confidence}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Classical Issues */}
-          {finding.classical_issues && finding.classical_issues.length > 0 && (
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5" /> Classical Flaws & Policy Warnings
-              </h4>
-              <ul className="space-y-1.5">
-                {finding.classical_issues.map((issue, idx) => (
-                  <li
-                    key={idx}
-                    className="p-2.5 bg-amber-950/20 border border-amber-900/40 rounded-lg text-xs text-amber-200"
-                  >
-                    {issue}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Posture Issues */}
-          {finding.posture_issues && finding.posture_issues.length > 0 && (
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-2 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" /> Operational Posture Warnings
-              </h4>
-              <ul className="space-y-1.5">
-                {finding.posture_issues.map((issue, idx) => (
-                  <li
-                    key={idx}
-                    className="p-2.5 bg-purple-950/20 border border-purple-900/40 rounded-lg text-xs text-purple-200"
-                  >
-                    {issue}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Actionable Recommendation */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
-              <CheckCircle className="w-3.5 h-3.5" /> Migration Next Step
-            </h4>
-            <div className="p-3.5 bg-emerald-950/20 border border-emerald-900/40 rounded-xl text-xs text-emerald-200 leading-relaxed font-medium">
-              {finding.recommendation || 'No specific migration action defined.'}
-            </div>
-          </div>
-
-          {/* References */}
-          {finding.references && finding.references.length > 0 && (
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Standardization Sources</h4>
-              <div className="space-y-1">
-                {finding.references.map((url, i) => (
-                  <a
-                    key={i}
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 hover:underline font-mono"
-                  >
-                    <ExternalLink className="w-3 h-3" /> {url}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between text-xs text-slate-400">
-          <span>Owner: {finding.owner || 'Unassigned'}</span>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
-          >
-            Close Details
-          </button>
-        </div>
+        <footer className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-6 py-3"><span className="text-[12px] text-slate-500">Primitive-level assessment · Review in system context</span><button onClick={onClose} className="h-8 rounded border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-slate-100">Close inspector</button></footer>
       </div>
     </div>
   );
