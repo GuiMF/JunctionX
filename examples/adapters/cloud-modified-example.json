@@ -13,7 +13,8 @@
           "mode": null,
           "named_group": "X25519MLKEM768",
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "key_establishment",
         "evidence_kind": "configured",
@@ -47,7 +48,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "signature",
         "evidence_kind": "configured",
@@ -83,7 +85,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "encryption",
         "evidence_kind": "configured",
@@ -135,6 +138,8 @@
     ],
     "tool_versions": {
       "synthetic-example-builder": "1.0.0"
-    }
+    },
+    "assets": [],
+    "snapshots": []
   }
 }

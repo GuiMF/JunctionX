@@ -33,6 +33,7 @@ class TestNetworkAdapter(unittest.TestCase):
         mock_packet.tls.handshake_random = "dummyrandom"
         mock_packet.number = 100
         mock_packet.sniff_timestamp = "1672531200.0"
+        del mock_packet.tls.handshake_extensions_key_share_group
         
         mock_capture_instance = MagicMock()
         mock_capture_instance.__iter__.return_value = [mock_packet]

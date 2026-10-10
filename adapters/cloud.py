@@ -1,0 +1,359 @@
+"""Read the supplied AWS-style snapshots; risk scoring belongs to the core."""
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import math
+from pathlib import Path
+
+
+KMS_REFERENCE = "https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-choose-key-spec.html"
+ALB_REFERENCE = "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html"
+NLB_REFERENCE = "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/describe-ssl-policies.html"
+ACM_REFERENCE = "https://docs.aws.amazon.com/acm/latest/APIReference/API_CertificateDetail.html"
+MAPPING_VERSION = "cloud-1.1"
+INPUTS = (
+    ("kms_key_inventory.json", "Keys", "kms_key", "KeyArn"),
+    ("acm_certificates.json", "Certificates", "certificate", "CertificateArn"),
+    ("load_balancer_listeners.json", "LoadBalancers", "load_balancer", "LoadBalancerArn"),
+)
+
+
+ECDHE_TLS12_CIPHERS = [
+    "ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256",
+    "ECDHE-ECDSA-AES128-SHA256", "ECDHE-RSA-AES128-SHA256",
+    "ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-RSA-AES256-GCM-SHA384",
+    "ECDHE-ECDSA-AES256-SHA384", "ECDHE-RSA-AES256-SHA384",
+]
+TLS12_CIPHERS = ECDHE_TLS12_CIPHERS + [
+    "AES128-GCM-SHA256", "AES128-SHA256", "AES256-GCM-SHA384", "AES256-SHA256",
+]
+LEGACY_CIPHERS = TLS12_CIPHERS + [
+    "ECDHE-ECDSA-AES128-SHA", "ECDHE-RSA-AES128-SHA",
+    "ECDHE-ECDSA-AES256-SHA", "ECDHE-RSA-AES256-SHA", "AES128-SHA", "AES256-SHA",
+]
+FS_CIPHERS = [
+    "ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256",
+    "ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-RSA-AES256-GCM-SHA384",
+]
+TLS13_CIPHERS = ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"]
+
+# shortcut: only supplied policies and the demo policy, extend from AWS docs for new inputs.
+# Cipher lists describe membership, not AWS preference order or observed selections.
+POLICIES = {
+    "ELBSecurityPolicy-2016-08": (["TLSv1.0", "TLSv1.1", "TLSv1.2"], False, LEGACY_CIPHERS),
+    "ELBSecurityPolicy-TLS-1-1-2017-01": (["TLSv1.1", "TLSv1.2"], False, LEGACY_CIPHERS),
+    "ELBSecurityPolicy-TLS-1-2-2017-01": (["TLSv1.2"], False, TLS12_CIPHERS),
+    "ELBSecurityPolicy-FS-1-2-Res-2020-10": (["TLSv1.2"], False, FS_CIPHERS),
+    "ELBSecurityPolicy-TLS13-1-2-2021-06": (["TLSv1.2", "TLSv1.3"], False, TLS13_CIPHERS + ECDHE_TLS12_CIPHERS),
+    "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09": (["TLSv1.2", "TLSv1.3"], True, TLS13_CIPHERS + FS_CIPHERS),
+}
+KMS_KEY_SPECS = {
+    "RSA_2048": ("RSA", 2048, None),
+    "RSA_3072": ("RSA", 3072, None),
+    "RSA_4096": ("RSA", 4096, None),
+    "ECC_NIST_P256": ("EC", 256, "secp256r1"),
+    "ECC_NIST_P384": ("EC", 384, "secp384r1"),
+}
+CERTIFICATE_KEY_SPECS = {
+    **{spec: parameters for spec, parameters in KMS_KEY_SPECS.items() if spec.startswith("RSA_")},
+    "EC_prime256v1": ("EC", 256, "secp256r1"),
+    "EC_secp384r1": ("EC", 384, "secp384r1"),
+}
+
+
+def _date(value):
+    if not isinstance(value, str):
+        raise ValueError("Expected an ISO-8601 timestamp")
+    result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if result.tzinfo is None:
+        raise ValueError("Timestamp must include a timezone")
+    try:
+        return result.astimezone(timezone.utc)
+    except OverflowError as exc:
+        raise ValueError("Timestamp is outside the supported UTC range") from exc
+
+
+def _json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"Duplicate JSON field: {key}")
+        result[key] = value
+    return result
+
+
+def _invalid_json_constant(value):
+    raise ValueError(f"Invalid JSON constant: {value}")
+
+
+def _json_float(value):
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError(f"JSON number is outside the supported range: {value}")
+    return result
+
+
+def _evidence(file, locator, value):
+    return {"file": str(file), "locator": locator, "detail": json.dumps(value)}
+
+
+def _validate_record(record, identifier):
+    if not isinstance(record, dict):
+        raise ValueError("Resource must be an object")
+    arn = record.get(identifier)
+    if not isinstance(arn, str) or not arn.startswith("arn:aws:"):
+        raise ValueError(f"Missing or invalid {identifier}")
+    if "Listeners" in record and not isinstance(record["Listeners"], list):
+        raise ValueError("Listeners must be a list")
+    for field in ("Tags", "Certificates", "DefaultActions"):
+        if field in record and (
+            not isinstance(record[field], list)
+            or not all(isinstance(item, dict) for item in record[field])
+        ):
+            raise ValueError(f"{field} must be a list of objects")
+    for field in ("SigningAlgorithms", "EncryptionAlgorithms", "InUseBy"):
+        if field in record and (
+            not isinstance(record[field], list)
+            or not all(isinstance(item, str) for item in record[field])
+        ):
+            raise ValueError(f"{field} must be a list of strings")
+    for certificate in record.get("Certificates", []):
+        if "CertificateArn" in certificate and not isinstance(certificate["CertificateArn"], str):
+            raise ValueError("CertificateArn reference must be a string")
+    for field in ("KeySpec", "KeyUsage", "KeyState", "KeyRotationStatus", "KeyAlgorithm",
+                  "SignatureAlgorithm", "Protocol", "SslPolicy", "Type"):
+        if field in record and not isinstance(record[field], str):
+            raise ValueError(f"{field} must be a string")
+    if "SslPolicy" in record and not record["SslPolicy"].strip():
+        raise ValueError("SslPolicy must not be blank")
+    for field in ("NotBefore", "NotAfter", "ValidTo", "DeletionDate"):
+        if field in record:
+            _date(record[field])
+    if "NotBefore" in record and "NotAfter" in record:
+        if _date(record["NotBefore"]) >= _date(record["NotAfter"]):
+            raise ValueError("NotBefore must precede NotAfter")
+    return arn
+
+
+def _scan_cloud(contents, evaluation):
+    report = {
+        "schema_version": "1.0", "mapping_version": MAPPING_VERSION,
+        "evaluated_at": evaluation.isoformat(), "assessment_status": "pending_core",
+        "assets": [], "findings": [], "relationships": [], "posture_issues": [],
+        "snapshots": [], "input_hashes": {}, "coverage": {}, "errors": [],
+    }
+    assets_by_id = {}
+
+    def error(file, locator, message):
+        report["errors"].append({"file": str(file), "locator": locator, "message": message})
+
+    def asset(record, kind, identifier, file, locator, snapshot, parent=None):
+        arn = _validate_record(record, identifier)
+        if arn in assets_by_id:
+            raise ValueError(f"Duplicate resource identifier: {arn}")
+        owner = next((tag.get("TagValue") for tag in record.get("Tags", []) if tag.get("TagKey") == "team"), None)
+        if owner is not None and not isinstance(owner, str):
+            raise ValueError("Team tag value must be a string")
+        item = {
+            "asset_id": arn, "kind": kind, "parent_id": parent, "owner": owner,
+            "snapshot_at": snapshot["GeneratedAt"], "account": snapshot.get("Account"),
+            "region": snapshot.get("Region"), "configuration": record,
+            "evidence": [_evidence(file, locator, record)],
+        }
+        assets_by_id[arn] = item
+        report["assets"].append(item)
+        if parent:
+            report["relationships"].append({
+                "source_id": parent, "target_id": arn, "kind": "has_listener", "resolved": True,
+                "evidence": [_evidence(file, locator + "/" + identifier, arn)],
+            })
+        return item
+
+    def issue(item, code, file, locator, value):
+        report["posture_issues"].append({
+            "asset_id": item["asset_id"], "code": code,
+            "evidence": [_evidence(file, locator, value)],
+        })
+
+    def finding(item, slot, algorithm, bits, group, usage, file, locator, value, reference, mode=None):
+        identity = item["asset_id"] + "|" + slot
+        if locator.rsplit("/", 1)[-1] not in item["configuration"]:
+            locator = locator.rsplit("/", 1)[0]
+            value = item["configuration"]
+        report["findings"].append({
+            "schema_version": "1.0", "id": hashlib.sha256(identity.encode()).hexdigest(),
+            "asset_id": item["asset_id"], "source_type": "cloud", "algorithm": algorithm,
+            "parameters": {"key_bits": bits, "mode": mode, "named_group": group},
+            "usage": usage, "evidence_kind": "configured", "observed_at": None,
+            "owner": item["owner"], "confidence": "high" if algorithm != "unknown" else "low",
+            "quantum_status": "unknown", "challenge_tier": "unknown", "classical_issues": [],
+            "rule_id": MAPPING_VERSION, "rationale": "Configuration snapshot; runtime use is unverified.",
+            "recommendation": None, "references": [reference],
+            "evidence": [_evidence(file, locator, value)],
+        })
+
+    for filename, collection, kind, identifier in INPUTS:
+        if filename not in contents:
+            continue
+        file, content, prefix = contents[filename]
+        coverage = {"unit": "resources", "total": None, "inventoried": 0, "failed": 0, "file_failed": False}
+        report["coverage"][kind] = coverage
+        try:
+            if isinstance(content, OSError):
+                raise content
+            report["input_hashes"][filename] = hashlib.sha256(content).hexdigest()
+            snapshot = json.loads(content, object_pairs_hook=_json_object,
+                                  parse_constant=_invalid_json_constant, parse_float=_json_float)
+            if not isinstance(snapshot, dict) or not isinstance(snapshot.get(collection), list):
+                raise ValueError(f"Expected an object with a {collection} list")
+            for field in ("Account", "Region"):
+                if field in snapshot and (not isinstance(snapshot[field], str) or not snapshot[field].strip()):
+                    raise ValueError(f"{field} must be a nonempty string")
+            generated = _date(snapshot.get("GeneratedAt"))
+            report["snapshots"].append({
+                "file": str(file), "locator": prefix + "/GeneratedAt", "generated_at": generated.isoformat(),
+                "age_seconds": (evaluation - generated).total_seconds(),
+            })
+        except (OSError, ValueError) as exc:
+            coverage["file_failed"] = True
+            error(file, prefix, str(exc))
+            continue
+        coverage["total"] = len(snapshot[collection])
+        for index, record in enumerate(snapshot[collection]):
+            pointer = prefix + f"/{collection}/{index}"
+            try:
+                item = asset(record, kind, identifier, file, pointer, snapshot)
+            except ValueError as exc:
+                coverage["failed"] += 1
+                error(file, pointer, str(exc))
+                continue
+            coverage["inventoried"] += 1
+            if kind == "kms_key":
+                usage = {"SIGN_VERIFY": "signature", "ENCRYPT_DECRYPT": "encryption"}.get(record.get("KeyUsage"), "unknown")
+                spec = record.get("KeySpec")
+                algorithm, bits, group = KMS_KEY_SPECS.get(spec, ("unknown", None, None))
+                mode = None
+                # shortcut: symmetric mapping covers the supplied region, verify others before extending.
+                if spec == "SYMMETRIC_DEFAULT" and snapshot.get("Region") == "eu-west-1":
+                    algorithm, bits, mode = "AES", 256, "GCM"
+                if algorithm == "EC" and usage == "signature":
+                    algorithm = "ECDSA"
+                finding(item, "key", algorithm, bits, group, usage, file, pointer + "/KeySpec", spec, KMS_REFERENCE, mode)
+                if "KeyUsage" in record:
+                    report["findings"][-1]["evidence"].append(_evidence(file, pointer + "/KeyUsage", record["KeyUsage"]))
+                if spec == "SYMMETRIC_DEFAULT" and "Region" in snapshot:
+                    report["findings"][-1]["evidence"].append(_evidence(file, prefix + "/Region", snapshot["Region"]))
+                for field, value, code in (
+                    ("KeyRotationStatus", "DISABLED", "rotation_disabled"),
+                    ("KeyState", "PendingDeletion", "pending_deletion"),
+                ):
+                    if record.get(field) == value:
+                        issue(item, code, file, pointer + "/" + field, value)
+                if "ValidTo" in record and _date(record["ValidTo"]) <= evaluation:
+                    issue(item, "key_material_expired", file, pointer + "/ValidTo", record["ValidTo"])
+            elif kind == "certificate":
+                algorithm, bits, group = CERTIFICATE_KEY_SPECS.get(record.get("KeyAlgorithm"), ("unknown", None, None))
+                finding(item, "public_key", algorithm, bits, group, "unknown", file, pointer + "/KeyAlgorithm", record.get("KeyAlgorithm"), ACM_REFERENCE)
+                signature = record.get("SignatureAlgorithm")
+                signatures = {"SHA256WITHRSA": "RSA", "SHA1WITHRSA": "RSA", "ECDSA_WITH_SHA256": "ECDSA", "ECDSA_WITH_SHA384": "ECDSA"}
+                finding(item, "issuer_signature", signatures.get(signature, "unknown"), None, None, "signature", file, pointer + "/SignatureAlgorithm", signature, ACM_REFERENCE)
+                digests = {"SHA1WITHRSA": "SHA1", "SHA256WITHRSA": "SHA256", "ECDSA_WITH_SHA256": "SHA256", "ECDSA_WITH_SHA384": "SHA384"}
+                report["findings"][-1]["parameters"]["hash_algorithm"] = digests.get(signature)
+                if signature == "SHA1WITHRSA":
+                    issue(item, "sha1_certificate_signature", file, pointer + "/SignatureAlgorithm", signature)
+                if "NotAfter" in record and _date(record["NotAfter"]) <= evaluation:
+                    issue(item, "certificate_expired", file, pointer + "/NotAfter", record["NotAfter"])
+                if "NotBefore" in record and _date(record["NotBefore"]) > evaluation:
+                    issue(item, "certificate_not_yet_valid", file, pointer + "/NotBefore", record["NotBefore"])
+            else:
+                listener_coverage = report["coverage"].setdefault("listener", {"unit": "resources", "total": 0, "inventoried": 0, "failed": 0, "file_failed": False})
+                for listener_index, listener in enumerate(record.get("Listeners", [])):
+                    locator = pointer + f"/Listeners/{listener_index}"
+                    listener_coverage["total"] += 1
+                    try:
+                        child = asset(listener, "listener", "ListenerArn", file, locator, snapshot, item["asset_id"])
+                    except ValueError as exc:
+                        listener_coverage["failed"] += 1
+                        error(file, locator, str(exc))
+                        continue
+                    listener_coverage["inventoried"] += 1
+                    if listener.get("Protocol") in ("HTTPS", "TLS"):
+                        name = listener.get("SslPolicy")
+                        reference = NLB_REFERENCE if record.get("Type") == "network" else ALB_REFERENCE
+                        policy = POLICIES.get(name) if record.get("Type") in ("application", "network") else None
+                        child["tls_policy"] = {
+                            "name": name, "protocols": list(policy[0]) if policy else None,
+                            "hybrid_pq_capable": policy[1] if policy else None,
+                            "cipher_suites": list(policy[2]) if policy else None,
+                            "hybrid_groups": ["SecP256r1MLKEM768", "SecP384r1MLKEM1024", "X25519MLKEM768"] if policy and policy[1] else ([] if policy else None),
+                            "negotiated_group": None, "reference": reference, "mapping_version": MAPPING_VERSION,
+                        }
+                        # Policy capabilities do not identify the negotiated algorithm.
+                        finding(child, "key_establishment", "unknown", None, None, "key_establishment", file, locator + "/SslPolicy", name, reference)
+                        if policy and any(protocol in policy[0] for protocol in ("TLSv1.0", "TLSv1.1")):
+                            issue(child, "legacy_tls_enabled", file, locator + "/SslPolicy", name)
+                    elif listener.get("Protocol") == "HTTP":
+                        child["http_actions"] = []
+                        for action_index, action in enumerate(listener.get("DefaultActions", [])):
+                            redirect = action.get("RedirectConfig")
+                            child["http_actions"].append({
+                                "type": action.get("Type"),
+                                "redirect_protocol": redirect.get("Protocol") if isinstance(redirect, dict) else None,
+                                "evidence": [_evidence(file, locator + f"/DefaultActions/{action_index}", action)],
+                            })
+                            if action.get("Type") == "forward":
+                                issue(child, "http_forwarding", file, locator + f"/DefaultActions/{action_index}", action)
+                    for ref_index, ref in enumerate(listener.get("Certificates", [])):
+                        target = ref.get("CertificateArn")
+                        ref_locator = locator + f"/Certificates/{ref_index}"
+                        evidence = _evidence(file, ref_locator + "/CertificateArn", target) if "CertificateArn" in ref else _evidence(file, ref_locator, ref)
+                        certificate = assets_by_id.get(target) if isinstance(target, str) else None
+                        resolved = certificate is not None and certificate["kind"] == "certificate"
+                        report["relationships"].append({
+                            "source_id": child["asset_id"], "target_id": target, "kind": "uses_certificate", "resolved": resolved,
+                            "evidence": [evidence],
+                        })
+                        if not resolved:
+                            error(file, evidence["locator"], "Unresolved certificate reference")
+    report["coverage"]["cryptography"] = {
+        "unit": "findings", "total": len(report["findings"]), "assessed": 0,
+        "normalized": sum(f["algorithm"] != "unknown" for f in report["findings"]),
+        "unknown_algorithm": sum(f["algorithm"] == "unknown" for f in report["findings"]),
+    }
+    policies = [item["tls_policy"] for item in report["assets"] if "tls_policy" in item]
+    report["coverage"]["tls_policies"] = {
+        "unit": "listeners", "total": len(policies),
+        "mapped": sum(p["protocols"] is not None for p in policies),
+        "unknown": sum(p["protocols"] is None for p in policies),
+    }
+    return report
+
+
+def scan_cloud(directory="cloud-posture", *, evaluated_at=None):
+    """Read local snapshots for the standalone CLI; raw API scanning never opens paths."""
+    directory = Path(directory)
+    evaluation = _date(evaluated_at) if evaluated_at is not None else datetime.now(timezone.utc)
+    contents = {}
+    for filename, *_ in INPUTS:
+        file = directory / filename
+        try:
+            content = file.read_bytes()
+        except OSError as exc:
+            content = exc
+        contents[filename] = (file, content, "")
+    return _scan_cloud(contents, evaluation)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("directory", nargs="?", default="cloud-posture")
+    parser.add_argument("--evaluated-at", help="ISO-8601 timestamp with timezone")
+    args = parser.parse_args()
+    try:
+        result = scan_cloud(args.directory, evaluated_at=args.evaluated_at)
+    except ValueError as exc:
+        parser.error(str(exc))
+    print(json.dumps(result, indent=2))
+    raise SystemExit(1 if result["errors"] else 0)

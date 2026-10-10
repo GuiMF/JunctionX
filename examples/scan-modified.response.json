@@ -15,9 +15,9 @@
     "cloud-example.json/normalized-fixture-importer": "1.0.0"
   },
   "input_hashes": {
-    "source-example.json": "4e2d522cb3e3e6e332b9dbca23123c88546c3ed51422a4535295764d036a5771",
-    "network-example.json": "2c8437a4a98a65c5381f104916de8bbcf26924fced27f79f36f528e211227859",
-    "cloud-example.json": "4dcf85cb5a412d160f0db36cedcd691388c83276431bfacc081ea389ef3a65ef"
+    "source-example.json": "07388153cc3ef1ec72571e3aeb786487621699bac159dd36095270ca4f368c31",
+    "network-example.json": "6be3dfbeb2ba7438c9407689e632591b7ec8997192f76ee0b4bda67a34dedb73",
+    "cloud-example.json": "7d1099f70e3f40f2d1bc02b54523a527fcb87ea9e4da938faaa1834be3d70899"
   },
   "findings": [
     {
@@ -31,7 +31,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "key_establishment",
       "evidence_kind": "observed",
@@ -70,7 +71,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": "SHA-1",
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "signature",
       "evidence_kind": "declared",
@@ -112,7 +114,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "signature",
       "evidence_kind": "configured",
@@ -152,7 +155,8 @@
         "mode": null,
         "named_group": "X25519MLKEM768",
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "key_establishment",
       "evidence_kind": "configured",
@@ -190,7 +194,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "encryption",
       "evidence_kind": "configured",
@@ -227,7 +232,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "encryption",
       "evidence_kind": "declared",
@@ -261,7 +267,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "signature",
       "evidence_kind": "declared",
@@ -300,7 +307,8 @@
         "mode": "GCM",
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "encryption",
       "evidence_kind": "declared",
@@ -336,7 +344,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "signature",
       "evidence_kind": "observed",
@@ -372,7 +381,8 @@
         "mode": null,
         "named_group": null,
         "hash_algorithm": null,
-        "iterations": null
+        "iterations": null,
+        "configured_tls_policy": null
       },
       "usage": "key_establishment",
       "evidence_kind": "offered",
@@ -445,6 +455,8 @@
       ]
     }
   ],
+  "assets": [],
+  "snapshots": [],
   "score": {
     "policy_version": "1.0.0",
     "label": "Project quantum exposure heuristic (0–100; higher means more exposure)",

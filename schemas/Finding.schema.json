@@ -1,5 +1,117 @@
 {
   "$defs": {
+    "ConfiguredTLSPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "protocols": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Protocols"
+        },
+        "cipher_suites": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cipher Suites"
+        },
+        "hybrid_pq_capable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hybrid Pq Capable"
+        },
+        "hybrid_groups": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hybrid Groups"
+        },
+        "classical_fallback": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Classical Fallback"
+        },
+        "negotiated_group": {
+          "const": null,
+          "default": null,
+          "title": "Negotiated Group",
+          "type": "null"
+        },
+        "reference": {
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        },
+        "mapping_version": {
+          "minLength": 1,
+          "title": "Mapping Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference",
+        "mapping_version"
+      ],
+      "title": "ConfiguredTLSPolicy",
+      "type": "object"
+    },
     "Evidence": {
       "additionalProperties": false,
       "properties": {
@@ -94,6 +206,17 @@
           ],
           "default": null,
           "title": "Iterations"
+        },
+        "configured_tls_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConfiguredTLSPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "Parameters",

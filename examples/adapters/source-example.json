@@ -13,7 +13,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": "SHA-1",
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "signature",
         "evidence_kind": "declared",
@@ -47,7 +48,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "signature",
         "evidence_kind": "declared",
@@ -81,7 +83,8 @@
           "mode": "GCM",
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "encryption",
         "evidence_kind": "declared",
@@ -115,7 +118,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "encryption",
         "evidence_kind": "declared",
@@ -154,6 +158,8 @@
     "relationships": [],
     "tool_versions": {
       "synthetic-example-builder": "1.0.0"
-    }
+    },
+    "assets": [],
+    "snapshots": []
   }
 }

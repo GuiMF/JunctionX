@@ -1,5 +1,117 @@
 {
   "$defs": {
+    "ConfiguredTLSPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "protocols": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Protocols"
+        },
+        "cipher_suites": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cipher Suites"
+        },
+        "hybrid_pq_capable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hybrid Pq Capable"
+        },
+        "hybrid_groups": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hybrid Groups"
+        },
+        "classical_fallback": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Classical Fallback"
+        },
+        "negotiated_group": {
+          "const": null,
+          "default": null,
+          "title": "Negotiated Group",
+          "type": "null"
+        },
+        "reference": {
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        },
+        "mapping_version": {
+          "minLength": 1,
+          "title": "Mapping Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reference",
+        "mapping_version"
+      ],
+      "title": "ConfiguredTLSPolicy",
+      "type": "object"
+    },
     "Coverage": {
       "additionalProperties": false,
       "properties": {
@@ -290,6 +402,117 @@
       "title": "Finding",
       "type": "object"
     },
+    "InventoryAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "minLength": 1,
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "source_type": {
+          "enum": [
+            "pcap",
+            "source",
+            "cloud"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Id"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owner"
+        },
+        "snapshot_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot At"
+        },
+        "account": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Account"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "configuration": {
+          "additionalProperties": true,
+          "title": "Configuration",
+          "type": "object"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "asset_id",
+        "source_type",
+        "kind",
+        "configuration",
+        "evidence"
+      ],
+      "title": "InventoryAsset",
+      "type": "object"
+    },
     "Parameters": {
       "additionalProperties": false,
       "properties": {
@@ -357,6 +580,17 @@
           ],
           "default": null,
           "title": "Iterations"
+        },
+        "configured_tls_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConfiguredTLSPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "Parameters",
@@ -433,6 +667,54 @@
         "message"
       ],
       "title": "ScanError",
+      "type": "object"
+    },
+    "Snapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "source_type": {
+          "enum": [
+            "pcap",
+            "source",
+            "cloud"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "input_name": {
+          "minLength": 1,
+          "title": "Input Name",
+          "type": "string"
+        },
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "age_seconds": {
+          "title": "Age Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "source_type",
+        "input_name",
+        "file",
+        "locator",
+        "generated_at",
+        "age_seconds"
+      ],
+      "title": "Snapshot",
       "type": "object"
     }
   },
@@ -513,6 +795,20 @@
         "$ref": "#/$defs/Relationship"
       },
       "title": "Relationships",
+      "type": "array"
+    },
+    "assets": {
+      "items": {
+        "$ref": "#/$defs/InventoryAsset"
+      },
+      "title": "Assets",
+      "type": "array"
+    },
+    "snapshots": {
+      "items": {
+        "$ref": "#/$defs/Snapshot"
+      },
+      "title": "Snapshots",
       "type": "array"
     },
     "score": {

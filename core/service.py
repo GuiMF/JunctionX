@@ -44,11 +44,11 @@ def _validated_result(output: AdapterResult | dict, scan_input: ScanInput) -> Ad
     # Revalidate even model instances: adapter code can construct or mutate nested values.
     payload = output.model_dump() if isinstance(output, AdapterResult) else output
     result = AdapterResult.model_validate(payload)
-    if any(item.source_type != scan_input.source_type for item in result.findings):
-        raise ValueError("Findings must match the input source type")
-    for item in [*result.coverage, *result.errors]:
+    if any(item.source_type != scan_input.source_type for item in [*result.findings, *result.assets]):
+        raise ValueError("Findings and assets must match the input source type")
+    for item in [*result.coverage, *result.errors, *result.snapshots]:
         if item.source_type != scan_input.source_type or item.input_name != scan_input.name:
-            raise ValueError("Coverage and errors must identify their own input")
+            raise ValueError("Coverage, errors and snapshots must identify their own input")
     return result
 
 
@@ -71,6 +71,8 @@ class ScanService:
         coverage = []
         errors = []
         relationships = []
+        assets = []
+        snapshots = []
         tool_versions = {"quantumtrace-core": "0.1.0"}
         input_hashes = {}
         successful_input = False
@@ -122,6 +124,8 @@ class ScanService:
             coverage.extend(result.coverage)
             errors.extend(result.errors)
             relationships.extend(result.relationships)
+            assets.extend(result.assets)
+            snapshots.extend(result.snapshots)
             for name, version in result.tool_versions.items():
                 # Encode each segment independently: otherwise input "a/b"
                 # with tool "c" overwrites input "a" with tool "b/c".
@@ -140,6 +144,7 @@ class ScanService:
             ruleset_version=RULESET_VERSION, tool_versions=tool_versions,
             input_hashes=input_hashes, findings=findings, coverage=coverage,
             errors=errors, relationships=relationships, score=score_findings(findings),
+            assets=assets, snapshots=snapshots,
             synthetic=request.synthetic or normalized,
             label=request.label or ("Normalized adapter fixtures" if normalized else None),
         )

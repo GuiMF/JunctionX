@@ -137,6 +137,110 @@
   },
   "components": {
     "schemas": {
+      "ConfiguredTLSPolicy": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "protocols": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocols"
+          },
+          "cipher_suites": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cipher Suites"
+          },
+          "hybrid_pq_capable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hybrid Pq Capable"
+          },
+          "hybrid_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hybrid Groups"
+          },
+          "classical_fallback": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classical Fallback"
+          },
+          "negotiated_group": {
+            "type": "null",
+            "title": "Negotiated Group"
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Reference"
+          },
+          "mapping_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Mapping Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reference",
+          "mapping_version"
+        ],
+        "title": "ConfiguredTLSPolicy"
+      },
       "Coverage": {
         "properties": {
           "source_type": {
@@ -435,6 +539,112 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "InventoryAsset": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Asset Id"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Kind"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner"
+          },
+          "snapshot_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot At"
+          },
+          "account": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "configuration": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Configuration"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_id",
+          "source_type",
+          "kind",
+          "configuration",
+          "evidence"
+        ],
+        "title": "InventoryAsset"
+      },
       "Parameters": {
         "properties": {
           "key_bits": {
@@ -496,6 +706,16 @@
               }
             ],
             "title": "Iterations"
+          },
+          "configured_tls_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfiguredTLSPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -751,6 +971,20 @@
             "type": "array",
             "title": "Relationships"
           },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryAsset"
+            },
+            "type": "array",
+            "title": "Assets"
+          },
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/Snapshot"
+            },
+            "type": "array",
+            "title": "Snapshots"
+          },
           "score": {
             "additionalProperties": true,
             "type": "object",
@@ -784,6 +1018,54 @@
           "ruleset_version"
         ],
         "title": "ScanResult"
+      },
+      "Snapshot": {
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "pcap",
+              "source",
+              "cloud"
+            ],
+            "title": "Source Type"
+          },
+          "input_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Input Name"
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "title": "File"
+          },
+          "locator": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Locator"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "age_seconds": {
+            "type": "number",
+            "title": "Age Seconds"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_type",
+          "input_name",
+          "file",
+          "locator",
+          "generated_at",
+          "age_seconds"
+        ],
+        "title": "Snapshot"
       },
       "ValidationError": {
         "properties": {

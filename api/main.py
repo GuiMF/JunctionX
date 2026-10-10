@@ -9,8 +9,9 @@ from fastapi.responses import JSONResponse
 
 from core.models import ScanRequest, ScanResult
 from core.service import ScanService
-from export.cyclonedx import export_cyclonedx
+from adapters.cloud_adapter import cloud_adapter
 from adapters.registry import AdapterRegistry
+from export.cyclonedx import export_cyclonedx
 from adapters.network import parse_pcap_adapter
 
 
@@ -39,6 +40,7 @@ def create_app(
         )
     if service is None:
         registry = AdapterRegistry()
+        registry.register("cloud", cloud_adapter)
         registry.register("pcap", parse_pcap_adapter)
         service = ScanService(registry=registry)
     app.state.scan_service = service

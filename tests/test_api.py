@@ -46,9 +46,13 @@ def test_create_get_and_both_real_exports(client):
     validate_cyclonedx(response.json())
 
 
-def test_partial_success_is_a_persisted_scan(client):
+def test_partial_success_is_a_persisted_scan():
+    from core.service import ScanService
+    from adapters.registry import AdapterRegistry
+    empty_service = ScanService(registry=AdapterRegistry())
+    client = TestClient(create_app(service=empty_service))
     body = request_body()
-    body["inputs"].append({"name": "capture.pcap", "source_type": "cloud", "format": "raw", "content": "capture bytes"})
+    body["inputs"].append({"name": "capture.pcap", "source_type": "pcap", "format": "raw", "content": "capture bytes"})
     response = client.post("/api/scans", json=body)
     assert response.status_code == 201
     scan = response.json()
@@ -145,7 +149,10 @@ def test_cors_can_be_disabled_or_explicitly_configured():
     assert response.headers["access-control-allow-origin"] == "http://localhost:9000"
 
 
-def test_raw_pcap_scan(client):
+from unittest.mock import patch, MagicMock
+
+@patch('adapters.network.pyshark.FileCapture')
+def test_raw_pcap_scan(mock_capture_cls, client):
     import base64
     content = base64.b64encode(b"dummy pcap bytes").decode("utf-8")
     body = {
@@ -159,14 +166,31 @@ def test_raw_pcap_scan(client):
             }
         ]
     }
-    # This will fail to open a real pcap because of dummy bytes, 
-    # but the API should accept it and adapter should return an error result, 
-    # proving it's registered and running.
+    
+    # Mock PyShark to simulate a successful TLS capture
+    mock_packet = MagicMock()
+    mock_packet.ip.src = "192.168.1.1"
+    mock_packet.ip.dst = "192.168.1.2"
+    mock_packet.tcp.stream = "1"
+    mock_packet.__contains__.return_value = True
+    mock_packet.tls.handshake_type = "2"
+    mock_packet.tls.handshake_ciphersuite = "0x002f"
+    mock_packet.tls.handshake_random = "dummyrandom"
+    mock_packet.number = 100
+    mock_packet.sniff_timestamp = "1672531200.0"
+    
+    mock_capture_instance = MagicMock()
+    mock_capture_instance.__iter__.return_value = [mock_packet]
+    mock_capture_cls.return_value = mock_capture_instance
+
     response = client.post("/api/scans", json=body)
     assert response.status_code == 201
     scan = response.json()
-    assert scan["status"] in ["completed", "partial", "failed"]
-    # Verify the pcap coverage or errors exist
+    assert scan["status"] == "completed"
+    assert len(scan.get("errors", [])) == 0
+    
+    # Verify the pcap findings and coverage
     has_pcap_coverage = any(c["source_type"] == "pcap" for c in scan.get("coverage", []))
-    has_pcap_error = any(e["source_type"] == "pcap" for e in scan.get("errors", []))
-    assert has_pcap_coverage or has_pcap_error
+    assert has_pcap_coverage
+    has_pcap_findings = any(f["source_type"] == "pcap" for f in scan.get("findings", []))
+    assert has_pcap_findings

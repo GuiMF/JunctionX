@@ -13,7 +13,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "key_establishment",
         "evidence_kind": "observed",
@@ -47,7 +48,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "key_establishment",
         "evidence_kind": "offered",
@@ -81,7 +83,8 @@
           "mode": null,
           "named_group": null,
           "hash_algorithm": null,
-          "iterations": null
+          "iterations": null,
+          "configured_tls_policy": null
         },
         "usage": "signature",
         "evidence_kind": "observed",
@@ -120,6 +123,8 @@
     "relationships": [],
     "tool_versions": {
       "synthetic-example-builder": "1.0.0"
-    }
+    },
+    "assets": [],
+    "snapshots": []
   }
 }

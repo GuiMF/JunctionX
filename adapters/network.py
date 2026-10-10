@@ -106,6 +106,9 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                 
                 tcp_stream = int(packet.tcp.stream)
                 
+                if tcp_stream not in stream_states:
+                    stream_states[tcp_stream] = "unsupported"
+                
                 if 'TLS' in packet and hasattr(packet.tls, 'handshake_type'):
                     handshake_type = packet.tls.handshake_type
                     
@@ -193,12 +196,29 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                                 findings.append(finding)
                                 stream_states[tcp_stream] = "assessed"
                             else:
+                                role = "keyshare-key_establishment"
+                                finding_id = stable_finding_id(asset_id, "key_establishment", role, "observed")
+                                finding = Finding(
+                                    id=finding_id,
+                                    asset_id=asset_id,
+                                    source_type="pcap",
+                                    algorithm="unknown",
+                                    usage="key_establishment",
+                                    evidence_kind="observed",
+                                    evidence=[Evidence(
+                                        file=scan_input.name,
+                                        locator=f"frame:{frame_number}",
+                                        detail=f"ServerHello selected unknown key share group {group}"
+                                    )],
+                                    confidence="high",
+                                    observed_at=dt
+                                )
+                                findings.append(finding)
                                 if stream_states.get(tcp_stream) not in ("assessed", "failed"):
                                     stream_states[tcp_stream] = "unknown"
                     
                     elif handshake_type == "1": # ClientHello
-                        if tcp_stream not in stream_states:
-                            stream_states[tcp_stream] = "unsupported"
+                        pass
                         
             except AttributeError as ae:
                 key = tcp_stream if tcp_stream is not None else f"pkt_{id(packet)}"

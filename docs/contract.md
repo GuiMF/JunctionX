@@ -24,7 +24,14 @@ JSON pointers. Evidence must substantiate the finding without including secrets.
 Use canonical algorithms where possible, such as `AES` plus `key_bits: 256` and
 `mode: GCM`. Sizes are **bits**, iterations are positive integers, and missing
 parameters are `null`. The current optional parameters are `key_bits`, `mode`,
-`named_group`, `hash_algorithm`, and `iterations`.
+`named_group`, `hash_algorithm`, `iterations`, and `configured_tls_policy`.
+
+`configured_tls_policy` describes a documented configuration capability, including
+protocols, cipher membership, hybrid groups, classical fallback and mapping source.
+It is optional for other adapters. `negotiated_group` must be null: this field cannot
+assert a selected group. The finding's `named_group` also stays null when selection
+is unknown. The core preserves the descriptor without treating a hybrid-capable
+listener as an observed hybrid connection or PQ certificate authentication.
 
 Adapters set identity, source, algorithm, parameters, usage, evidence kind,
 evidence, confidence, ownership, observation time, and any independently evidenced
@@ -57,7 +64,7 @@ the core preserves it rather than promoting it based on algorithm recognition.
 
 ## Stable identity and repeated observations
 
-Use `stable_asset_id(source_type, identity)` with a stable logical resource or
+Use `stable_asset_id(source_type, identity)` (or an immutable cloud ARN) with a stable logical resource or
 occurrence identity: an ARN, a repository-relative symbol/call-site identity,
 or a capture/flow identity. Do not use a mutable algorithm, current key size,
 timestamp of the scan, array index that may reorder, or entire file hash as an
@@ -80,6 +87,27 @@ asset IDs, so multiple findings on one asset cannot inflate its weight.
 Explicit relationships contain `source_asset_id`, `target_asset_id`, `kind`, and
 nonempty evidence. Unresolved targets remain visible. Similar names or shared
 algorithms are not grounds for creating a relationship.
+
+## Inventory and snapshot provenance
+
+`AdapterResult` and `ScanResult` also accept optional `assets` and `snapshots` lists.
+These default to empty lists for existing adapters. Inventory assets preserve their
+stable ID, source type, resource kind, explicit parent, owner, snapshot time,
+account/region, configuration and evidence. Cloud assets use their immutable ARN
+as identity. Load balancers can be inventoried without inventing a cryptographic
+finding. The score still counts findings' assessed asset IDs; inventory coverage
+is separate and inventory-only assets must not be presented as assessed or safe.
+
+Snapshots identify their input name, source type, evidence file/JSON pointer,
+`generated_at` and `age_seconds` relative to `AdapterContext.evaluated_at`.
+Negative age means evaluation predates the export. For configured cloud findings,
+`observed_at` is the snapshot's `GeneratedAt` as specified above, not a claim about
+wire negotiation. The input hash covers the submitted decoded bytes. Both JSON
+and CycloneDX preserve inventory and snapshots (CBOM metadata properties).
+
+Unresolved certificate ARNs remain relationship targets and have explicit scan
+errors; absence from `assets` identifies the unresolved target. A malformed or
+missing target with no usable identifier has an error without an invented edge.
 
 ## Coverage and errors
 
