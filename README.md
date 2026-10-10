@@ -4,7 +4,7 @@ QuantumTrace discovers cryptographic facts in Python/Java/Go source, saved netwo
 captures and AWS JSON snapshots. A shared rule engine assesses findings, calculates
 asset exposure, and exports JSON or a schema-validated CycloneDX 1.6 CBOM.
 
-The React dashboard starts with synthetic demo fixtures. Open **Import data**, select source,
+The React dashboard starts with an empty inventory. Open **Import data**, select source,
 AWS snapshot, or capture files and click **Scan selected files** to analyze them
 with the local API, inspect the returned findings, and export the active scan.
 
@@ -69,11 +69,9 @@ visible while scanning. A returned `partial` or `failed` result replaces it and
 shows per-input errors; `201` alone does not mean all inputs succeeded.
 
 Use **Retry scan** after fixing a connection problem, or reselect corrected files.
-Scans time out after 5 minutes; exports after 10 seconds. **Cancel scan** or
-**Load demo dataset** discards pending results in the browser (server work may continue).
-Reset restores the offline demo and its JSON/CBOM exports. Live exports use the
-active scan ID; if it was evicted or the API restarted, scan the files again.
-The migration tab is a separate, labeled synthetic demo comparison.
+Scans time out after 5 minutes; exports after 10 seconds. **Cancel scan** discards pending results in the browser (server work may continue).
+Exports are available after a scan and use the active scan ID; if it was evicted or
+the API restarted, scan the files again.
 
 ## Scan and demonstrate
 
@@ -110,7 +108,7 @@ git diff --check
 ```
 
 The generator updates `schemas/`, `examples/`, and the frontend API types from the
-Python models and canonical inputs. The frontend imports the generated examples;
+Python models and canonical inputs. Frontend tests use the generated examples;
 edit their source inputs/builders instead of maintaining separate mock reports.
 Independent evaluation labels in `tests/fixtures/source/` are never generated
 from scanner output. GitHub Actions verifies tests, builds and artifact drift.

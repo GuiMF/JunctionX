@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, Cloud, FileCode2, FileUp, FolderOpen, FlaskConical, Info, Layers, Loader2, Network, Upload, X } from 'lucide-react';
+import { ArrowRight, Check, Cloud, FileCode2, FileUp, FolderOpen, Info, Layers, Loader2, Network, Upload, X } from 'lucide-react';
 
 import { collectDroppedFiles, filePath, type CollectedFiles } from '../utils/folderFiles';
 import { cloudSnapshotEntries, MAX_SCAN_FILES, MAX_INPUT_BYTES, MAX_INPUT_MIB, MAX_SCAN_MIB } from '../utils/scanInputs';
 
 interface UploadBarProps {
-  onLoadDemoData: () => void;
   onClose: () => void;
   onScan: (files: File[]) => void;
   onCancel: () => void;
@@ -19,7 +18,7 @@ const sources = [
   { id: 'cloud', label: 'AWS configuration', detail: 'JSON snapshots', icon: Cloud, accept: '.json' },
 ];
 
-export const UploadBar: React.FC<UploadBarProps> = ({ onLoadDemoData, onClose, onScan, onCancel, isScanning, error }) => {
+export const UploadBar: React.FC<UploadBarProps> = ({ onClose, onScan, onCancel, isScanning, error }) => {
   const [source, setSource] = useState(sources[0]);
   const [files, setFiles] = useState<File[]>([]);
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -120,7 +119,7 @@ export const UploadBar: React.FC<UploadBarProps> = ({ onLoadDemoData, onClose, o
         {error && <div role="alert" className="rounded border border-rose-200 bg-rose-50 p-3 text-[13px] leading-5 text-rose-700"><p className="font-semibold">Scan could not complete</p><p className="mt-1">{error}</p><p className="mt-1">Your selection is preserved. Adjust the files if needed, then retry.</p></div>}
         <div className="flex gap-2.5 rounded border border-sky-100 bg-sky-50 p-3"><Info size={16} className="mt-0.5 shrink-0 text-sky-600" /><p className="text-[13px] leading-5 text-sky-900">Unsupported files are skipped. Keep related AWS snapshots in the same folder to resolve certificate references; use Mixed sources to include all supported types. Files are submitted for analysis when you start the scan; your previous result remains available until a new result is ready.</p></div>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4"><button className="button button-secondary" onClick={onLoadDemoData}><FlaskConical size={14} />Load demo dataset</button><div className="flex items-center gap-2"><button className="button button-secondary" onClick={isScanning ? onCancel : onClose}>{isScanning ? 'Cancel scan' : 'Cancel'}</button><button disabled={busy || !files.length || !!fileCountError} className="button button-primary disabled:cursor-not-allowed disabled:opacity-50" onClick={() => onScan(files)}>{isScanning ? <><Loader2 size={14} className="animate-spin" />Scanning…</> : <>{error ? 'Retry scan' : 'Scan selected files'}<ArrowRight size={14} /></>}</button></div></div>
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4"><div className="flex items-center gap-2"><button className="button button-secondary" onClick={isScanning ? onCancel : onClose}>{isScanning ? 'Cancel scan' : 'Cancel'}</button><button disabled={busy || !files.length || !!fileCountError} className="button button-primary disabled:cursor-not-allowed disabled:opacity-50" onClick={() => onScan(files)}>{isScanning ? <><Loader2 size={14} className="animate-spin" />Scanning…</> : <>{error ? 'Retry scan' : 'Scan selected files'}<ArrowRight size={14} /></>}</button></div></div>
     </div>
   </div>;
 };
