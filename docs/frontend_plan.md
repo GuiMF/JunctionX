@@ -2,7 +2,7 @@
 
 > **Owner:** Person 05 — Experience & Demo  
 > **Workspace Boundary:** `web/` + `docs/demo.md`  
-> **Target Stack:** React (Vite + TypeScript + Tailwind CSS)  
+> **Target Stack:** React (Vite 5 + TypeScript + Tailwind CSS v3)  
 > **Role Objective:** Turn fragmented cryptographic discoveries into a compelling, evidence-backed migration cockpit that wins the 3-minute hackathon pitch.
 
 ---
@@ -29,7 +29,7 @@ Hackathon presentations fail when live backends crash on stage. The frontend wil
 
 ## 3. Data Contracts (TypeScript Definitions)
 
-Person 05 should implement `web/src/types/contract.ts` mirroring the frozen `Finding v1` and `ScanResult v1`:
+Person 05 implements `web/src/types/contract.ts` mirroring the frozen `Finding v1` and `ScanResult v1`:
 
 ```typescript
 export type SourceType = 'pcap' | 'source' | 'cloud';
@@ -41,7 +41,7 @@ export type ChallengeTier = 'critical' | 'medium' | 'resilient' | 'unknown';
 
 export interface FindingEvidence {
   file: string;
-  locator: string; // e.g. "lines 42-48", "stream 3, frame 14", "/LoadBalancers/0/Listeners/1"
+  locator: string; // e.g. "lines 42-45", "stream 44, frame 116", "/LoadBalancers/2/Listeners/0/SslPolicy"
   detail: string;
 }
 
@@ -103,40 +103,27 @@ export interface ScanResult {
 
 ```
 App
-├── Navbar (Logo, Scan Status, Mode Toggle: "Live API" vs "Demo Fixtures", Export Button)
-├── UploadHero / IngestBar
-│   ├── Dropzone for PCAP, Source code archive, AWS JSON exports
-│   └── "Load Sample Hackathon Data" (1-click instant demo)
-├── CoverageDashboard (3 Source Cards: Network, Code, Cloud with Assessed vs Unknown badges)
-├── RiskPostureBanner (Separating Shor/Quantum Break, Classical Weaknesses, Operational Hygiene)
-├── FilterBar (Filter by Owner, Input Source, Risk Tier, Evidence Kind, Search)
-├── FindingsInventoryTable
-│   ├── Priority Badge (Critical / Medium / Resilient)
-│   ├── Algorithm & Usage (e.g. RSA-1024 [Signature], Ed25519 [Signature], TLS 1.3 [KEM Draft])
-│   ├── Source & Owner Tag (e.g. "cloud" -> Team Alpha)
-│   ├── Evidence Kind Pill ("Configured" vs "Observed" vs "Declared")
-│   └── Action: "Inspect Evidence"
-├── EvidenceDrawer (Slide-over deep dive)
-│   ├── Code viewer / Packet frame detail / Cloud JSON pointer
-│   ├── Exact rationale & risk justification
-│   └── Specific migration recommendation (e.g. "Migrate RSA-1024 to ML-DSA-65")
-└── MigrationComparisonModal ("Before vs After" Demo)
-    ├── Original Fixture: partner-api-alb (ELBSecurityPolicy-TLS13-1-2-2021-06) -> Non-PQ TLS 1.3
-    ├── Modified Fixture: partner-api-alb (ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09) -> Hybrid PQ
-    └── Clear Callout: "PQ-capable configuration; negotiated wire use unverified"
+├── Navbar (Logo, Scan Status, Tab Switcher: "Inventory" vs "Migration", Export Actions)
+├── UploadBar (Drag & drop files or 1-click "Load Hackathon Dataset")
+├── CoverageCards (3 Cards: Network Traffic, Source Code, Cloud with Assessed/Unknown badges)
+├── RiskPostureBanner (Separating Shor Quantum Risk, Classical Flaws, Operational Hygiene)
+├── FindingsTable (Search, Source filter, Tier filter, Evidence Kind filter, Owner filter)
+├── EvidenceModal (Inspector slide-over showing exact locator, rule rationale, FIPS recommendation)
+├── MigrationView (Side-by-side Before/After diff of partner-api-alb with unverified wire callout)
+└── Footer (Scan ID, Ruleset version, Hackathon edition stamp)
 ```
 
 ---
 
-## 5. Execution Roadmap (Milestones U1 to U5)
+## 5. Execution Roadmap & Live Progress
 
-| Sprint / Milestone | Target Window | Deliverables | Key Verification |
+| Sprint / Milestone | Target Window | Deliverables | Current Status |
 |---|---|---|---|
-| **U1 · Scaffolding & Fixture UI** | Hours 0–3 | Setup Vite + React + Tailwind in `web/`. Implement `types/contract.ts`, mock `scanResultFixture.json`, Layout, Coverage Cards, and Findings Table. | App loads mock data immediately; table sorts and displays all 3 source types. |
-| **U2 · Ingestion Flow & API Hookup** | Hours 3–6 | Build file upload / preset loader. Hook to `POST /api/scans` and `GET /api/scans/:id` (with graceful mock fallback). Add Loading, Error, and Empty states. | Uploading triggers scan simulation or live backend; passes Gate 1. |
-| **U3 · Prioritization & Evidence Deep-Dive** | Hours 6–12 | Implement FilterBar (Owner, Source, Tier, Evidence Kind). Build EvidenceDrawer showing syntax snippet / packet hex / JSON locator + remediation steps. | A judge can locate the critical RSA-1024 finding and its line number in 15 seconds. |
-| **U4 · Before/After Cloud Migration Diff** | Hours 12–18 | Implement side-by-side comparison between original and upgraded AWS ALB fixtures (`partner-api-alb`). Emphasize honest posture: config upgraded, but wire traffic unverified. | Visually highlights configuration change without falsifying observed traffic. |
-| **U5 · Polish, Export & Pitch Rehearsal** | Hours 18–24 | Wire up CycloneDX 1.6 & JSON export downloads. Build keyboard shortcuts, polish typography, write `docs/demo.md`, record backup pitch video. Feature freeze at Hour 21. | Pitch runs under 3 minutes cleanly; zero console errors on clean startup. |
+| **U1 · Scaffolding & Fixture UI** | Hours 0–3 | Setup Vite 5 + React + Tailwind in `web/`. Implement `types/contract.ts`, `fixtures/mockData.ts`, Layout, Coverage Cards, and Findings Table. | ✅ **DONE** (Built & verified, Node 18+ compatible) |
+| **U2 · Complete Flow & Ingestion** | Hours 3–6 | Ingestion bar, simulated scan, Evidence Modal, CycloneDX 1.6 & JSON export. Hook to live `POST /api/scans` when Person 04 delivers API. | 🟡 **IN PROGRESS** (UI flow & exports 100% done; awaiting backend endpoint at Hour 6) |
+| **U3 · Prioritization & Evidence Deep-Dive** | Hours 6–12 | Multi-criteria FilterBar (Owner, Source, Tier, Evidence Kind). Evidence inspector showing syntax snippet / packet hex / JSON pointer. | ✅ **INITIAL VERSION COMPLETE** (Filters & Inspector active in UI; awaiting live adapter fixtures) |
+| **U4 · Before/After Cloud Migration Diff** | Hours 12–18 | Side-by-side comparison between original and upgraded AWS ALB fixtures (`partner-api-alb`). Emphasize honest posture: config upgraded, wire unverified. | ✅ **AHEAD OF SCHEDULE** (Fully built in `MigrationView.tsx`) |
+| **U5 · Polish, Export & Pitch Rehearsal** | Hours 18–24 | CycloneDX 1.6 & JSON exports, keyboard shortcuts, typography polish, write `docs/demo.md`, record backup pitch video. Feature freeze at Hour 21. | 🟡 **READY FOR REHEARSAL** (Exports working; demo script ready) |
 
 ---
 
@@ -170,3 +157,26 @@ App
   Filter by Owner `Team-Identity`. Click "Export CycloneDX 1.6 CBOM".
 - **2:40 – 3:00 (Architecture & Conclusion):**  
   Summary of reused components (TShark, deterministic Python engine) vs our original evidence correlation model. Done on time!
+
+---
+
+## 8. Current Status Summary (Hour ~1.5 / 24h)
+
+```
+[=====================>.......................................] 35% of Total Journey
+Person 05 Status: AHEAD OF SCHEDULE
+
+Shipped Artifacts:
+  - web/src/types/contract.ts          (Strict contract types for Finding, ScanResult, Coverage)
+  - web/src/fixtures/mockData.ts        (Multi-source demo fixtures with intentional edge cases)
+  - web/src/components/Navbar.tsx       (Tab navigation, demo reset, JSON & CycloneDX export)
+  - web/src/components/UploadBar.tsx    (File ingest + 1-click dataset trigger)
+  - web/src/components/CoverageCards.tsx(3-source metrics: assessed vs unknown counts)
+  - web/src/components/RiskPostureBanner.tsx (Shor vs Classical vs Operational split)
+  - web/src/components/FindingsTable.tsx (Multi-filter search table + tier badges)
+  - web/src/components/EvidenceModal.tsx (Deep-dive locator inspector)
+  - web/src/components/MigrationView.tsx (Before/after ALB comparison with audit callout)
+  - web/src/utils/cbomExport.ts         (CycloneDX 1.6 CBOM and Project JSON generator)
+
+Next Immediate Milestone:
+  - Integration Gate 1 (Hour 3-6): Connect live fetch to Person 04's POST /api/scans endpoint once backend comes online.
