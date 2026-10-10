@@ -15,16 +15,23 @@ export const App: React.FC = () => {
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
   const [activeTab, setActiveTab] = useState<'inventory' | 'migration'>('inventory');
   const [resetCounter, setResetCounter] = useState<number>(0);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const handleExportJson = () => {
     exportProjectJson(scanResult);
   };
 
   const handleExportCbom = async () => {
-    await exportCycloneDxCbom(scanResult);
+    setExportError(null);
+    try {
+      await exportCycloneDxCbom(scanResult);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'CBOM export failed. Please retry.');
+    }
   };
 
   const handleResetDemo = () => {
+    setExportError(null);
     setScanResult(mockScanResult);
     setResetCounter((prev) => prev + 1);
   };
@@ -40,6 +47,11 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {exportError && (
+          <p role="alert" className="rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-200">
+            {exportError}
+          </p>
+        )}
         {activeTab === 'inventory' ? (
           <>
             {/* Multi-source Ingestion Bar */}

@@ -21,7 +21,7 @@ export const RiskPostureBanner: React.FC<RiskPostureBannerProps> = ({ findings, 
   let classicalIssueAssets = 0;
   let postureIssueAssets = 0;
   let offeredOnlyAssets = 0;
-  let unknownAssets = 0;
+  let assetsWithUnknowns = 0;
 
   for (const group of assetsMap.values()) {
     const active = group.filter((f) => f.evidence_kind !== 'offered');
@@ -42,8 +42,9 @@ export const RiskPostureBanner: React.FC<RiskPostureBannerProps> = ({ findings, 
     if (active.some((f) => f.posture_issues && f.posture_issues.length > 0)) {
       postureIssueAssets++;
     }
-    if (active.every((f) => f.quantum_status === 'unknown')) {
-      unknownAssets++;
+    if (active.some((f) => f.quantum_status !== 'not_applicable' &&
+      (f.quantum_status === 'unknown' || f.challenge_tier === 'unknown'))) {
+      assetsWithUnknowns++;
     }
   }
 
@@ -53,7 +54,7 @@ export const RiskPostureBanner: React.FC<RiskPostureBannerProps> = ({ findings, 
   const classical = score?.classical_issue_assets ?? classicalIssueAssets;
   const posture = score?.posture_issue_assets ?? postureIssueAssets;
   const offered = score?.offered_only_assets ?? offeredOnlyAssets;
-  const unknowns = score?.unknown_assets ?? unknownAssets;
+  const unknowns = score?.assets_with_unknowns ?? assetsWithUnknowns;
   const exposureScore = score?.value;
 
   return (
@@ -129,7 +130,7 @@ export const RiskPostureBanner: React.FC<RiskPostureBannerProps> = ({ findings, 
           <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/60 px-3 py-1.5 rounded-lg">
             <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
             <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-tight">Unknown</span>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block leading-tight">Assets with unknowns</span>
               <span className="text-xs font-mono font-bold text-slate-300">{unknowns} Assets</span>
             </div>
           </div>
