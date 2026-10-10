@@ -1,0 +1,1085 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:c8e98948-adc9-5cd4-85d1-5c8591e9a56d",
+  "version": 1,
+  "metadata": {
+    "properties": [
+      {
+        "name": "quantumtrace:coverage",
+        "value": "[{\"assessed\":3,\"failed\":0,\"input_name\":\"source-example.json\",\"source_type\":\"source\",\"unit\":\"files\",\"unknown\":1,\"unsupported\":0},{\"assessed\":1,\"failed\":0,\"input_name\":\"network-example.json\",\"source_type\":\"pcap\",\"unit\":\"sessions\",\"unknown\":0,\"unsupported\":0},{\"assessed\":3,\"failed\":0,\"input_name\":\"cloud-example.json\",\"source_type\":\"cloud\",\"unit\":\"resources\",\"unknown\":0,\"unsupported\":0}]"
+      },
+      {
+        "name": "quantumtrace:errors",
+        "value": "[]"
+      },
+      {
+        "name": "quantumtrace:evaluated_at",
+        "value": "2026-10-10T12:00:00Z"
+      },
+      {
+        "name": "quantumtrace:input_hashes",
+        "value": "{\"cloud-example.json\":\"dd5e60ab4411570b2ef465fa6c8ef5f0668d32a457b2d995c2d957064a8e8431\",\"network-example.json\":\"2c8437a4a98a65c5381f104916de8bbcf26924fced27f79f36f528e211227859\",\"source-example.json\":\"4e2d522cb3e3e6e332b9dbca23123c88546c3ed51422a4535295764d036a5771\"}"
+      },
+      {
+        "name": "quantumtrace:label",
+        "value": "Synthetic original integration fixtures"
+      },
+      {
+        "name": "quantumtrace:relationships",
+        "value": "[{\"evidence\":[{\"detail\":\"Explicit synthetic certificate identifier reference\",\"file\":\"synthetic/cloud-example\",\"locator\":\"/listeners/0/CertificateArn\"}],\"kind\":\"uses_certificate\",\"source_asset_id\":\"asset-8e2aa59f340a3c8c5b7d48b469adf6d0\",\"target_asset_id\":\"asset-e5375b71762e8b8073777760c93a83e0\"}]"
+      },
+      {
+        "name": "quantumtrace:ruleset_version",
+        "value": "1.0.0"
+      },
+      {
+        "name": "quantumtrace:scan_id",
+        "value": "example-scan-original"
+      },
+      {
+        "name": "quantumtrace:schema_version",
+        "value": "1.0"
+      },
+      {
+        "name": "quantumtrace:score",
+        "value": "{\"assessed_assets\":7,\"assets_by_evidence_kind\":{\"configured\":3,\"declared\":4,\"observed\":1,\"offered\":1},\"assets_with_unknowns\":2,\"classical_issue_assets\":1,\"denominator\":\"Unique assessed asset IDs with non-offered, known quantum assessments; worst tier per asset\",\"hybrid_assets\":0,\"label\":\"Project quantum exposure heuristic (0–100; higher means more exposure)\",\"limitations\":\"Inventory heuristic, not a probability, NIST metric, or application security certification. Unknown and offered-only assets are excluded, never counted as safe. Coverage units remain separate. Business criticality is not inferred.\",\"not_applicable_assets\":0,\"offered_only_assets\":0,\"policy_version\":\"1.0.0\",\"posture_issue_assets\":1,\"quantum_vulnerable_assets\":6,\"total_assets\":8,\"unknown_assets\":1,\"value\":85.71,\"weights\":{\"critical\":100,\"medium\":50,\"resilient\":0}}"
+      },
+      {
+        "name": "quantumtrace:started_at",
+        "value": "2026-10-10T12:00:00Z"
+      },
+      {
+        "name": "quantumtrace:status",
+        "value": "completed"
+      },
+      {
+        "name": "quantumtrace:synthetic",
+        "value": "true"
+      },
+      {
+        "name": "quantumtrace:tool_versions",
+        "value": "{\"cloud-example.json/normalized-fixture-importer\":\"1.0.0\",\"cloud-example.json/synthetic-example-builder\":\"1.0.0\",\"network-example.json/normalized-fixture-importer\":\"1.0.0\",\"network-example.json/synthetic-example-builder\":\"1.0.0\",\"quantumtrace-core\":\"0.1.0\",\"source-example.json/normalized-fixture-importer\":\"1.0.0\",\"source-example.json/synthetic-example-builder\":\"1.0.0\"}"
+      }
+    ],
+    "timestamp": "2026-10-10T12:00:00Z"
+  },
+  "components": [
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-12d701235a71dc82def5d27cbf1e4f13",
+      "name": "X25519",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "key-agree"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "X25519"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-8ff1a0f49750812b29386b9321c3aa83"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "critical"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: X25519 for key_establishment; not a real scan.\",\"file\":\"synthetic/pcap-example\",\"locator\":\"frame 18; stream 1\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "observed"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-12d701235a71dc82def5d27cbf1e4f13"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "2026-10-10T12:00:00Z"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":null,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "vulnerable"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Observed evidence applies only to the captured operation, not other sessions or the whole application. A primitive assessment does not certify whole-application resilience. Passive TLS 1.3 normally hides certificate and CertificateVerify details after ServerHello; absent details remain unknown."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Plan supported ML-KEM or a standardized hybrid key-establishment protocol; assess signatures separately."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\",\"https://csrc.nist.gov/pubs/fips/203/final\",\"https://www.rfc-editor.org/rfc/rfc10024.html\",\"https://www.rfc-editor.org/rfc/rfc8446.html\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "pcap"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "key_establishment"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/pcap-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: X25519 for key_establishment; not a real scan.\",\"evidence_kind\":\"observed\",\"locator\":\"frame 18; stream 1\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-198be5bba5c661cf12c85f2127ca4c2e",
+      "name": "RSA",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "parameterSetIdentifier": "1024"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "RSA"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-7de123eb7223eff6767280d1d89a775c"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "critical"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[\"RSA key below 2048 bits; unsuitable for new protection under the pinned transition policy.\",\"SHA-1 is unsuitable for new digital signatures because of collision weaknesses.\"]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: RSA for signature; not a real scan.\",\"file\":\"synthetic/source-example\",\"locator\":\"line 12\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "declared"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-198be5bba5c661cf12c85f2127ca4c2e"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "payments"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":\"SHA-1\",\"iterations\":null,\"key_bits\":1024,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "vulnerable"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Plan a supported ML-DSA or SLH-DSA signature migration; verify certificate and peer compatibility."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\",\"https://csrc.nist.gov/pubs/fips/204/final\",\"https://csrc.nist.gov/pubs/fips/205/final\",\"https://csrc.nist.gov/pubs/sp/800/131/a/r2/final\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "source"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "signature"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/source-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: RSA for signature; not a real scan.\",\"evidence_kind\":\"declared\",\"locator\":\"line 12\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-50b2e250c764028a77b0f8c8ddcad288",
+      "name": "RSA",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "parameterSetIdentifier": "2048"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "RSA"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-e5375b71762e8b8073777760c93a83e0"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "critical"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: RSA for signature; not a real scan.\",\"file\":\"synthetic/cloud-example\",\"locator\":\"/certificates/0/signatureAlgorithm\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "configured"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-50b2e250c764028a77b0f8c8ddcad288"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "2026-10-10T12:00:00Z"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "partners"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":2048,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[\"Synthetic certificate expiry issue for demonstration; not live AWS state.\"]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "vulnerable"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Plan a supported ML-DSA or SLH-DSA signature migration; verify certificate and peer compatibility."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\",\"https://csrc.nist.gov/pubs/fips/204/final\",\"https://csrc.nist.gov/pubs/fips/205/final\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "cloud"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "signature"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/cloud-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: RSA for signature; not a real scan.\",\"evidence_kind\":\"configured\",\"locator\":\"/certificates/0/signatureAlgorithm\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-6fd89fd4901ffeccc1e4670a8cf6140f",
+      "name": "ECDHE",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "key-agree"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "ECDHE"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-8e2aa59f340a3c8c5b7d48b469adf6d0"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "critical"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: ECDHE for key_establishment; not a real scan.\",\"file\":\"synthetic/cloud-example\",\"locator\":\"/listeners/0/securityPolicy\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "configured"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-6fd89fd4901ffeccc1e4670a8cf6140f"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "2026-10-10T12:00:00Z"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "partners"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":null,\"mode\":null,\"named_group\":\"X25519\"}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "vulnerable"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Plan supported ML-KEM or a standardized hybrid key-establishment protocol; assess signatures separately."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\",\"https://csrc.nist.gov/pubs/fips/203/final\",\"https://www.rfc-editor.org/rfc/rfc10024.html\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "cloud"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "key_establishment"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/cloud-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: ECDHE for key_establishment; not a real scan.\",\"evidence_kind\":\"configured\",\"locator\":\"/listeners/0/securityPolicy\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-7d28a51278bccf5f56cfc1c8cc2e04fe",
+      "name": "RSA",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "pke",
+          "parameterSetIdentifier": "2048"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "RSA"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-51abe1bcdc960bd776a0daaa236110b0"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "critical"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: RSA for encryption; not a real scan.\",\"file\":\"synthetic/cloud-example\",\"locator\":\"/keys/0/KeySpec\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "configured"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-7d28a51278bccf5f56cfc1c8cc2e04fe"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "2026-10-10T12:00:00Z"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "payments"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":2048,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "vulnerable"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Plan a vetted encryption protocol combining ML-KEM key establishment with authenticated symmetric encryption; ML-KEM is not a drop-in bulk-encryption API."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\",\"https://csrc.nist.gov/pubs/fips/203/final\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "cloud"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "encryption"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/cloud-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: RSA for encryption; not a real scan.\",\"evidence_kind\":\"configured\",\"locator\":\"/keys/0/KeySpec\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-7df8d664a8b385049999233da3e75c19",
+      "name": "AES",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "block-cipher"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "AES"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-b96822afd9e16c621a471c1fd3751a37"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "unknown"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: AES for encryption; not a real scan.\",\"file\":\"synthetic/source-example\",\"locator\":\"line 48\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "declared"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-7df8d664a8b385049999233da3e75c19"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":null,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "unknown"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "AES key size is absent, unsupported, or contradicts its name, or mode metadata conflicts; assessment remains unknown. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Resolve AES key size in bits and any conflicting mode metadata from the actual API or configuration."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-UNKNOWN@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "source"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "encryption"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/source-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: AES for encryption; not a real scan.\",\"evidence_kind\":\"declared\",\"locator\":\"line 48\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-898cf3264e81d3d42fd0819225469ef7",
+      "name": "Ed25519",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "Ed25519"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-ce683ffdfc1ddad8b084b0b259f005b2"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "critical"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: Ed25519 for signature; not a real scan.\",\"file\":\"synthetic/source-example\",\"locator\":\"line 24\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "declared"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-898cf3264e81d3d42fd0819225469ef7"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "identity"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":null,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "vulnerable"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "This classical asymmetric primitive relies on factoring or discrete logarithms, which are vulnerable to a sufficiently capable quantum computer. This does not assert a practical attack today. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Plan a supported ML-DSA or SLH-DSA signature migration; verify certificate and peer compatibility."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\",\"https://csrc.nist.gov/pubs/fips/204/final\",\"https://csrc.nist.gov/pubs/fips/205/final\",\"https://www.rfc-editor.org/rfc/rfc8032.html\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-CLASSICAL-ASYMMETRIC@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "source"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "signature"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/source-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: Ed25519 for signature; not a real scan.\",\"evidence_kind\":\"declared\",\"locator\":\"line 24\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-cd691d4692fbf4f50c4395c894d9c4c1",
+      "name": "AES",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "ae",
+          "parameterSetIdentifier": "256",
+          "mode": "gcm"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "AES"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-52e2b934466d69ca2abfca5d87b94443"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "resilient"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: AES for encryption; not a real scan.\",\"file\":\"synthetic/source-example\",\"locator\":\"line 36\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "declared"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-cd691d4692fbf4f50c4395c894d9c4c1"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":256,\"mode\":\"GCM\",\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "resistant_primitive"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "AES-256 is a symmetric primitive. Generic quantum search does not establish a practical break. This classification does not establish key-exchange or authentication resistance. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Verify authenticated encryption, nonce uniqueness, key handling, and separately assess key establishment and signatures. Consider AES-256 where policy requires additional margin."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-AES@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "source"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "encryption"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/source-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: AES for encryption; not a real scan.\",\"evidence_kind\":\"declared\",\"locator\":\"line 36\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-e6febb541a370d1e013ce99779157046",
+      "name": "unknown",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "unknown"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "unknown"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-8ff1a0f49750812b29386b9321c3aa83"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "unknown"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: unknown for signature; not a real scan.\",\"file\":\"synthetic/pcap-example\",\"locator\":\"stream 1; encrypted TLS 1.3 authentication unavailable\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "observed"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-e6febb541a370d1e013ce99779157046"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "2026-10-10T12:00:00Z"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":null,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "unknown"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "The normalized algorithm, parameters, or usage are insufficient for a supported assessment. Observed evidence applies only to the captured operation, not other sessions or the whole application. A primitive assessment does not certify whole-application resilience. Passive TLS 1.3 normally hides certificate and CertificateVerify details after ServerHello; absent details remain unknown."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Confirm the algorithm and usage from direct evidence; retain unresolved facts as unknown."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://www.rfc-editor.org/rfc/rfc8446.html\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-UNKNOWN@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "pcap"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "signature"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/pcap-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: unknown for signature; not a real scan.\",\"evidence_kind\":\"observed\",\"locator\":\"stream 1; encrypted TLS 1.3 authentication unavailable\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-f10313c2fe618558541601a1d8926d1f",
+      "name": "X25519MLKEM768",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "combiner"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "X25519MLKEM768"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-8ff1a0f49750812b29386b9321c3aa83"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "resilient"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "high"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"Synthetic adapter observation: X25519MLKEM768 for key_establishment; not a real scan.\",\"file\":\"synthetic/pcap-example\",\"locator\":\"frame 15; stream 1\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "offered"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-f10313c2fe618558541601a1d8926d1f"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "2026-10-10T12:00:00Z"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":null,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "hybrid"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "This exact RFC 10024 group combines classical ECDHE with standardized ML-KEM. The assessment covers key establishment only; authentication remains independently assessed. An offered capability is not a negotiated selection. A primitive assessment does not certify whole-application resilience. Passive TLS 1.3 normally hides certificate and CertificateVerify details after ServerHello; absent details remain unknown."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Verify platform support, peer interoperability, negotiated selection, and authentication separately."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/pubs/fips/203/final\",\"https://www.iana.org/assignments/tls-parameters\",\"https://www.rfc-editor.org/rfc/rfc10024.html\",\"https://www.rfc-editor.org/rfc/rfc8446.html\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-HYBRID-MLKEM@1.0.0"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "pcap"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "key_establishment"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/pcap-example",
+            "additionalContext": "{\"detail\":\"Synthetic adapter observation: X25519MLKEM768 for key_establishment; not a real scan.\",\"evidence_kind\":\"offered\",\"locator\":\"frame 15; stream 1\"}"
+          }
+        ]
+      }
+    }
+  ]
+}

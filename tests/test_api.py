@@ -1,0 +1,119 @@
+from fastapi.testclient import TestClient
+import pytest
+
+from api.main import create_app
+from export.cyclonedx import validate_cyclonedx
+
+
+@pytest.fixture
+def client():
+    return TestClient(create_app())
+
+
+def request_body():
+    import json
+
+    name = "source-fixture.json"
+    fixture = {
+        "fixture_format": "quantumtrace.normalized.v1",
+        "result": {
+            "findings": [{
+                "id": "rsa-signature", "asset_id": "signing-service", "source_type": "source",
+                "algorithm": "RSA", "usage": "signature", "parameters": {"key_bits": 2048},
+                "evidence_kind": "declared", "confidence": "high",
+                "evidence": [{"file": "sign.py", "locator": "line 5", "detail": "RSA signature key configuration"}],
+            }],
+            "coverage": [{"source_type": "source", "input_name": name, "unit": "files", "assessed": 1}],
+        },
+    }
+    return {"inputs": [{"name": name, "source_type": "source", "format": "normalized", "content": json.dumps(fixture)}]}
+
+
+def test_create_get_and_both_real_exports(client):
+    response = client.post("/api/scans", json=request_body())
+    assert response.status_code == 201, response.text
+    scan = response.json()
+    assert scan["status"] == "completed"
+    assert scan["findings"][0]["quantum_status"] == "vulnerable"
+    endpoint = f'/api/scans/{scan["scan_id"]}'
+    assert client.get(endpoint).json() == scan
+    response = client.get(endpoint + "/export?format=json")
+    assert response.json() == scan
+    assert "attachment" in response.headers["content-disposition"]
+    response = client.get(endpoint + "/export?format=cyclonedx")
+    assert response.status_code == 200, response.text
+    assert response.headers["content-type"] == "application/vnd.cyclonedx+json"
+    validate_cyclonedx(response.json())
+
+
+def test_partial_success_is_a_persisted_scan(client):
+    body = request_body()
+    body["inputs"].append({"name": "capture.pcap", "source_type": "pcap", "format": "raw", "content": "capture bytes"})
+    response = client.post("/api/scans", json=body)
+    assert response.status_code == 201
+    scan = response.json()
+    assert scan["status"] == "partial"
+    assert len(scan["findings"]) == 1
+    assert scan["errors"][0]["code"] == "unsupported_adapter"
+
+
+@pytest.mark.parametrize("endpoint", ["/api/scans/missing", "/api/scans/missing/export"])
+def test_missing_scan_404(client, endpoint):
+    assert client.get(endpoint).status_code == 404
+
+
+def test_unsupported_export_format_rejected(client):
+    assert client.get("/api/scans/missing/export?format=xml").status_code == 422
+
+
+@pytest.mark.parametrize("body", [
+    {"inputs": []},
+    {"inputs": [{"name": "test", "source_type": "cloud", "format": "raw", "path": "/etc/passwd"}]},
+    {"inputs": [{"name": "test", "source_type": "other", "format": "raw", "content": ""}]},
+    {"inputs": [{"name": "test", "source_type": "source", "format": "raw", "content": ""}], "evaluated_at": "2026-10-10T10:00:00"},
+])
+def test_request_validation_422(client, body):
+    assert client.post("/api/scans", json=body).status_code == 422
+
+
+def test_openapi_contains_shared_contract(client):
+    schema = client.get("/openapi.json").json()
+    assert "ScanRequest" in schema["components"]["schemas"]
+    assert "Finding" in schema["components"]["schemas"]
+    assert "/api/scans/{scan_id}/export" in schema["paths"]
+
+
+@pytest.mark.parametrize("origin", [
+    "http://localhost:3000", "http://127.0.0.1:3000",
+    "http://localhost:5173", "http://127.0.0.1:5173",
+])
+def test_local_frontend_preflight_allowed(client, origin):
+    response = client.options("/api/scans", headers={
+        "Origin": origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "Content-Type",
+    })
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+    assert "access-control-allow-credentials" not in response.headers
+
+
+def test_arbitrary_origin_preflight_rejected(client):
+    response = client.options("/api/scans", headers={
+        "Origin": "https://untrusted.example",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "Content-Type",
+    })
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_cors_can_be_disabled_or_explicitly_configured():
+    headers = {"Origin": "http://localhost:9000", "Access-Control-Request-Method": "GET"}
+    disabled = TestClient(create_app(cors_origins=[]))
+    response = disabled.options("/api/scans/test", headers=headers)
+    assert "access-control-allow-origin" not in response.headers
+    configured = TestClient(create_app(cors_origins=["http://localhost:9000"]))
+    response = configured.options("/api/scans/test", headers=headers)
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:9000"
