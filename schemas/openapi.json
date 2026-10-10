@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "QuantumTrace local scan API",
-    "description": "Synchronous local integration API. Results are held in bounded process memory. Normalized inputs are labelled synthetic fixtures. Raw Python/Java/Go source and cloud snapshots are supported; other raw inputs need registered scanners.",
+    "description": "Synchronous local integration API. Results are held in bounded process memory. Normalized inputs are labelled synthetic fixtures. Raw Python/Java/Go source, cloud snapshots and PCAP inputs are supported by the default application.",
     "version": "1.0.0"
   },
   "paths": {

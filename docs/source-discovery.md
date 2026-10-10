@@ -85,7 +85,7 @@ HMAC remains a MAC, and Ed25519 remains a classical signature.
 Explicitly supplied `AdapterRegistry()` instances remain empty; call
 `registry.register("source", scan_source)` when using a custom registry. The
 default service registers source discovery and the cloud adapter integrated on
-main. PCAP discovery remains a separate workstream. Normalized fixture imports
+main. The default API also registers the PCAP adapter from main. Normalized fixture imports
 keep their existing synthetic behavior.
 
 ## CryptoScan reuse trial (S1)

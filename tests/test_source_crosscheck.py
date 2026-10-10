@@ -50,6 +50,13 @@ def test_scanned_absolute_paths_supported_others_ignored_and_context_not_copied(
     assert "secret" not in json.dumps(result)
 
 
+def test_root_with_parent_segments_matches_absolute_report_paths(tmp_path):
+    nested = tmp_path / "nested"
+    nested.mkdir()
+    result = cross_reference(scans(tmp_path), report(hit(file=str(tmp_path / "example.py"))), nested / "..")
+    assert len(result["matched"]) == 1
+
+
 @pytest.mark.parametrize("invalid", [
     {}, {"tool": {"name": "CryptoScan", "version": "untrusted text"}, "findings": []},
     report(None), report(hit(line=True)), report(hit(line=-1)), report(hit(file=None)),

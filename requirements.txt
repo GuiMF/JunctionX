@@ -16,6 +16,7 @@ opentelemetry-api==1.45.1
 packaging==26.3
 pluggy==1.6.0
 pydantic==2.14.0
+pyshark==0.6
 pydantic_core==2.50.0
 Pygments==2.21.0
 pytest==9.1.1

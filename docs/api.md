@@ -42,6 +42,8 @@ Limits: 1–16 inputs; unique names; at most 8 MiB of encoded content per input 
 
 The default service includes raw Python/Java/Go [source discovery](source-discovery.md)
 and `adapters.cloud_adapter.cloud_adapter` for raw cloud snapshots.
+The default API additionally registers `adapters.network.parse_pcap_adapter` for
+PCAP inputs; direct `ScanService` callers can register it explicitly if needed.
 Explicitly supplied registries remain empty until populated. Unregistered scanners
 produce `unsupported_adapter` with one unsupported `inputs` coverage unit. Register
 each teammate's callable explicitly:

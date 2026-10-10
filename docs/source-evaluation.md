@@ -76,7 +76,8 @@ cannot be inferred from this subset check or these small corpora.
 
 ## Recorded results
 
-Recorded on 2026-10-10 using `quantumtrace-source` 0.1.0 and `source-api-v1`:
+Recorded on 2026-10-10 using `quantumtrace-source` 0.1.0 and `source-api-v1`,
+then revalidated unchanged with 0.1.1 / `source-api-v2` after the PR #6 additions:
 
 | Corpus | Assessed files | Expected | TP | FP | FN | Precision | Full recall |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |

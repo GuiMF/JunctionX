@@ -2,8 +2,7 @@
 
 Task 04 connects discovery adapters to deterministic cryptographic assessments,
 an asset-based score, and JSON/CycloneDX reports. This branch implements the
-shared backend, raw cloud snapshots and task 02 source discovery; network
-discovery remains a separate workstream.
+shared backend, raw cloud snapshots, PCAP discovery and task 02 source discovery.
 
 ## Run locally
 
@@ -31,8 +30,8 @@ In another terminal, exercise all three synthetic inputs and save both exports:
 Read `reports/demo-summary.json`, `reports/scan.json`, and `reports/scan.cdx.json`.
 These are explicitly labelled integration fixtures, not organizer-input scans.
 Raw Python, Java and Go inputs use the built-in source scanner, and raw cloud
-snapshots use the cloud adapter. Raw network inputs return `unsupported_adapter`
-until their scanner is registered.
+snapshots use the cloud adapter. The default API also registers the PCAP adapter;
+packet parsing requires TShark on the host.
 
 Scan local source and export validated CBOMs:
 

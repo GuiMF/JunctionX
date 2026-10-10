@@ -32,3 +32,13 @@ The existing Starlette/httpx deprecation warning is unchanged. Java/Go parsing i
 bounded lexical recognition; Python has no interprocedural type inference.
 Scanner and policy versions, unresolved parameters, declared evidence semantics,
 and the real CryptoScan trial results are documented in the scanner guide.
+
+Consolidation follow-up: PR #6's original commit is preserved in history, with
+its useful coverage and comparison features integrated into this branch. Source
+detector version is now 0.1.1 / `source-api-v2`. Merged main `219edd5b` and preserved
+the API's network adapter registration alongside cloud and source. The partial
+demo now uses an unsupported source language so results do not depend on TShark.
+Local checks after consolidation: 337 tests and 12 subtests passed (unchanged
+browser-board tests left to CI), demo/CBOM and original labelled evaluation pass.
+Comparing the actual CryptoScan 1.4.0 trial JSON produced 21 exact matches and
+51 unmatched hits; scores and findings were not changed by cross-checking.

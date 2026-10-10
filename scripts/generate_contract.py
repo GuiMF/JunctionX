@@ -80,8 +80,8 @@ def build_examples() -> dict[str, ScanRequest]:
     write_json(fixtures_dir / "cloud-modified-example.json", envelope.model_dump(mode="json"))
     requests["scan-modified"] = modified
     partial = requests["scan-original"].model_copy(deep=True)
-    partial.label = "Synthetic partial scan with unavailable raw scanner"
-    partial.inputs.append(ScanInput(name="unimplemented.pcap", source_type="pcap", format="raw", content="unparsed capture"))
+    partial.label = "Synthetic partial scan with unsupported source language"
+    partial.inputs.append(ScanInput(name="unsupported.rs", source_type="source", format="raw", content="// unsupported source language"))
     requests["scan-partial"] = partial
     requests["scan-source"] = ScanRequest(
         inputs=[ScanInput(

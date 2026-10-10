@@ -22,14 +22,14 @@
       "encoding": "utf-8"
     },
     {
-      "name": "unimplemented.pcap",
-      "source_type": "pcap",
+      "name": "unsupported.rs",
+      "source_type": "source",
       "format": "raw",
-      "content": "unparsed capture",
+      "content": "// unsupported source language",
       "encoding": "utf-8"
     }
   ],
   "evaluated_at": "2026-10-10T12:00:00Z",
-  "label": "Synthetic partial scan with unavailable raw scanner",
+  "label": "Synthetic partial scan with unsupported source language",
   "synthetic": true
 }

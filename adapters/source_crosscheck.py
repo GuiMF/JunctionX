@@ -57,7 +57,7 @@ def cross_reference(scans: list[dict], report: dict, root: Path) -> dict:
                 candidates.setdefault(key, set()).add(finding["id"])
     matched, unmatched, seen = [], [], set()
     ignored = duplicates = 0
-    root = root.absolute()
+    root = root.resolve()
     for hit in hits:
         if not isinstance(hit, dict):
             raise ValueError("CryptoScan findings must be objects")

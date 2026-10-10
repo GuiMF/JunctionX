@@ -12,13 +12,15 @@
     "network-example.json/synthetic-example-builder": "1.0.0",
     "network-example.json/normalized-fixture-importer": "1.0.0",
     "cloud-example.json/synthetic-example-builder": "1.0.0",
-    "cloud-example.json/normalized-fixture-importer": "1.0.0"
+    "cloud-example.json/normalized-fixture-importer": "1.0.0",
+    "unsupported.rs/quantumtrace-source": "0.1.1",
+    "unsupported.rs/source-rules": "source-api-v2"
   },
   "input_hashes": {
     "source-example.json": "07388153cc3ef1ec72571e3aeb786487621699bac159dd36095270ca4f368c31",
     "network-example.json": "6be3dfbeb2ba7438c9407689e632591b7ec8997192f76ee0b4bda67a34dedb73",
     "cloud-example.json": "ae577a7edf9e72fa34936d5e9f98a32fbf46a7fe3dc9c620e66f4fabc46a8235",
-    "unimplemented.pcap": "ff6178fd2c5003217f83e9b9e8fe5eef7c0965f959424d044c1100bf2137b931"
+    "unsupported.rs": "a8d04f813fccf0cb76a5fb9bd4e6b43a61abd2037139e7276ce5215d0968b1d4"
   },
   "findings": [
     {
@@ -441,9 +443,9 @@
       "failed": 0
     },
     {
-      "source_type": "pcap",
-      "input_name": "unimplemented.pcap",
-      "unit": "inputs",
+      "source_type": "source",
+      "input_name": "unsupported.rs",
+      "unit": "files",
       "assessed": 0,
       "unknown": 0,
       "unsupported": 1,
@@ -452,10 +454,10 @@
   ],
   "errors": [
     {
-      "source_type": "pcap",
-      "input_name": "unimplemented.pcap",
-      "code": "unsupported_adapter",
-      "message": "No raw pcap scanner is registered; this input was not scanned"
+      "source_type": "source",
+      "input_name": "unsupported.rs",
+      "code": "unsupported_language",
+      "message": "Supported file extensions: .py, .java, .go"
     }
   ],
   "relationships": [
@@ -502,6 +504,6 @@
     },
     "limitations": "Inventory heuristic, not a probability, NIST metric, or application security certification. Unknown and offered-only assets are excluded, never counted as safe. Coverage units remain separate. Business criticality is not inferred."
   },
-  "label": "Synthetic partial scan with unavailable raw scanner",
+  "label": "Synthetic partial scan with unsupported source language",
   "synthetic": true
 }

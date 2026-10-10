@@ -53,8 +53,8 @@ def test_partial_fixture_keeps_successful_findings_and_explicit_unknown_units():
         scan = client.post("/api/scans", json=load("scan-partial.request.json")).json()
     assert scan["status"] == "partial"
     assert len(scan["findings"]) == 10
-    assert scan["errors"][0]["code"] == "unsupported_adapter"
-    assert scan["coverage"][-1]["unit"] == "inputs"
+    assert scan["errors"][0]["code"] == "unsupported_language"
+    assert scan["coverage"][-1]["unit"] == "files"
     assert scan["coverage"][-1]["unsupported"] == 1
 
 
