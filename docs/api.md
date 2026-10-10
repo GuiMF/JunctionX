@@ -36,7 +36,38 @@ The example checks the full transport with an empty finding inventory; it does n
 
 Inputs are inline content, never local paths or remote URLs. `name` is an identifier used for coverage and hashes; no file is opened by that name. `source_type` is `source`, `pcap`, or `cloud`; `format` is `normalized` or `raw`. For binary captures, use `encoding: "base64"`; scanners can use `adapters.normalized.input_bytes()` to decode. Base64 is validated, not guessed. SHA-256 hashes cover decoded content. Un-decodable input has an error and no hash.
 
-Limits: 1–10,000 inputs; unique names; at most 64 MiB of encoded content per input and 256 MiB combined. `evaluated_at` is optional and requires a timezone; by default it is the scan start time. Evaluation time is distinct from evidence observation time. A supplied `synthetic` flag and label persist.
+Single-request limits: 1–10,000 inputs; unique names; at most 64 MiB of encoded content per input and 256 MiB combined. `evaluated_at` is optional and requires a timezone; by default it is the scan start time. Evaluation time is distinct from evidence observation time. A supplied `synthetic` flag and label persist.
+
+## Large folder uploads (up to 3 GB)
+
+For folders exceeding one request, upload in batches, then complete one scan:
+
+1. `POST /api/uploads` returns `201` with an `upload_id`.
+2. `POST /api/uploads/{upload_id}/batches` takes a `ScanRequest` containing inputs
+   only (no custom label, evaluation time or synthetic flag). Each batch allows
+   64 MiB of encoded content; each input also allows 64 MiB. The response reports
+   cumulative `received_bytes` and `input_count`. Names must be unique across batches.
+3. `POST /api/uploads/{upload_id}/complete` reads stored inputs one at a time,
+   applies the shared assessment/scoring pipeline and returns one `ScanResult` (`201`).
+   Standard GET and JSON/CycloneDX exports use that result's `scan_id`.
+4. `DELETE /api/uploads/{upload_id}` discards an incomplete upload (`204`, idempotent).
+
+The total allows **3,000,000,000 encoded content bytes (3 GB)** and 10,000 inputs.
+Base64 expansion and AWS bundling count toward this total. Batch/total/count overflow,
+duplicate names and empty completion return `422`; missing/expired uploads return
+`404`; insufficient temporary disk space returns `507`. Batch writes are atomic.
+Related AWS snapshots must stay together in a single input; the dashboard handles
+this automatically. Ordinary `/api/scans` JSON requests retain the 256 MiB transport
+limit so callers cannot accidentally construct a multi-gigabyte JSON string.
+
+Uploads use server-generated temporary filenames; input names are never opened as
+paths. Uploaded content is deleted after completion (including failure), cancellation
+or API shutdown. Inactive uploads expire after one hour and are cleaned on the next
+upload operation; at most two incomplete uploads are retained (`429` if full).
+Completion remains synchronous, with a 30-minute browser timeout. Cancelling during
+analysis discards the browser result; server analysis may continue until cleanup.
+Results, including findings, remain in memory; the total size allowance is not a
+throughput or completion-time guarantee.
 
 ## Adapter registration
 

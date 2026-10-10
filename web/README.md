@@ -11,13 +11,12 @@ Vite prints the local URL, normally `http://localhost:5173`. Run `npm test` for
 frontend regression checks and `npm run build` for TypeScript and production build
 validation. Use Node.js 22+.
 
-The dashboard starts in demo mode with backend-generated fixtures from
-`../examples/`. Open **Import data**, select supported files, and click **Scan selected files** to submit
-raw inputs to `POST /api/scans`. Related AWS snapshots are bundled together.
+The dashboard starts with an empty inventory. Open **Import data**, select supported files, and click **Scan selected files** to submit
+raw inputs to the scan API. Small selections use `POST /api/scans`; folders above
+64 MiB use batched uploads for up to 3 GB combined. Related AWS snapshots are
+bundled together.
 Completed, partial, and failed scans show their own findings, coverage, scores,
-input errors, and export IDs. **Load demo dataset** in the import dialog restores
-the offline demo; migration remains
-a labeled synthetic comparison.
+input errors, and export IDs. Exports are enabled once a scan result is available.
 
 Start the API with `./scripts/run-local.sh` from the repository root. Scans and
 live JSON/CBOM exports share `VITE_API_BASE_URL` (default
@@ -32,7 +31,7 @@ builds. An empty value uses same-origin `/api` routes when served behind a proxy
 The API permits localhost/127.0.0.1 frontend ports 3000 and 5173 by default; other
 frontend origins need [CORS configuration](../docs/api.md).
 
-Frontend tests include mounted React interactions for scanning, errors, reset
+Frontend tests include mounted React interactions for scanning, errors, cancellation
 races, and exports. They run without a backend. The cross-stack test additionally
 requires the repository Python dependencies; run it with
 `PYTHON=../.venv/bin/python npm run test:integration` from this directory (or set

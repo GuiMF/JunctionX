@@ -9,7 +9,6 @@ const { CoverageCards } = require('../src/components/CoverageCards.tsx');
 const { RiskPostureBanner } = require('../src/components/RiskPostureBanner.tsx');
 const { MigrationView } = require('../src/components/MigrationView.tsx');
 const { mockScanResult, mockMigrationComparison } = require('../src/fixtures/mockData.ts');
-const mockCycloneDxCbom = require('../../examples/scan-original.cdx.json');
 const { exportCycloneDxCbom } = require('../src/utils/cbomExport.ts');
 
 afterEach(() => mock.restoreAll());
@@ -86,20 +85,12 @@ function stubDownloads(t) {
   return downloads;
 }
 
-test('matching demo exports immediately even if the API would never respond', async (t) => {
+test('even a matching fixture requires a backend export', async (t) => {
   const downloads = stubDownloads(t);
-  const fetch = mock.method(global, 'fetch', () => new Promise(() => {}));
-  const outcome = await Promise.race([
-    exportCycloneDxCbom(structuredClone(mockScanResult)).then(() => 'downloaded'),
-    new Promise((resolve) => {
-      const timer = setTimeout(() => resolve('stalled'), 100);
-      t.after(() => clearTimeout(timer));
-    })
-  ]);
-  assert.equal(outcome, 'downloaded');
-  assert.equal(fetch.mock.callCount(), 0);
-  assert.equal(downloads.length, 1);
-  assert.deepEqual(JSON.parse(decodeURIComponent(downloads[0].href.split(',')[1])), mockCycloneDxCbom);
+  const fetch = mock.method(global, 'fetch', async () => ({ ok: false, status: 404 }));
+  await assert.rejects(exportCycloneDxCbom(structuredClone(mockScanResult)), /HTTP 404/);
+  assert.equal(fetch.mock.callCount(), 1);
+  assert.equal(downloads.length, 0);
 });
 
 test('a changed scan with the demo ID cannot silently download unrelated fixture evidence', async (t) => {

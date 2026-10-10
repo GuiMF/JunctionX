@@ -36,19 +36,24 @@ async function select(files) {
 }
 
 const activeScan = (container) => container.querySelector('main[aria-label="Active scan"]');
-function assertActiveScan(container, { id, status, demo }) {
+function assertActiveScan(container, { id, status }) {
   const active = activeScan(container);
   assert.ok(active, 'active scan metadata remains accessible');
   assert.equal(active.dataset.scanId, id);
   assert.equal(active.dataset.scanStatus, status);
-  assert.equal(active.dataset.demo, String(demo));
 }
 async function exportFormat(label) { await click('Export'); await click(label); }
-async function loadDemo() {
-  if (!document.querySelector('input[type=file]')) await click('Import data');
-  await click('Load demo dataset');
-  assert.equal(document.querySelector('input[type=file]'), null, 'loading demo closes the import dialog');
-}
+test('dashboard starts empty with no demo controls and export disabled', async (t) => {
+  const container = await mount(t);
+  assertActiveScan(container, { id: undefined, status: 'empty' });
+  assert.match(container.textContent, /No scans yet/);
+  assert.equal(container.querySelector('tbody'), null);
+  assert.equal(button('Export current scan').disabled, true);
+  assert.doesNotMatch(container.textContent, /Migration comparison/);
+  await click('Import files');
+  assert.ok(container.querySelector('[role=dialog]'));
+  assert.equal(button('Load demo dataset'), undefined);
+});
 
 test('source content is UTF-8 raw and binary captures are base64', async () => {
   const request = await prepareScan([file('source.py', '# café'), file('capture.pcap', new Uint8Array([0, 255, 128, 13]))]);
@@ -103,12 +108,9 @@ test('successful scan updates the active result and evidence, closes import, and
   window.URL.createObjectURL = () => 'blob:live'; window.URL.revokeObjectURL = () => {};
   mock.method(window.HTMLAnchorElement.prototype, 'click', function () { downloads.push(this.download); });
   const container = await mount(t);
-  await act(async () => container.querySelector('tbody button').click());
-  assert.match(container.querySelector('[role=dialog]').textContent, /Evidence inspector/);
-  await click('Close evidence inspector');
   await select([file()]); await click('Scan selected files');
   assert.equal(container.querySelector('[role=dialog]'), null, 'successful scan closes the import dialog');
-  assertActiveScan(container, { id: 'live-completed', status: 'completed', demo: false });
+  assertActiveScan(container, { id: 'live-completed', status: 'completed' });
   assert.match(container.querySelector('tbody').textContent, /LIVE-ALGORITHM/);
   assert.match(container.textContent, /37 files/);
   assert.ok(container.querySelector('[aria-label="Exposure Score: 12.5/100"]'));
@@ -125,12 +127,15 @@ for (const status of ['partial', 'failed']) test(`HTTP 201 ${status} exposes per
   mock.method(global, 'fetch', async () => ({ ok: true, status: 201, json: async () => response(status) }));
   const container = await mount(t);
   await select([file(), file('broken.pcap')]); await click('Scan selected files');
-  assertActiveScan(container, { id: `live-${status}`, status, demo: false });
+  assertActiveScan(container, { id: `live-${status}`, status });
   assert.equal(container.querySelector('[role=dialog]'), null, 'accepted API results close import even with per-input failures');
   assert.match(container.querySelector('[aria-label="Input errors"]').textContent, /broken.pcap.*parse_failed: Invalid capture/);
 });
 
 for (const scenario of ['offline', 'validation', 'timeout']) test(`${scenario} failure offers retry and preserves the active scan`, async (t) => {
+  mock.method(global, 'fetch', async () => ({ ok: true, json: async () => response() }));
+  const container = await mount(t);
+  await select([file()]); await click('Scan selected files');
   const nativeTimeout = global.setTimeout;
   if (scenario === 'timeout') mock.method(global, 'setTimeout', (callback) => nativeTimeout(callback, 1));
   mock.method(global, 'fetch', async (_url, options) => {
@@ -138,16 +143,15 @@ for (const scenario of ['offline', 'validation', 'timeout']) test(`${scenario} f
     if (scenario === 'validation') return { ok: false, status: 422 };
     return new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted'))));
   });
-  const container = await mount(t);
   await select([file()]); await click('Scan selected files');
   if (scenario === 'timeout') await act(async () => new Promise(resolve => nativeTimeout(resolve, 10)));
   assert.match(container.querySelector('[role=alert]').textContent, scenario === 'offline' ? /Cannot reach/ : scenario === 'validation' ? /validation failed/ : /timed out/);
   assert.equal(button('Retry scan').disabled, false);
-  assertActiveScan(container, { id: mockScanResult.scan_id, status: mockScanResult.status, demo: true });
+  assertActiveScan(container, { id: 'live-completed', status: 'completed' });
   mock.restoreAll();
   mock.method(global, 'fetch', async () => ({ ok: true, json: async () => response() }));
   await click('Retry scan');
-  assertActiveScan(container, { id: 'live-completed', status: 'completed', demo: false });
+  assertActiveScan(container, { id: 'live-completed', status: 'completed' });
   assert.equal(container.querySelector('[role=dialog]'), null);
 });
 
@@ -163,7 +167,7 @@ test('invalid and oversized selections never submit and allow replacing the file
   assert.equal(document.querySelector('input[type=file]').disabled, false);
 });
 
-test('pending state prevents duplicate requests; reset and a newer scan ignore stale responses', async (t) => {
+test('pending state prevents duplicate requests; cancellation and a newer scan ignore stale responses', async (t) => {
   const pending = [];
   const fetch = mock.method(global, 'fetch', (_url, options) => new Promise(resolve => pending.push({ resolve, signal: options.signal })));
   const container = await mount(t);
@@ -171,18 +175,18 @@ test('pending state prevents duplicate requests; reset and a newer scan ignore s
   assert.equal(button('Scanning…').disabled, true);
   await click('Scanning…'); assert.equal(fetch.mock.callCount(), 1);
   assert.ok(container.querySelector('[role=status]'));
-  await loadDemo(); assert.equal(pending[0].signal.aborted, true);
-  assertActiveScan(container, { id: mockScanResult.scan_id, status: mockScanResult.status, demo: true });
+  await click('Close import dialog'); assert.equal(pending[0].signal.aborted, true);
+  assertActiveScan(container, { id: undefined, status: 'empty' });
   await click('Import data');
   assert.equal(document.querySelector('input[type=file]').files.length, 0);
   await select([file('new.py')]); await click('Scan selected files');
   await act(async () => pending[1].resolve({ ok: true, json: async () => ({ ...response(), scan_id: 'newest' }) }));
   await act(async () => pending[0].resolve({ ok: true, json: async () => ({ ...response(), scan_id: 'stale' }) }));
-  assertActiveScan(container, { id: 'newest', status: 'completed', demo: false });
+  assertActiveScan(container, { id: 'newest', status: 'completed' });
   assert.notEqual(activeScan(container).dataset.scanId, 'stale');
 });
 
-test('missing backend exports show errors without downloading demo evidence; reset restores offline exports', async (t) => {
+test('missing backend exports show errors without downloading demo evidence', async (t) => {
   mock.method(global, 'fetch', async () => ({ ok: true, json: async () => response() }));
   const downloads = [];
   mock.method(window.HTMLAnchorElement.prototype, 'click', function () { downloads.push(this.href); });
@@ -193,24 +197,21 @@ test('missing backend exports show errors without downloading demo evidence; res
     await exportFormat(label); assert.match(container.querySelector('[role=alert]').textContent, /evicted.*Scan the files again/);
   }
   assert.equal(downloads.length, 0);
-  await loadDemo(); await exportFormat('Project JSON'); await exportFormat('CycloneDX 1.6 CBOM');
-  assert.equal(downloads.length, 2);
-  assert.deepEqual(JSON.parse(decodeURIComponent(downloads[0].split(',')[1])), mockScanResult);
 });
 
-test('reset during file reading prevents submission and clears the pending selection', async (t) => {
+test('closing import during file reading prevents submission and clears the pending selection', async (t) => {
   let finishRead;
   const fetch = mock.method(global, 'fetch', async () => { throw Error('must not submit'); });
   const container = await mount(t);
   await select([{ name: 'slow.py', size: 10, arrayBuffer: () => new Promise(resolve => { finishRead = resolve; }) }]);
   await click('Scan selected files');
-  await loadDemo();
+  await click('Close import dialog');
   await act(async () => finishRead(new TextEncoder().encode('# source').buffer));
   assert.equal(fetch.mock.callCount(), 0);
   await click('Import data');
   assert.equal(document.querySelector('input[type=file]').files.length, 0);
   assert.equal(button('Scan selected files').disabled, true);
-  assertActiveScan(container, { id: mockScanResult.scan_id, status: mockScanResult.status, demo: true });
+  assertActiveScan(container, { id: undefined, status: 'empty' });
 });
 
 test('unreadable local files explain how to recover without submitting', async () => {

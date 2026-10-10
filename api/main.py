@@ -1,6 +1,7 @@
 """Run locally with: uvicorn api.main:app --host 127.0.0.1 --port 8000."""
 
 from typing import Literal
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
@@ -9,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from core.models import ScanRequest, ScanResult
 from core.service import ScanService
+from core.uploads import UploadError, UploadStore
 from export.cyclonedx import export_cyclonedx
 from adapters.network import parse_pcap_adapter
 
@@ -16,7 +18,17 @@ from adapters.network import parse_pcap_adapter
 def create_app(
     service: ScanService | None = None, *, cors_origins: list[str] | None = None
 ) -> FastAPI:
+    uploads = UploadStore()
+
+    @asynccontextmanager
+    async def lifespan(_):
+        try:
+            yield
+        finally:
+            uploads.close()
+
     app = FastAPI(
+        lifespan=lifespan,
         title="QuantumTrace local scan API",
         version="1.0.0",
         description=(
@@ -33,7 +45,7 @@ def create_app(
         app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
-            allow_methods=["GET", "POST"],
+            allow_methods=["GET", "POST", "DELETE"],
             allow_headers=["Content-Type"],
             allow_credentials=False,
         )
@@ -59,6 +71,32 @@ def create_app(
             }
             for error in exc.errors()
         ]})
+
+    app.state.upload_store = uploads
+
+    @app.exception_handler(UploadError)
+    async def upload_error(_, exc: UploadError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status, content={"detail": str(exc)})
+
+    @app.post("/api/uploads", status_code=201)
+    def begin_upload() -> dict[str, str]:
+        return {"upload_id": uploads.create()}
+
+    @app.post("/api/uploads/{upload_id}/batches")
+    def upload_batch(upload_id: str, request: ScanRequest) -> dict[str, int]:
+        return uploads.append(upload_id, request)
+
+    @app.delete("/api/uploads/{upload_id}", status_code=204)
+    def cancel_upload(upload_id: str):
+        uploads.delete(upload_id)
+
+    @app.post("/api/uploads/{upload_id}/complete", response_model=ScanResult, status_code=201)
+    def complete_upload(upload_id: str) -> ScanResult:
+        upload = uploads.take(upload_id)
+        try:
+            return app.state.scan_service.run_inputs(upload.inputs())
+        finally:
+            upload.directory.cleanup()
 
     @app.post("/api/scans", response_model=ScanResult, status_code=201)
     def create_scan(request: ScanRequest) -> ScanResult:
