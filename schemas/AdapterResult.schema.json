@@ -1,0 +1,487 @@
+{
+  "$defs": {
+    "Coverage": {
+      "additionalProperties": false,
+      "properties": {
+        "source_type": {
+          "enum": [
+            "pcap",
+            "source",
+            "cloud"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "input_name": {
+          "minLength": 1,
+          "title": "Input Name",
+          "type": "string"
+        },
+        "unit": {
+          "enum": [
+            "files",
+            "packets",
+            "sessions",
+            "resources",
+            "inputs"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "assessed": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Assessed",
+          "type": "integer"
+        },
+        "unknown": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Unknown",
+          "type": "integer"
+        },
+        "unsupported": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Unsupported",
+          "type": "integer"
+        },
+        "failed": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Failed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_type",
+        "input_name",
+        "unit"
+      ],
+      "title": "Coverage",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "detail": {
+          "minLength": 1,
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "locator",
+        "detail"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "asset_id": {
+          "minLength": 1,
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "source_type": {
+          "enum": [
+            "pcap",
+            "source",
+            "cloud"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "algorithm": {
+          "minLength": 1,
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "parameters": {
+          "$ref": "#/$defs/Parameters"
+        },
+        "usage": {
+          "enum": [
+            "key_establishment",
+            "signature",
+            "encryption",
+            "hash",
+            "mac",
+            "kdf",
+            "unknown"
+          ],
+          "title": "Usage",
+          "type": "string"
+        },
+        "evidence_kind": {
+          "enum": [
+            "declared",
+            "configured",
+            "offered",
+            "observed"
+          ],
+          "title": "Evidence Kind",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "confidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "quantum_status": {
+          "default": "unknown",
+          "enum": [
+            "vulnerable",
+            "resistant_primitive",
+            "hybrid",
+            "unknown",
+            "not_applicable"
+          ],
+          "title": "Quantum Status",
+          "type": "string"
+        },
+        "challenge_tier": {
+          "default": "unknown",
+          "enum": [
+            "critical",
+            "medium",
+            "resilient",
+            "unknown"
+          ],
+          "title": "Challenge Tier",
+          "type": "string"
+        },
+        "classical_issues": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Classical Issues",
+          "type": "array"
+        },
+        "posture_issues": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Posture Issues",
+          "type": "array"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owner"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed At"
+        },
+        "rule_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule Id"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "recommendation": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation"
+        },
+        "references": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "References",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "asset_id",
+        "source_type",
+        "algorithm",
+        "usage",
+        "evidence_kind",
+        "evidence",
+        "confidence"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "Parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "key_bits": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key Bits"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "named_group": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Named Group"
+        },
+        "hash_algorithm": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hash Algorithm"
+        },
+        "iterations": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Iterations"
+        }
+      },
+      "title": "Parameters",
+      "type": "object"
+    },
+    "Relationship": {
+      "additionalProperties": false,
+      "properties": {
+        "source_asset_id": {
+          "minLength": 1,
+          "title": "Source Asset Id",
+          "type": "string"
+        },
+        "target_asset_id": {
+          "minLength": 1,
+          "title": "Target Asset Id",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_asset_id",
+        "target_asset_id",
+        "kind",
+        "evidence"
+      ],
+      "title": "Relationship",
+      "type": "object"
+    },
+    "ScanError": {
+      "additionalProperties": false,
+      "properties": {
+        "source_type": {
+          "enum": [
+            "pcap",
+            "source",
+            "cloud"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "input_name": {
+          "minLength": 1,
+          "title": "Input Name",
+          "type": "string"
+        },
+        "code": {
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_type",
+        "input_name",
+        "code",
+        "message"
+      ],
+      "title": "ScanError",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "coverage": {
+      "items": {
+        "$ref": "#/$defs/Coverage"
+      },
+      "minItems": 1,
+      "title": "Coverage",
+      "type": "array"
+    },
+    "errors": {
+      "items": {
+        "$ref": "#/$defs/ScanError"
+      },
+      "title": "Errors",
+      "type": "array"
+    },
+    "relationships": {
+      "items": {
+        "$ref": "#/$defs/Relationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "tool_versions": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "propertyNames": {
+        "minLength": 1
+      },
+      "title": "Tool Versions",
+      "type": "object"
+    }
+  },
+  "required": [
+    "coverage"
+  ],
+  "title": "AdapterResult",
+  "type": "object"
+}

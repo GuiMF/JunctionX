@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "evaluated_at": {
+      "format": "date-time",
+      "title": "Evaluated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "evaluated_at"
+  ],
+  "title": "AdapterContext",
+  "type": "object"
+}
