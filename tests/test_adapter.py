@@ -51,17 +51,19 @@ class TestNetworkAdapter(unittest.TestCase):
 
     @patch('adapters.network.pyshark.FileCapture')
     def test_adapter_handles_attribute_error(self, mock_capture_cls):
+        class BrokenLayer:
+            @property
+            def src(self):
+                raise AttributeError("simulated missing src attr")
+                
         class BrokenPacket:
             def __init__(self):
                 self.number = 42
-                
-            @property
-            def ip(self):
-                raise AttributeError("simulated missing ip attr")
+                self.ip = BrokenLayer()
                 
             @property
             def ipv6(self):
-                raise AttributeError("simulated missing ipv6 attr")
+                raise AttributeError("not ipv6")
 
         mock_capture_instance = MagicMock()
         mock_capture_instance.__iter__.return_value = [BrokenPacket()]

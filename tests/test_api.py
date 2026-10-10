@@ -48,7 +48,7 @@ def test_create_get_and_both_real_exports(client):
 
 def test_partial_success_is_a_persisted_scan(client):
     body = request_body()
-    body["inputs"].append({"name": "capture.pcap", "source_type": "pcap", "format": "raw", "content": "capture bytes"})
+    body["inputs"].append({"name": "capture.pcap", "source_type": "cloud", "format": "raw", "content": "capture bytes"})
     response = client.post("/api/scans", json=body)
     assert response.status_code == 201
     scan = response.json()

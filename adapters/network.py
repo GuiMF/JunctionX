@@ -39,17 +39,25 @@ GROUP_REGISTRY = {
 HRR_RANDOM = "cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c"
 
 def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> AdapterResult:
-    result = AdapterResult()
+    findings = []
+    errors = []
+    coverage = []
     try:
         raw_bytes = input_bytes(scan_input)
     except Exception as e:
-        result.errors.append(ScanError(
+        errors.append(ScanError(
             source_type="pcap",
             input_name=scan_input.name,
             code="decode_error",
             message=f"Failed to decode input bytes: {e}"
         ))
-        return result
+        coverage.append(Coverage(
+            source_type="pcap",
+            input_name=scan_input.name,
+            unit="sessions",
+            failed=1
+        ))
+        return AdapterResult(findings=findings, coverage=coverage, errors=errors)
 
     capture_hash = hashlib.sha256(raw_bytes).hexdigest()
     
@@ -64,7 +72,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
     try:
         capture = pyshark.FileCapture(temp_file_path, keep_packets=False)
     except Exception as e:
-        result.errors.append(ScanError(
+        errors.append(ScanError(
             source_type="pcap",
             input_name=scan_input.name,
             code="capture_error",
@@ -72,10 +80,17 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
         ))
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-        return result
+        coverage.append(Coverage(
+            source_type="pcap",
+            input_name=scan_input.name,
+            unit="sessions",
+            failed=1
+        ))
+        return AdapterResult(findings=findings, coverage=coverage, errors=errors)
 
     try:
         for packet in capture:
+            tcp_stream = None
             try:
                 ip_src, ip_dst = None, None
                 if hasattr(packet, 'ipv6'):
@@ -144,7 +159,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                                     confidence="high",
                                     observed_at=dt
                                 )
-                                result.findings.append(finding)
+                                findings.append(finding)
                             
                             # Successful assessment upgrades stream state
                             stream_states[tcp_stream] = "assessed"
@@ -175,7 +190,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                                     confidence="high",
                                     observed_at=dt
                                 )
-                                result.findings.append(finding)
+                                findings.append(finding)
                                 stream_states[tcp_stream] = "assessed"
                             else:
                                 if stream_states.get(tcp_stream) not in ("assessed", "failed"):
@@ -186,16 +201,18 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                             stream_states[tcp_stream] = "unsupported"
                         
             except AttributeError as ae:
-                stream_states[tcp_stream] = "failed"
-                result.errors.append(ScanError(
+                key = tcp_stream if tcp_stream is not None else f"pkt_{id(packet)}"
+                stream_states[key] = "failed"
+                errors.append(ScanError(
                     source_type="pcap",
                     input_name=scan_input.name,
                     code="attribute_error",
                     message=f"AttributeError at frame {getattr(packet, 'number', 'unknown')}: {ae}"
                 ))
             except Exception as e:
-                stream_states[tcp_stream] = "failed"
-                result.errors.append(ScanError(
+                key = tcp_stream if tcp_stream is not None else f"pkt_{id(packet)}"
+                stream_states[key] = "failed"
+                errors.append(ScanError(
                     source_type="pcap",
                     input_name=scan_input.name,
                     code="parse_error",
@@ -218,7 +235,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
     unsupported = sum(1 for s in stream_states.values() if s == "unsupported")
     failed = sum(1 for s in stream_states.values() if s == "failed")
     
-    result.coverage.append(Coverage(
+    coverage.append(Coverage(
         source_type="pcap",
         input_name=scan_input.name,
         unit="sessions",
@@ -228,6 +245,15 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
         failed=failed
     ))
     
-    result.tool_versions["pyshark"] = pyshark.__version__
+    import importlib.metadata
+    try:
+        pyshark_ver = importlib.metadata.version("pyshark")
+    except Exception:
+        pyshark_ver = "unknown"
     
-    return result
+    return AdapterResult(
+        findings=findings,
+        coverage=coverage,
+        errors=errors,
+        tool_versions={"pyshark": pyshark_ver}
+    )
