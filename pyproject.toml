@@ -1,7 +1,7 @@
 [project]
 name = "quantumtrace-core"
 version = "0.1.0"
-description = "QuantumTrace task 04 local integration backend"
+description = "QuantumTrace local integration backend and source discovery"
 requires-python = ">=3.12"
 
 [tool.pytest.ini_options]

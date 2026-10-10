@@ -1,0 +1,385 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "properties": [
+      {
+        "name": "quantumtrace:assets",
+        "value": "[]"
+      },
+      {
+        "name": "quantumtrace:coverage",
+        "value": "[{\"assessed\":1,\"failed\":0,\"input_name\":\"synthetic/handoff.py\",\"source_type\":\"source\",\"unit\":\"files\",\"unknown\":0,\"unsupported\":0}]"
+      },
+      {
+        "name": "quantumtrace:errors",
+        "value": "[]"
+      },
+      {
+        "name": "quantumtrace:evaluated_at",
+        "value": "2026-10-10T12:00:00Z"
+      },
+      {
+        "name": "quantumtrace:input_hashes",
+        "value": "{\"synthetic/handoff.py\":\"8990f5d137b53f808650acb483b4a5322adf88bbe278b4fb730f65b1962183f0\"}"
+      },
+      {
+        "name": "quantumtrace:label",
+        "value": "Synthetic source handoff: risky, resistant primitive, unknown parameters"
+      },
+      {
+        "name": "quantumtrace:relationships",
+        "value": "[]"
+      },
+      {
+        "name": "quantumtrace:ruleset_version",
+        "value": "1.0.2"
+      },
+      {
+        "name": "quantumtrace:scan_id",
+        "value": "example-scan-source"
+      },
+      {
+        "name": "quantumtrace:schema_version",
+        "value": "1.0"
+      },
+      {
+        "name": "quantumtrace:score",
+        "value": "{\"assessed_assets\":2,\"assets_by_evidence_kind\":{\"declared\":3},\"assets_with_unknowns\":1,\"classical_issue_assets\":1,\"denominator\":\"Unique assessed asset IDs with non-offered, known quantum assessments; worst tier per asset\",\"hybrid_assets\":0,\"label\":\"Project quantum exposure heuristic (0–100; higher means more exposure)\",\"limitations\":\"Inventory heuristic, not a probability, NIST metric, or application security certification. Unknown and offered-only assets are excluded, never counted as safe. Coverage units remain separate. Business criticality is not inferred.\",\"not_applicable_assets\":0,\"offered_only_assets\":0,\"policy_version\":\"1.0.0\",\"posture_issue_assets\":0,\"quantum_vulnerable_assets\":1,\"total_assets\":3,\"unknown_assets\":1,\"value\":50.0,\"weights\":{\"critical\":100,\"medium\":50,\"resilient\":0}}"
+      },
+      {
+        "name": "quantumtrace:snapshots",
+        "value": "[]"
+      },
+      {
+        "name": "quantumtrace:started_at",
+        "value": "2026-10-10T12:00:00Z"
+      },
+      {
+        "name": "quantumtrace:status",
+        "value": "completed"
+      },
+      {
+        "name": "quantumtrace:synthetic",
+        "value": "true"
+      },
+      {
+        "name": "quantumtrace:tool_versions",
+        "value": "{\"quantumtrace-core\":\"0.1.0\",\"synthetic%2Fhandoff.py/quantumtrace-source\":\"0.1.1\",\"synthetic%2Fhandoff.py/source-rules\":\"source-api-v2\"}"
+      }
+    ],
+    "timestamp": "2026-10-10T12:00:00Z"
+  },
+  "components": [
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-042860cf36cb4cf7bcfe26a680934679",
+      "name": "AES",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "ae",
+          "mode": "gcm"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "AES"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-8bda517d726b83a652f91fdb9edc14ef"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "unknown"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "medium"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.1; rule source-api-v2/python-aes; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:8:column:12\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "declared"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-042860cf36cb4cf7bcfe26a680934679"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"configured_tls_policy\":null,\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":null,\"mode\":\"GCM\",\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "unknown"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "AES key size is absent, unsupported, or contradicts its name, or mode metadata conflicts; assessment remains unknown. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Resolve AES key size in bits and any conflicting mode metadata from the actual API or configuration."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-UNKNOWN@1.0.2"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "source"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "encryption"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/handoff.py",
+            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.1; rule source-api-v2/python-aes; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:8:column:12\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-26d807f15db346497c969f91df826050",
+      "name": "AES",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "ae",
+          "parameterSetIdentifier": "256",
+          "mode": "gcm"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "AES"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-08acd6b2c72ec53011524106fb9ce50e"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "resilient"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "medium"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.1; rule source-api-v2/python-aes; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:6:column:1\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "declared"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-26d807f15db346497c969f91df826050"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"configured_tls_policy\":null,\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":256,\"mode\":\"GCM\",\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "resistant_primitive"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "AES-256 is a symmetric primitive. Generic quantum search does not establish a practical break. This classification does not establish key-exchange or authentication resistance. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Verify authenticated encryption, nonce uniqueness, key handling, and separately assess key establishment and signatures. Consider AES-256 where policy requires additional margin."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-AES@1.0.2"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "source"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "encryption"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/handoff.py",
+            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.1.1; rule source-api-v2/python-aes; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:6:column:1\"}"
+          }
+        ]
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "bom-ref": "quantumtrace:finding:finding-993e4be905866837e3b5d79beb2f2b1b",
+      "name": "RSA",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "unknown",
+          "parameterSetIdentifier": "1024"
+        }
+      },
+      "properties": [
+        {
+          "name": "quantumtrace:algorithm",
+          "value": "RSA"
+        },
+        {
+          "name": "quantumtrace:asset_id",
+          "value": "asset-7350bf41455f6bebc84d193099092f99"
+        },
+        {
+          "name": "quantumtrace:challenge_tier",
+          "value": "critical"
+        },
+        {
+          "name": "quantumtrace:classical_issues",
+          "value": "[\"RSA key below 2048 bits; unsuitable for new protection under the pinned transition policy.\"]"
+        },
+        {
+          "name": "quantumtrace:confidence",
+          "value": "medium"
+        },
+        {
+          "name": "quantumtrace:evidence",
+          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.1.1; rule source-api-v2/python-rsa-generation; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:4:column:1\"}]"
+        },
+        {
+          "name": "quantumtrace:evidence_kind",
+          "value": "declared"
+        },
+        {
+          "name": "quantumtrace:id",
+          "value": "finding-993e4be905866837e3b5d79beb2f2b1b"
+        },
+        {
+          "name": "quantumtrace:observed_at",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:owner",
+          "value": "null"
+        },
+        {
+          "name": "quantumtrace:parameters",
+          "value": "{\"configured_tls_policy\":null,\"hash_algorithm\":null,\"iterations\":null,\"key_bits\":1024,\"mode\":null,\"named_group\":null}"
+        },
+        {
+          "name": "quantumtrace:posture_issues",
+          "value": "[]"
+        },
+        {
+          "name": "quantumtrace:quantum_status",
+          "value": "vulnerable"
+        },
+        {
+          "name": "quantumtrace:rationale",
+          "value": "The declared RSA primitive relies on factoring and is quantum-vulnerable; key generation alone does not establish how the key is used. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience."
+        },
+        {
+          "name": "quantumtrace:recommendation",
+          "value": "Confirm whether this key signs, encrypts, or establishes keys before choosing a compatible post-quantum replacement. Do not substitute a KEM for a signature."
+        },
+        {
+          "name": "quantumtrace:references",
+          "value": "[\"https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs\",\"https://csrc.nist.gov/pubs/sp/800/131/a/r2/final\"]"
+        },
+        {
+          "name": "quantumtrace:rule_id",
+          "value": "QT-RSA-UNKNOWN-USAGE@1.0.2"
+        },
+        {
+          "name": "quantumtrace:schema_version",
+          "value": "1.0"
+        },
+        {
+          "name": "quantumtrace:source_type",
+          "value": "source"
+        },
+        {
+          "name": "quantumtrace:usage",
+          "value": "unknown"
+        }
+      ],
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "synthetic/handoff.py",
+            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.1.1; rule source-api-v2/python-rsa-generation; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:4:column:1\"}"
+          }
+        ]
+      }
+    }
+  ],
+  "serialNumber": "urn:uuid:61ab3c23-a074-5405-9083-d29d83dde9a2"
+}

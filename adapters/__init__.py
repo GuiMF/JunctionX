@@ -1,4 +1,4 @@
-"""Scanner integration contracts; discovery implementations belong to scanner owners."""
+"""Scanner integration contracts and built-in bounded source discovery."""
 
 from adapters.registry import Adapter, AdapterRegistry
 

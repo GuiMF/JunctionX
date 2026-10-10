@@ -1,4 +1,4 @@
-# Deterministic assessment v1.0.1
+# Deterministic assessment v1.0.2
 
 `core.assessment.assess_finding(Finding) -> Finding` returns a deep copy. It reads normalized algorithm, usage, and parameters only. There is no LLM, network call, clock dependency, or inference from evidence text, comments, filenames, owner, or asset names. The adapter supplies those facts; assessment cannot establish whether a detector is correct.
 
@@ -9,6 +9,7 @@ Assessment consumes fresh detector facts. Repeating assessment on an unchanged r
 | Supported fact | Quantum status / challenge tier | Limits and action |
 | --- | --- | --- |
 | RSA, DH, ECDH, ECDSA, Ed25519/Ed448 in compatible uses | vulnerable / critical | Future quantum exposure. Signing advice points to ML-DSA/SLH-DSA; key establishment to ML-KEM or supported hybrid protocols. RSA encryption requires a reviewed KEM-plus-authenticated-encryption design. |
+| RSA with unknown usage (for example key generation) | vulnerable / critical | RSA's primitive is known; confirm signing/encryption/key-establishment usage before choosing a replacement. Explicit key sizes below 2048 bits remain a classical issue. |
 | AES-128 encryption | resistant_primitive / medium | Medium is project policy, not NIST deprecation or a practical quantum break. |
 | AES-192/256 encryption | resistant_primitive / resilient | Only the primitive; no inference about key exchange, authentication, nonce handling, or application safety. |
 | FIPS ML-KEM family / valid named parameter sets | resistant_primitive / resilient | Key establishment only. Family-level evidence does not validate the actual parameter set. |

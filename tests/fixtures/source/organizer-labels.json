@@ -1,0 +1,556 @@
+{
+  "schema_version": 1,
+  "description": "Manual occurrence labels; source was read independently of scanner output.",
+  "corpus": "organizer",
+  "commit": "39e8f18dcfb5edc66eda0f47bb44884aa7db5c9c",
+  "files": [
+    {
+      "path": "go/agent-enrollment/main.go",
+      "sha256": "a253c8b4a7817ba66109f52a94df65c3162e07017b9c9fab5ffa22eb1d1205a5",
+      "expected": [
+        {
+          "line": 11,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        },
+        {
+          "line": 20,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        },
+        {
+          "line": 21,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        },
+        {
+          "line": 25,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "go/auth-gateway/main.go",
+      "sha256": "1ded3ba187284d448bb74fb9d98d7d51cb650ab98ce107908d3c03f2a433abef",
+      "expected": [
+        {
+          "line": 25,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 34,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 55,
+          "algorithm": "PBKDF2",
+          "usage": "kdf",
+          "parameters": {
+            "key_bits": 256,
+            "iterations": 600000,
+            "hash_algorithm": "SHA-256"
+          },
+          "known_gap": "Handwritten PBKDF2 requires semantic analysis of deriveKey."
+        }
+      ]
+    },
+    {
+      "path": "go/batch-pipeline/main.go",
+      "sha256": "a99c1aceea60c3cf2f2c1fc166185c23aeb9931a356659cc00f11c88f976bbb4",
+      "expected": [
+        {
+          "line": 22,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "key_bits": null,
+            "mode": null
+          }
+        },
+        {
+          "line": 29,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "key_bits": null,
+            "mode": "ECB"
+          },
+          "known_gap": "Independent block.Encrypt loop implements ECB without a named mode API."
+        }
+      ]
+    },
+    {
+      "path": "go/config-sync/main.go",
+      "sha256": "f185a907543036a4b2583c9c64450b461c14220e6cdcd12b9c015ae6f3c4606d",
+      "expected": [
+        {
+          "line": 13,
+          "algorithm": "SHA-384",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 22,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "go/invoice-service/main.go",
+      "sha256": "b65ba00d11beb701f43cd18c752e52d43df2409a57869a7e51be152752d8d722",
+      "expected": [
+        {
+          "line": 13,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": 1024
+          }
+        },
+        {
+          "line": 17,
+          "algorithm": "SHA-1",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 18,
+          "algorithm": "RSA",
+          "usage": "signature",
+          "parameters": {
+            "key_bits": null,
+            "hash_algorithm": "SHA-1"
+          }
+        },
+        {
+          "line": 22,
+          "algorithm": "SHA-1",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 23,
+          "algorithm": "RSA",
+          "usage": "signature",
+          "parameters": {
+            "key_bits": null,
+            "hash_algorithm": "SHA-1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "go/member-directory/main.go",
+      "sha256": "d95016aa2eb1b847c28691833e3419d0f1773c56bf58a6663e4aab984cf2ded8",
+      "expected": [
+        {
+          "line": 10,
+          "algorithm": "MD5",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "go/release-feed/main.go",
+      "sha256": "6a6c9af4478c7671fce0ba82a1543927a6288836ac375be591e5a1873dd18369",
+      "expected": [
+        {
+          "line": 10,
+          "algorithm": "SHA-1",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "go/telemetry-relay/main.go",
+      "sha256": "db3a664db13a221633f5b38877041c9efece3d998abcc71023494a6f511e8869",
+      "expected": [
+        {
+          "line": 23,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 40,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "java/BatchExporter.java",
+      "sha256": "28526c2b891614d27b957671ac8ed58f0b09ac56a61df579a1ff027f58f321b5",
+      "expected": [
+        {
+          "line": 14,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "ECB",
+            "key_bits": 128
+          }
+        }
+      ]
+    },
+    {
+      "path": "java/ConfigSync.java",
+      "sha256": "d9f4e70bb9af672ec202d04dc23434df22bb41e531d0720719ca4cac16bedd66",
+      "expected": [
+        {
+          "line": 10,
+          "algorithm": "SHA-384",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 20,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "java/CustomerDirectory.java",
+      "sha256": "af0028c49ced0454abd49823fc571c27c60f1e3009c428cd63592af0e7301bec",
+      "expected": [
+        {
+          "line": 8,
+          "algorithm": "MD5",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "java/DeviceAttestation.java",
+      "sha256": "ed645fc2ceea43732bbfcc8fab3075d0c5aec96b1fdd8e137959f0d5c295c0f3",
+      "expected": [
+        {
+          "line": 12,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        },
+        {
+          "line": 17,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        },
+        {
+          "line": 24,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "java/IdentityVault.java",
+      "sha256": "f7fbd5c41c191c558812ea397e440a91f3c590f6ba509f17342b1df438c833f7",
+      "expected": [
+        {
+          "line": 22,
+          "algorithm": "PBKDF2",
+          "usage": "kdf",
+          "parameters": {
+            "key_bits": 256,
+            "hash_algorithm": "SHA-256",
+            "iterations": 600000
+          }
+        }
+      ]
+    },
+    {
+      "path": "java/PatchFeed.java",
+      "sha256": "a9c8ff0f3a5bce7c57694cb32dbe42fb027113a71f607e8a404d5399c47d08a9",
+      "expected": [
+        {
+          "line": 8,
+          "algorithm": "SHA-1",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "java/ReceiptSigner.java",
+      "sha256": "9a18be3651227ac28844141b09068ee9f1f12f5c3ab7badf8ab66c7615a67d17",
+      "expected": [
+        {
+          "line": 12,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": 1024
+          }
+        },
+        {
+          "line": 18,
+          "algorithm": "RSA",
+          "usage": "signature",
+          "parameters": {
+            "hash_algorithm": "SHA-1",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 25,
+          "algorithm": "RSA",
+          "usage": "signature",
+          "parameters": {
+            "hash_algorithm": "SHA-1",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "java/SessionCipher.java",
+      "sha256": "da2af1401d56774013c6b421921692e7d29875181bbd25e68ad3e3185b0c44de",
+      "expected": [
+        {
+          "line": 18,
+          "algorithm": "AES",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": 256,
+            "mode": null
+          }
+        },
+        {
+          "line": 30,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 39,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "python/artifact_manifest.py",
+      "sha256": "24beb52bd72a0b71062dda088b9a1389a25482c0e5db649951a960270ad135af",
+      "expected": [
+        {
+          "line": 6,
+          "algorithm": "SHA-384",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 14,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "python/legacy_accounts.py",
+      "sha256": "140ff45f2f80b8d92b0ab3ea500dd28c676cc0f52a1269f593966c8e054811e6",
+      "expected": [
+        {
+          "line": 5,
+          "algorithm": "MD5",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "python/license_token.py",
+      "sha256": "82a0bf97317b0c0d97aeb451235766d7d2542653207e06cf060c6ac2e5ad9c29",
+      "expected": [
+        {
+          "line": 6,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": 1024
+          }
+        },
+        {
+          "line": 11,
+          "algorithm": "RSA",
+          "usage": "signature",
+          "parameters": {
+            "hash_algorithm": "SHA-1",
+            "key_bits": null
+          },
+          "known_gap": "Untyped function parameter receiver requires interprocedural type resolution; padding arguments alone do not prove an RSA API."
+        },
+        {
+          "line": 11,
+          "algorithm": "SHA-1",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 16,
+          "algorithm": "RSA",
+          "usage": "signature",
+          "parameters": {
+            "hash_algorithm": "SHA-1",
+            "key_bits": null
+          },
+          "known_gap": "Untyped function parameter receiver requires interprocedural type resolution; padding arguments alone do not prove an RSA API."
+        },
+        {
+          "line": 16,
+          "algorithm": "SHA-1",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "python/member_credentials.py",
+      "sha256": "0787d400c966dbe6a3a0e8f09a8cac439345deea997c4b708cfb6600724226e2",
+      "expected": [
+        {
+          "line": 13,
+          "algorithm": "PBKDF2",
+          "usage": "kdf",
+          "parameters": {
+            "key_bits": 256,
+            "iterations": 600000,
+            "hash_algorithm": "SHA-256"
+          }
+        },
+        {
+          "line": 13,
+          "algorithm": "SHA-256",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 18,
+          "algorithm": "PBKDF2",
+          "usage": "kdf",
+          "parameters": {
+            "key_bits": 256,
+            "iterations": 600000,
+            "hash_algorithm": "SHA-256"
+          }
+        },
+        {
+          "line": 18,
+          "algorithm": "SHA-256",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "python/report_export.py",
+      "sha256": "5ea510681aeef12d64ff95b3083b28cdbb9132bc03283dc5df0ccb540e54c17b",
+      "expected": [
+        {
+          "line": 11,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "ECB",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "python/secure_transfer.py",
+      "sha256": "c75a2c6a02b24fcd7745814e9805ac7ab181eaad8e9239ce4be525dfa27e299d",
+      "expected": [
+        {
+          "line": 16,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 21,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "python/update_feed.py",
+      "sha256": "5cd9dd55d134e7751195234964a70015f2f29c3b4cf81531e7289b849fd65014",
+      "expected": [
+        {
+          "line": 5,
+          "algorithm": "SHA-1",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "python/webhook_signature.py",
+      "sha256": "60dec28780e1188093b8fdede64e55e26465df421e45e0858ebc36a4bb686028",
+      "expected": [
+        {
+          "line": 5,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        }
+      ]
+    }
+  ]
+}

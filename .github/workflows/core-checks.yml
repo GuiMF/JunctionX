@@ -21,6 +21,8 @@ jobs:
       - run: python -m pip check
       - run: python -m pytest -q
       - run: python -m scripts.demo --in-process
+      - run: python -m scripts.evaluate_source
+      - run: python -m scripts.scan_source tests/fixtures/source --synthetic --output reports/source.json --cyclonedx-dir reports/source-cbom
       - name: Verify generated contracts and examples are current
         run: |
           python -m scripts.generate_contract

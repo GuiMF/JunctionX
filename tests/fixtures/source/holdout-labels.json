@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "description": "Manual occurrence labels; source was read independently of scanner output.",
+  "corpus": "synthetic-holdout",
+  "files": [
+    {
+      "path": "Negative.java",
+      "sha256": "ed52a6dd5217c2c800cc5ec2e8964fe504556f9eea11eccea7700f869927635a",
+      "expected": []
+    },
+    {
+      "path": "Positive.java",
+      "sha256": "98a149f4054ae5859136206433dd20698ec521eb62242fadf75dedcf314b9a69",
+      "expected": [
+        {
+          "line": 9,
+          "algorithm": "SHA-512",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 10,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "ECB",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 11,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256"
+          }
+        },
+        {
+          "line": 12,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": 2048
+          }
+        },
+        {
+          "line": 14,
+          "algorithm": "RSA",
+          "usage": "signature",
+          "parameters": {
+            "hash_algorithm": "SHA-1",
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "Unknown.java",
+      "sha256": "099e0666c29590e4f42d1b876d9ef1077cd358dfa34ffe18bc71f5fe8ecea2da",
+      "expected": [
+        {
+          "line": 6,
+          "algorithm": "unknown",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 7,
+          "algorithm": "unknown",
+          "usage": "encryption",
+          "parameters": {
+            "mode": null,
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "negative.go",
+      "sha256": "6f7d0bde4c0eae59b2c3d98ba1538331df7b444d8310d506e7fc5edb2f92674d",
+      "expected": []
+    },
+    {
+      "path": "negative.py",
+      "sha256": "d51a7036e6e564308fdea56897a3275b09a9df9efc941fc30d549103a38a9b97",
+      "expected": []
+    },
+    {
+      "path": "positive.go",
+      "sha256": "02abf82b605b09e12be103b647055010abb75fc52dc23c642bdae9d35d8487a9",
+      "expected": [
+        {
+          "line": 13,
+          "algorithm": "SHA-256",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 14,
+          "algorithm": "MD5",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 15,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256"
+          }
+        },
+        {
+          "line": 17,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": 256
+          }
+        },
+        {
+          "line": 19,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": 1024
+          }
+        },
+        {
+          "line": 20,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "positive.py",
+      "sha256": "ce5cb8c21475c75fd2d23f0341cde4c506ccbf9ce3cca82ca4c41e7cab2924f8",
+      "expected": [
+        {
+          "line": 9,
+          "algorithm": "MD5",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 10,
+          "algorithm": "SHA-384",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 11,
+          "algorithm": "HMAC",
+          "usage": "mac",
+          "parameters": {
+            "hash_algorithm": "SHA-256"
+          }
+        },
+        {
+          "line": 12,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": 1024
+          }
+        },
+        {
+          "line": 13,
+          "algorithm": "Ed25519",
+          "usage": "signature",
+          "parameters": {}
+        },
+        {
+          "line": 14,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": 256
+          }
+        },
+        {
+          "line": 15,
+          "algorithm": "PBKDF2",
+          "usage": "kdf",
+          "parameters": {
+            "hash_algorithm": "SHA-256",
+            "key_bits": 256,
+            "iterations": 600000
+          }
+        },
+        {
+          "line": 15,
+          "algorithm": "SHA-256",
+          "usage": "hash",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "path": "unknown.go",
+      "sha256": "9dbc2f67badcde374e600b5acc6a43ef15fa19742a865ababa0c0adc89f7c1d7",
+      "expected": [
+        {
+          "line": 8,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "key_bits": null,
+            "mode": null
+          }
+        },
+        {
+          "line": 9,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": null
+          }
+        }
+      ]
+    },
+    {
+      "path": "unknown.py",
+      "sha256": "618af037b2cf2252e7e951c957db032c1a90763568134c9414dac1962591bc9a",
+      "expected": [
+        {
+          "line": 6,
+          "algorithm": "unknown",
+          "usage": "hash",
+          "parameters": {}
+        },
+        {
+          "line": 7,
+          "algorithm": "AES",
+          "usage": "encryption",
+          "parameters": {
+            "mode": "GCM",
+            "key_bits": null
+          }
+        },
+        {
+          "line": 8,
+          "algorithm": "RSA",
+          "usage": "unknown",
+          "parameters": {
+            "key_bits": null
+          }
+        }
+      ]
+    }
+  ]
+}
