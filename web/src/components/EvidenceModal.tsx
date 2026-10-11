@@ -73,7 +73,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ finding, onClose }
           <section className="mb-6 rounded-md border border-sky-200 bg-sky-50 p-4"><h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-sky-800"><ArrowRight className="h-3.5 w-3.5" />Recommended action</h3><p className="text-[13px] leading-relaxed text-sky-900">{finding.recommendation || 'No specific migration action defined.'}</p></section>
           {finding.references.length > 0 && <section><h3 className="mb-2 text-[13px] font-semibold text-slate-900">Standards & references</h3><div className="space-y-2">{finding.references.map((url, index) => <a key={index} href={url} target="_blank" rel="noreferrer" className="flex items-start gap-1.5 break-all font-mono text-[12px] leading-4 text-sky-700 hover:underline"><ExternalLink className="mt-0.5 h-3 w-3 shrink-0" />{url}</a>)}</div></section>}
         </div>
-        <footer className="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-6 py-3"><span className="text-[12px] text-slate-500">Primitive-level assessment · Review in system context</span><button onClick={onClose} className="h-8 rounded border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-slate-100">Close inspector</button></footer>
+        <footer className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-3"><button onClick={onClose} className="h-8 rounded border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-slate-100">Close inspector</button></footer>
       </div>
     </div>
   );
