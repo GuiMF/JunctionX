@@ -1,6 +1,10 @@
 # QuantumTrace dashboard
 
-From this directory:
+To set up and start both services, run `py start.py` (Windows) or
+`python3 start.py` (macOS/Linux) from the repository root. See the
+[root setup instructions](../README.md#run-locally).
+
+To start only the dashboard from this directory:
 
 ```sh
 npm ci

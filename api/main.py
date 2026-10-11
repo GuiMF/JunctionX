@@ -2,6 +2,7 @@
 
 from typing import Literal
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
@@ -37,10 +38,16 @@ def create_app(
             "cloud snapshots and PCAP inputs are supported by the default application."
         ),
     )
-    origins = cors_origins if cors_origins is not None else [
+    default_origins = [
         "http://localhost:3000", "http://127.0.0.1:3000",
         "http://localhost:5173", "http://127.0.0.1:5173",
     ]
+    if cors_origins is not None:
+        origins = cors_origins
+    elif "CORS_ORIGINS" in os.environ:
+        origins = [origin.strip().rstrip("/") for origin in os.environ["CORS_ORIGINS"].split(",") if origin.strip()]
+    else:
+        origins = default_origins
     if origins:
         app.add_middleware(
             CORSMiddleware,
