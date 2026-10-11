@@ -23,15 +23,17 @@ Completed, partial, and failed scans show their own findings, coverage, scores,
 input errors, and export IDs. Exports are enabled once a scan result is available.
 
 Start the API with `./scripts/run-local.sh` from the repository root. Scans and
-live JSON/CBOM exports share `VITE_API_BASE_URL` (default
-`http://127.0.0.1:8000`). For example:
+live JSON/CBOM exports use same-origin `/api` URLs by default. Standalone Vite
+development proxies those requests to `http://127.0.0.1:8000`. Override
+`VITE_API_BASE_URL` for an API on another origin or port. For example:
 
 ```sh
 VITE_API_BASE_URL=http://127.0.0.1:8001 npm run dev
 ```
 
 Restart Vite after changing the setting and supply it at build time for production
-builds. An empty value uses same-origin `/api` routes when served behind a proxy.
+builds. Leave it unset or empty for [Vercel services](../docs/deployment.md),
+which route `/api` to the backend on the same domain.
 The API permits localhost/127.0.0.1 frontend ports 3000 and 5173 by default; other
 frontend origins need [CORS configuration](../docs/api.md).
 

@@ -1,0 +1,15 @@
+**
+!Dockerfile.vercel
+!requirements.txt
+!api/
+!api/**
+!adapters/
+!adapters/**
+!core/
+!core/**
+!export/
+!export/**
+!schemas/
+!schemas/**
+**/__pycache__/
+**/*.pyc

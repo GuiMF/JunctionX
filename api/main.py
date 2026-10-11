@@ -3,6 +3,7 @@
 from typing import Literal
 from contextlib import asynccontextmanager
 import os
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
@@ -60,6 +61,10 @@ def create_app(
         service = ScanService()
         service.registry.register("pcap", parse_pcap_adapter)
     app.state.scan_service = service
+
+    @app.get("/healthz", include_in_schema=False)
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(_, exc: RequestValidationError) -> JSONResponse:
@@ -124,7 +129,17 @@ def create_app(
         scan_id: str,
         format: Literal["json", "cyclonedx"] = Query(default="json"),
     ) -> JSONResponse:
-        scan = require_scan(scan_id)
+        return export_response(require_scan(scan_id), format)
+
+    @app.post("/api/exports")
+    def export_submitted_scan(
+        scan: ScanResult,
+        format: Literal["json", "cyclonedx"] = Query(default="json"),
+    ) -> JSONResponse:
+        """Convert a validated client-held result without process-local storage."""
+        return export_response(scan, format)
+
+    def export_response(scan: ScanResult, format: str) -> JSONResponse:
         document = (
             export_cyclonedx(scan)
             if format == "cyclonedx"
@@ -134,7 +149,7 @@ def create_app(
         return JSONResponse(
             content=document,
             media_type="application/vnd.cyclonedx+json" if format == "cyclonedx" else "application/json",
-            headers={"Content-Disposition": f'attachment; filename="{scan.scan_id}.{suffix}"'},
+            headers={"Content-Disposition": f'attachment; filename="{quote(scan.scan_id, safe="")}.{suffix}"'},
         )
 
     return app

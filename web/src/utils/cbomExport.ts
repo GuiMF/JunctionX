@@ -3,8 +3,11 @@ import { apiRequest } from '../api/client';
 
 async function exportScan(scanResult: ScanResult, format: 'json' | 'cyclonedx', signal?: AbortSignal) {
   const filename = format === 'json' ? `quantumtrace-scan-${scanResult.scan_id}.json` : `quantumtrace-cbom-${scanResult.scan_id}.cdx.json`;
-  const blob = await apiRequest(`/api/scans/${encodeURIComponent(scanResult.scan_id)}/export?format=${format}`,
-    { signal }, response => response.blob(), 10_000);
+  // The browser owns the displayed result; another server instance may have no
+  // record of its ID. Submit that exact result for stateless conversion.
+  const blob = await apiRequest(`/api/exports?format=${format}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(scanResult), signal },
+    response => response.blob(), 10_000);
   if (signal?.aborted) return;
   const url = window.URL.createObjectURL(blob);
   try { download(url, filename); }

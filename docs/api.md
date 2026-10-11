@@ -4,6 +4,7 @@ Start with the repository README command. Interactive contract and request examp
 
 | Endpoint | Result |
 | --- | --- |
+| `POST /api/exports?format=json` or `format=cyclonedx` | Convert a submitted `ScanResult` without looking up server memory. |
 | `POST /api/scans` | Run synchronously and return the complete `ScanResult` (`201`). |
 | `GET /api/scans/{scan_id}` | Fetch a saved result (`200`) or `404` when absent/evicted. |
 | `GET /api/scans/{scan_id}/export?format=json` | Download the project JSON. |
