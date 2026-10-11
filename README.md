@@ -10,42 +10,50 @@ with the local API, inspect the returned findings, and export the active scan.
 
 ## Run locally
 
-Use Python 3.12+ and Node.js 22+ with npm. From the repository root, start the API:
+Install **Python 3.12+** and **Node.js 22+ with npm**, then run the root
+launcher. No Bash, WSL, virtual-environment activation, or separate terminals are needed.
 
-```sh
-./scripts/run-local.sh
+**Windows (PowerShell):**
+
+```powershell
+py start.py
 ```
 
-This creates `.venv`, installs pinned dependencies on first use, and starts
-`http://127.0.0.1:8000`. Set `PYTHON=python3.13` or `PORT=8001` if needed.
-The API contract is at `/openapi.json`; interactive documentation is at `/docs`
-(the Swagger UI loads assets from a CDN).
+If Python was installed without the `py` launcher, use `python start.py` instead.
 
-In another terminal, start the dashboard:
+**macOS / Linux:**
 
 ```sh
-cd web
-npm ci
-npm run dev
+python3 start.py
 ```
 
-For a custom API port, set the same origin in the frontend (restart Vite after changes):
+The launcher finds an installed Python 3.12+, creates `.venv`, installs Python and
+frontend dependencies, and starts both the API and dashboard. The first run needs
+internet access; later runs reuse dependencies until the dependency files change.
+Keep the terminal open and visit **http://127.0.0.1:5173** when it prints `Ready!`.
+Press **Ctrl-C** to stop both services. If either service fails, the launcher stops
+the other and reports the error.
 
-```sh
-# Backend terminal, from repository root
-PORT=8001 ./scripts/run-local.sh
-# Frontend terminal, from web/
-VITE_API_BASE_URL=http://127.0.0.1:8001 npm run dev
-```
-
-`VITE_API_BASE_URL` defaults to `http://127.0.0.1:8000` and is used for scans and
-both live exports. It is a build-time setting; set it for `npm run build` too.
-
-Open the URL printed by Vite, normally `http://localhost:5173`. Stop either server
-with Ctrl-C. npm commands belong in `web/`; there is no root Node application.
+The API runs at `http://127.0.0.1:8000`, with its contract at `/openapi.json` and
+interactive documentation at `/docs` (Swagger UI assets load from a CDN).
+To use a different API port, add `--port 8001`; the dashboard connects to that
+port automatically. If dashboard port 5173 is busy, add `--web-port 5174`;
+the launcher configures API access for the selected port. Use `--reinstall` to repair dependencies.
+All options work with any of the commands above.
 
 Scanning and export work offline after setup. PCAP parsing additionally requires
-TShark installed on the host. Source and cloud scans do not require TShark.
+TShark installed on the host and available on `PATH`. Source and cloud scans do
+not require TShark. On Windows, enable Python's PATH option during installation;
+after installing Python, Node.js, or TShark, reopen the terminal.
+
+### Start services separately (optional)
+
+For backend-only development on macOS/Linux, `./scripts/run-local.sh` still
+starts the API (`PYTHON=python3.13` and `PORT=8001` can override its defaults).
+For frontend-only development, run `npm ci` and `npm run dev` from `web/`.
+`VITE_API_BASE_URL` defaults to `http://127.0.0.1:8000`; when starting the frontend
+separately, set it to your API origin before starting Vite. It is a build-time
+setting, so also set it for `npm run build` when needed.
 
 ## Dashboard workflow
 
