@@ -187,6 +187,8 @@ def test_raw_pcap_scan(mock_capture_cls, client):
     mock_packet.tls.handshake_type = "2"
     mock_packet.tls.handshake_ciphersuite = "0x002f"
     mock_packet.tls.handshake_random = "dummyrandom"
+    mock_packet.tls.layer_name = "tls"
+    mock_packet.layers = [mock_packet.tls]
     mock_packet.number = 100
     mock_packet.sniff_timestamp = "1672531200.0"
     

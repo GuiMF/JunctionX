@@ -31,6 +31,8 @@ class TestNetworkAdapter(unittest.TestCase):
         mock_packet.tls.handshake_type = "2" # ServerHello
         mock_packet.tls.handshake_ciphersuite = "0x002f"
         mock_packet.tls.handshake_random = "dummyrandom"
+        mock_packet.tls.layer_name = "tls"
+        mock_packet.layers = [mock_packet.tls]
         mock_packet.number = 100
         mock_packet.sniff_timestamp = "1672531200.0"
         del mock_packet.tls.handshake_extensions_key_share_group

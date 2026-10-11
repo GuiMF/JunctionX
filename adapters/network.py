@@ -3,7 +3,6 @@ import tempfile
 import pyshark
 import hashlib
 from datetime import datetime, timezone
-import traceback
 
 from core.models import (
     ScanInput,
@@ -30,6 +29,37 @@ CIPHER_REGISTRY = {
         {"algorithm": "AES", "usage": "encryption", "key_bits": 256, "mode": "GCM"}
     ]
 }
+
+# RFC 5289: the selected TLS 1.2 suite identifies these algorithm families,
+# but does not establish the curve, certificate key size, or signature hash.
+for suite, signature, bits in (
+    ("0xc02b", "ECDSA", 128), ("0xc02c", "ECDSA", 256),
+    ("0xc02f", "RSA", 128), ("0xc030", "RSA", 256),
+):
+    CIPHER_REGISTRY[suite] = [
+        {"algorithm": "ECDHE", "usage": "key_establishment"},
+        {"algorithm": signature, "usage": "signature"},
+        {"algorithm": "AES", "usage": "encryption", "key_bits": bits, "mode": "GCM"},
+    ]
+
+
+class _TLSFields:
+    """TShark nests QUIC TLS fields inside the QUIC layer in PDML output."""
+
+    def __init__(self, layer, prefix=""):
+        self.layer = layer
+        self.prefix = prefix
+
+    def __getattr__(self, name):
+        return getattr(self.layer, self.prefix + name)
+
+
+def _tls_layers(packet):
+    for layer in packet.layers:
+        if layer.layer_name == "tls":
+            yield _TLSFields(layer)
+        elif layer.layer_name == "quic":
+            yield _TLSFields(layer, "tls_")
 
 GROUP_REGISTRY = {
     "4588": {"algorithm": "X25519MLKEM768", "usage": "key_establishment"},
@@ -67,7 +97,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
 
     # Disjoint stream state tracking
     # states: "assessed", "unknown", "unsupported", "failed"
-    stream_states: dict[int, str] = {}
+    stream_states: dict[str, str] = {}
     
     try:
         capture = pyshark.FileCapture(temp_file_path, keep_packets=False)
@@ -90,7 +120,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
 
     try:
         for packet in capture:
-            tcp_stream = None
+            stream_key = None
             try:
                 ip_src, ip_dst = None, None
                 if hasattr(packet, 'ipv6'):
@@ -101,37 +131,45 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                 if not ip_src or not ip_dst:
                     continue  # Not IP
                 
-                if not hasattr(packet, 'tcp'):
+                if hasattr(packet, 'tcp'):
+                    stream_key = f"tcp-stream-{int(packet.tcp.stream)}"
+                elif hasattr(packet, 'quic') and hasattr(packet, 'udp'):
+                    connection = getattr(packet.quic, 'connection_number', None)
+                    stream_key = (
+                        f"quic-connection-{connection}" if connection is not None
+                        else f"quic-udp-stream-{packet.udp.stream}"
+                    )
+                else:
                     continue
                 
-                tcp_stream = int(packet.tcp.stream)
+                if stream_key not in stream_states:
+                    stream_states[stream_key] = "unsupported"
                 
-                if tcp_stream not in stream_states:
-                    stream_states[tcp_stream] = "unsupported"
-                
-                if 'TLS' in packet and hasattr(packet.tls, 'handshake_type'):
-                    handshake_type = packet.tls.handshake_type
+                for tls in _tls_layers(packet):
+                    if not hasattr(tls, 'handshake_type'):
+                        continue
+                    handshake_type = tls.handshake_type
                     
                     if handshake_type == "2":
                         # Check HelloRetryRequest
                         random_bytes = ""
-                        if hasattr(packet.tls, 'handshake_random'):
-                            random_bytes = packet.tls.handshake_random.replace(":", "").lower()
+                        if hasattr(tls, 'handshake_random'):
+                            random_bytes = tls.handshake_random.replace(":", "").lower()
                         
                         if random_bytes == HRR_RANDOM:
                             # It's HRR, mark unsupported/retry and don't emit selected group
-                            if stream_states.get(tcp_stream) not in ("assessed", "failed"):
-                                stream_states[tcp_stream] = "unsupported"
+                            if stream_states.get(stream_key) not in ("assessed", "failed"):
+                                stream_states[stream_key] = "unsupported"
                             continue
                             
                         # Actual ServerHello
-                        selecao = packet.tls.handshake_ciphersuite
+                        selecao = tls.handshake_ciphersuite
                         frame_number = packet.number
                         
                         ts = float(packet.sniff_timestamp)
                         dt = datetime.fromtimestamp(ts, timezone.utc)
                         
-                        flow_key = f"tcp-stream-{tcp_stream}-{ip_src}-{ip_dst}"
+                        flow_key = f"{stream_key}-{ip_src}-{ip_dst}"
                         asset_id = stable_asset_id("pcap", f"{capture_hash}|{flow_key}")
                         
                         primitives = CIPHER_REGISTRY.get(selecao)
@@ -165,14 +203,14 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                                 findings.append(finding)
                             
                             # Successful assessment upgrades stream state
-                            stream_states[tcp_stream] = "assessed"
+                            stream_states[stream_key] = "assessed"
                         else:
                             # If we don't know the cipher, and it hasn't failed/assessed yet
-                            if stream_states.get(tcp_stream) not in ("assessed", "failed"):
-                                stream_states[tcp_stream] = "unknown"
+                            if stream_states.get(stream_key) not in ("assessed", "failed"):
+                                stream_states[stream_key] = "unknown"
                         
-                        if hasattr(packet.tls, 'handshake_extensions_key_share_group'):
-                            group = packet.tls.handshake_extensions_key_share_group
+                        if hasattr(tls, 'handshake_extensions_key_share_group'):
+                            group = tls.handshake_extensions_key_share_group
                             group_info = GROUP_REGISTRY.get(group)
                             if group_info:
                                 role = "keyshare-key_establishment"
@@ -194,7 +232,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                                     observed_at=dt
                                 )
                                 findings.append(finding)
-                                stream_states[tcp_stream] = "assessed"
+                                stream_states[stream_key] = "assessed"
                             else:
                                 role = "keyshare-key_establishment"
                                 finding_id = stable_finding_id(asset_id, "key_establishment", role, "observed")
@@ -214,14 +252,14 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                                     observed_at=dt
                                 )
                                 findings.append(finding)
-                                if stream_states.get(tcp_stream) not in ("assessed", "failed"):
-                                    stream_states[tcp_stream] = "unknown"
+                                if stream_states.get(stream_key) not in ("assessed", "failed"):
+                                    stream_states[stream_key] = "unknown"
                     
                     elif handshake_type == "1": # ClientHello
                         pass
                         
             except AttributeError as ae:
-                key = tcp_stream if tcp_stream is not None else f"pkt_{id(packet)}"
+                key = stream_key if stream_key is not None else f"pkt_{id(packet)}"
                 stream_states[key] = "failed"
                 errors.append(ScanError(
                     source_type="pcap",
@@ -230,7 +268,7 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                     message=f"AttributeError at frame {getattr(packet, 'number', 'unknown')}: {ae}"
                 ))
             except Exception as e:
-                key = tcp_stream if tcp_stream is not None else f"pkt_{id(packet)}"
+                key = stream_key if stream_key is not None else f"pkt_{id(packet)}"
                 stream_states[key] = "failed"
                 errors.append(ScanError(
                     source_type="pcap",

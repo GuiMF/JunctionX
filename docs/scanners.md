@@ -385,11 +385,18 @@ or renew anything in AWS. Run the comparison command above to generate the curre
 ## Network discovery
 
 `adapters/network.py` reads saved PCAP data through PyShark/TShark. It examines
-supported TLS ServerHello cipher suites and key-share groups, keeps frame evidence,
+supported TLS ServerHello cipher suites and key-share groups over TCP and QUIC/UDP,
+keeps frame evidence,
 and distinguishes offered capabilities from selected values. Registries are bounded:
 unsupported or unknown values remain explicit. Encrypted TLS 1.3 authentication
 cannot be inferred from a visible ServerHello. Install TShark separately to parse
-captures; scanning is passive and does not initiate connections.
+captures; scanning is passive and does not initiate connections. QUIC support uses
+handshakes decoded by TShark (including visible Initial packets); it does not decrypt
+application traffic. QUIC connections are tracked separately from TCP streams.
+The cipher registry includes TLS 1.2 ECDHE-ECDSA/ECDHE-RSA with AES-128/256-GCM
+([RFC 5289](https://www.rfc-editor.org/rfc/rfc5289.html)), alongside the existing
+RSA/AES-128-CBC and TLS 1.3 AES-GCM suites. TLS 1.2 suite evidence identifies
+algorithm families, not the certificate key size, selected curve, or signature hash.
 
 ```sh
 .venv/bin/python network-capture.py capture.pcap > reports/network.json
