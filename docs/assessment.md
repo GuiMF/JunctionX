@@ -1,6 +1,6 @@
 # Deterministic assessment v1.1.0
 
-`core.assessment.assess_finding(Finding) -> Finding` returns a deep copy. It reads normalized algorithm, usage, and parameters only. There is no LLM, network call, clock dependency, or inference from evidence text, comments, filenames, owner, or asset names. The adapter supplies those facts; assessment cannot establish whether a detector is correct.
+`core.assessment.assess_finding(Finding) -> Finding` returns a deep copy. It reads the normalized algorithm, usage, parameters, and evidence scope. There is no LLM, network call, clock dependency, or inference from evidence text, comments, filenames, owner, or asset names. The adapter supplies those facts; assessment cannot establish whether a detector is correct.
 
 Every result includes a versioned rule ID, rationale, recommendation, and authoritative reference URLs. Unknown cases receive an explicit unknown rule. Confidence, identity, evidence kind, timestamps, ownership, and detector-supplied issues survive assessment. Evidence is never upgraded from offered/configured/declared to observed.
 

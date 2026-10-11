@@ -2,7 +2,9 @@ import type { ScanRequest, ScanResult } from '../types/contract';
 import { MAX_BATCH_BYTES, prepareScan, prepareScanBatches, validateFileSelection } from '../utils/scanInputs';
 
 export function apiUrl(path: string): string {
-  const base = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000').replace(/\/+$/, '');
+  // Browser requests use the public service rewrite; internal bindings belong
+  // to server functions and must never be embedded in a Vite build.
+  const base = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
   return `${base}${path}`;
 }
 

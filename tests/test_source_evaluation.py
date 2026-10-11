@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+from scripts import evaluate_source
 from scripts.evaluate_source import FIXTURES, evaluate_corpus, score_occurrences
 
 
@@ -81,3 +82,30 @@ def test_holdout_scans_successfully_against_manual_labels():
     assert report["detection"]["false_positive"] == 0, report["false_positives"]
     assert report["detection"]["false_negative"] == 0, report["false_negatives"]
     assert not report["parameters"]["mismatches"]
+
+
+@pytest.mark.parametrize("expected,actual,errors", [
+    ([item()], [item(), item(2)], []),
+    ([item(), item(2)], [item()], []),
+    ([item(parameters={"key_bits": None})], [item(parameters={"key_bits": 256})], []),
+    ([item(known_gap="unsupported construction")], [], []),
+    ([item()], [item()], [{"code": "scan_failed"}]),
+])
+def test_strict_cli_fails_on_accuracy_regressions_and_preserves_report(monkeypatch, capsys, expected, actual, errors):
+    report = {"scan_errors": errors, **score_occurrences(expected, actual)}
+    monkeypatch.setattr(evaluate_source, "evaluate_corpus", lambda *_: report)
+    assert evaluate_source.main(["--strict"]) == 1
+    assert json.loads(capsys.readouterr().out)["reports"] == [report]
+    # Non-strict mode remains useful for measuring incomplete implementations.
+    assert evaluate_source.main([]) == int(bool(errors))
+    assert json.loads(capsys.readouterr().out)["reports"] == [report]
+
+
+def test_strict_cli_checks_optional_organizer_report_as_well(monkeypatch, capsys, tmp_path):
+    perfect = {"scan_errors": [], **score_occurrences([item()], [item()])}
+    regression = {"scan_errors": [], **score_occurrences([item()], [])}
+    monkeypatch.setattr(evaluate_source, "evaluate_corpus", lambda root, _: regression if root == tmp_path else perfect)
+    assert evaluate_source.main(["--strict"]) == 0
+    assert json.loads(capsys.readouterr().out)["reports"] == [perfect]
+    assert evaluate_source.main(["--strict", "--organizer-root", str(tmp_path)]) == 1
+    assert json.loads(capsys.readouterr().out)["reports"] == [perfect, regression]

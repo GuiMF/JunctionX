@@ -51,11 +51,14 @@ after installing Python, Node.js, or TShark, reopen the terminal.
 For backend-only development on macOS/Linux, `./scripts/run-local.sh` still
 starts the API (`PYTHON=python3.13` and `PORT=8001` can override its defaults).
 For frontend-only development, run `npm ci` and `npm run dev` from `web/`.
-`VITE_API_BASE_URL` defaults to `http://127.0.0.1:8000`; when starting the frontend
-separately, set it to your API origin before starting Vite. It is a build-time
+Vite proxies same-origin `/api` requests to `http://127.0.0.1:8000`; when starting the frontend
+separately against another API port, set `VITE_API_BASE_URL` to your API origin before starting Vite. It is a build-time
 setting, so also set it for `npm run build` when needed.
 
 ## Dashboard workflow
+
+For hosting, see [Vercel services deployment](docs/deployment.md), including
+the remaining backend storage and upload constraints.
 
 Open **Import data** and select `.py`, `.java`, `.go`, `.pcap`, `.pcapng`, `.cap`, or AWS snapshot `.json`
 files, or use **Browse folder** (or drop a folder) to recursively discover compatible

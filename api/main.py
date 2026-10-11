@@ -61,6 +61,10 @@ def create_app(
         service.registry.register("pcap", parse_pcap_adapter)
     app.state.scan_service = service
 
+    @app.get("/healthz", include_in_schema=False)
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
     @app.exception_handler(RequestValidationError)
     async def invalid_request(_, exc: RequestValidationError) -> JSONResponse:
         # FastAPI's default includes the invalid input, which can be an entire
