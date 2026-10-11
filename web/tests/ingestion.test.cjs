@@ -273,3 +273,49 @@ test('folder checks block scanning and ignore results after closing the dialog',
   assert.equal(button('Scan selected files').disabled, true);
   assert.doesNotMatch(container.textContent, /slow.json/);
 });
+
+test('uncertainty reasons filter findings and keep HTTP out of the unknown tier', async (t) => {
+  const live = response();
+  const base = live.findings[0];
+  live.findings = [
+    { ...base, id: 'aes', algorithm: 'AES', quantum_status: 'unknown', challenge_tier: 'unknown', rule_id: 'QT-AES-PARAMETERS@1.1.0' },
+    { ...base, id: 'hmac', algorithm: 'HMAC', quantum_status: 'unknown', challenge_tier: 'unknown', rule_id: 'QT-HMAC-PARAMETERS@1.1.0' },
+    { ...base, id: 'http', algorithm: 'HTTP', quantum_status: 'not_applicable', challenge_tier: 'unknown' },
+    { ...base, id: 'sha1', algorithm: 'SHA-1', quantum_status: 'quantum_weakened', challenge_tier: 'medium' },
+  ];
+  mock.method(global, 'fetch', async () => ({ ok: true, json: async () => live }));
+  const container = await mount(t);
+  await select([file()]); await click('Scan selected files');
+  assert.match(container.textContent, /Why are 2 findings unresolved/);
+  await act(async () => {
+    container.querySelector('details summary').click();
+  });
+  await click('AES parameters unresolved: 1');
+  assert.equal(container.querySelectorAll('tbody tr').length, 1);
+  assert.match(container.querySelector('tbody').textContent, /AES/);
+  await click('Clear filters');
+  const tier = container.querySelector('[aria-label="Filter by quantum tier"]');
+  await act(async () => { tier.value = 'unknown'; tier.dispatchEvent(new window.Event('change', { bubbles: true })); });
+  assert.equal(container.querySelectorAll('tbody tr').length, 2);
+  assert.doesNotMatch(container.querySelector('tbody').textContent, /HTTP|SHA-1/);
+  await act(async () => { tier.value = 'not_applicable'; tier.dispatchEvent(new window.Event('change', { bubbles: true })); });
+  assert.equal(container.querySelectorAll('tbody tr').length, 1);
+  assert.match(container.querySelector('tbody').textContent, /Not applicable.*HTTP/);
+  await act(async () => container.querySelector('tbody button').click());
+  assert.match(container.querySelector('[role=dialog]').textContent, /Not applicable/);
+  assert.doesNotMatch(container.querySelector('[role=dialog]').textContent, /unknown tier/i);
+});
+
+test('partial coverage without input errors remains explained after dismissing notification', async (t) => {
+  const live = response('partial');
+  live.errors = [];
+  live.coverage = [{ source_type: 'pcap', input_name: 'network.pcap', unit: 'sessions', assessed: 97, unknown: 0, unsupported: 38, failed: 0 }];
+  mock.method(global, 'fetch', async () => ({ ok: true, json: async () => live }));
+  const container = await mount(t);
+  await select([file()]); await click('Scan selected files');
+  await click('Dismiss');
+  const notice = container.querySelector('[aria-label="Incomplete scan coverage"]');
+  assert.match(notice.textContent, /Scan partially completed/);
+  assert.match(notice.textContent, /network.pcap \(pcap\): 38 unsupported, 0 failed sessions/);
+  assert.equal(container.querySelector('[aria-label="Input errors"]'), null);
+});

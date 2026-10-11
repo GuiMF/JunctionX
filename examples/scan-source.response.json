@@ -4,7 +4,7 @@
   "status": "completed",
   "started_at": "2026-10-10T12:00:00Z",
   "evaluated_at": "2026-10-10T12:00:00Z",
-  "ruleset_version": "1.0.2",
+  "ruleset_version": "1.1.0",
   "tool_versions": {
     "quantumtrace-core": "0.1.0",
     "synthetic%2Fhandoff.py/quantumtrace-source": "0.2.0",
@@ -44,7 +44,7 @@
       "posture_issues": [],
       "owner": null,
       "observed_at": null,
-      "rule_id": "QT-UNKNOWN@1.0.2",
+      "rule_id": "QT-AES-PARAMETERS@1.1.0",
       "rationale": "AES key size is absent, unsupported, or contradicts its name, or mode metadata conflicts; assessment remains unknown. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
       "recommendation": "Resolve AES key size in bits and any conflicting mode metadata from the actual API or configuration.",
       "references": []
@@ -79,7 +79,7 @@
       "posture_issues": [],
       "owner": null,
       "observed_at": null,
-      "rule_id": "QT-AES@1.0.2",
+      "rule_id": "QT-AES@1.1.0",
       "rationale": "AES-256 is a symmetric primitive. Generic quantum search does not establish a practical break. This classification does not establish key-exchange or authentication resistance. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
       "recommendation": "Verify authenticated encryption, nonce uniqueness, key handling, and separately assess key establishment and signatures. Consider AES-256 where policy requires additional margin.",
       "references": [
@@ -118,7 +118,7 @@
       "posture_issues": [],
       "owner": null,
       "observed_at": null,
-      "rule_id": "QT-RSA-UNKNOWN-USAGE@1.0.2",
+      "rule_id": "QT-RSA-UNKNOWN-USAGE@1.1.0",
       "rationale": "The declared RSA primitive relies on factoring and is quantum-vulnerable; key generation alone does not establish how the key is used. Declared source evidence does not establish runtime execution. A primitive assessment does not certify whole-application resilience.",
       "recommendation": "Confirm whether this key signs, encrypts, or establishes keys before choosing a compatible post-quantum replacement. Do not substitute a KEM for a signature.",
       "references": [

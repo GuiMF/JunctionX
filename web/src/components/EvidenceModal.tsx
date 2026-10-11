@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { X, ExternalLink, ShieldAlert, ArrowRight, FileText, Network, Cloud, ScanLine } from 'lucide-react';
 import type { Finding, EvidenceKind } from '../types/contract';
+import { assessmentGap, assessmentLabel } from '../utils/assessment';
 
 interface EvidenceModalProps { finding: Finding | null; onClose: () => void; }
 const evidenceDescriptions: Record<EvidenceKind, string> = {
@@ -51,7 +52,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ finding, onClose }
         </header>
         <div className="flex-1 overflow-y-auto px-6 py-6 text-[15px]">
           <div className="mb-6">
-            <div className="mb-3 flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-[13px] text-slate-500"><SourceIcon className="h-3.5 w-3.5" />{sourceLabel}</span><span className={`rounded border px-2 py-0.5 text-[13px] font-semibold capitalize ${tierStyles[finding.challenge_tier]}`}>{finding.challenge_tier} tier</span></div>
+            <div className="mb-3 flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-[13px] text-slate-500"><SourceIcon className="h-3.5 w-3.5" />{sourceLabel}</span><span className={`rounded border px-2 py-0.5 text-[13px] font-semibold capitalize ${tierStyles[finding.challenge_tier]}`}>{assessmentLabel(finding)}{finding.quantum_status !== 'not_applicable' && ' tier'}</span></div>
             <h2 id="evidence-title" className="break-words font-mono text-xl font-semibold tracking-tight text-slate-900">{finding.algorithm}</h2>
             <p id="evidence-description" className="mt-2 break-all font-mono text-[13px] text-slate-500">{finding.asset_id}</p>
             <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-[13px]">
@@ -61,7 +62,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ finding, onClose }
               <div><dt className="mb-1 text-slate-500">Confidence</dt><dd className="capitalize text-slate-800">{finding.confidence}</dd></div>
             </dl>
           </div>
-          <section className="mb-6"><h3 className="mb-2 text-[13px] font-semibold text-slate-900">Why it matters</h3><p className="leading-relaxed text-slate-600">{finding.rationale || 'No assessment rationale available.'}</p><p className="mt-2 font-mono text-[12px] text-slate-500">RULE {finding.rule_id || 'Not available'}</p></section>
+          <section className="mb-6"><h3 className="mb-2 text-[13px] font-semibold text-slate-900">{assessmentGap(finding) || 'Why it matters'}</h3><p className="leading-relaxed text-slate-600">{finding.rationale || 'No assessment rationale available.'}</p><p className="mt-2 font-mono text-[12px] text-slate-500">RULE {finding.rule_id || 'Not available'}</p></section>
           <section className="mb-6">
             <div className="mb-2 flex items-center justify-between"><h3 className="text-[13px] font-semibold text-slate-900">Traceable evidence</h3><span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 font-mono text-[12px] capitalize text-sky-700">{finding.evidence_kind}</span></div>
             <p className="mb-3 text-[13px] leading-relaxed text-slate-500">{evidenceDescriptions[finding.evidence_kind]}</p>

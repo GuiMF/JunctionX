@@ -58,7 +58,7 @@ without calling it is not a hash observation. AES inside a Python `Cipher` is on
 occurrence at `Cipher`; Go GCM construction enriches the bound AES block factory.
 Java factories are occurrence anchors; bound initializer calls can add parameters.
 
-RSA generation keeps usage unknown. Core rules 1.0.2 classify the known RSA
+RSA generation keeps usage unknown. Core rules 1.1.0 classify the known RSA
 primitive as quantum-vulnerable and flag explicitly weak key sizes while asking
 the user to establish usage before choosing a replacement. This follows the
 existing [NIST rationale](https://csrc.nist.gov/projects/post-quantum-cryptography/faqs).

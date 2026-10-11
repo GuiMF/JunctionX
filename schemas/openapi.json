@@ -554,6 +554,7 @@
             "type": "string",
             "enum": [
               "vulnerable",
+              "quantum_weakened",
               "resistant_primitive",
               "hybrid",
               "unknown",

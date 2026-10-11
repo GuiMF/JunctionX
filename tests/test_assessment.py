@@ -176,7 +176,49 @@ def test_md5_hash_signature_and_hmac_have_distinct_issues():
     assert any("non-security checksum" in issue for issue in plain.classical_issues)
     assert any("digital signatures" in issue for issue in signature.classical_issues)
     assert any("do not prove HMAC forgery" in issue for issue in mac.classical_issues)
-    assert all(result.quantum_status == "unknown" for result in (plain, signature, mac))
+    assert plain.quantum_status == "quantum_weakened" and plain.challenge_tier == "medium"
+    assert all(result.quantum_status == "unknown" for result in (signature, mac))
+
+
+@pytest.mark.parametrize("algorithm", ["MD5", "SHA-1", "sha_1"])
+def test_legacy_hash_challenge_tier_preserves_classical_weakness_and_limits(algorithm):
+    result = assess_finding(finding(algorithm, "hash"))
+    assert result.quantum_status == "quantum_weakened"
+    assert result.challenge_tier == "medium"
+    assert result.rule_id == f"QT-LEGACY-HASH@{RULESET_VERSION}"
+    assert "project policy" in result.rationale and "not a practical quantum break" in result.rationale
+    assert result.classical_issues
+    assert "non-security checksum" in result.recommendation
+    assert assess_finding(result) == result
+
+
+@pytest.mark.parametrize("algorithm", ["SHA-256", "SHA-384", "SHA-512", "SHA-1-custom"])
+def test_other_hashes_do_not_inherit_legacy_policy(algorithm):
+    assert assess_finding(finding(algorithm, "hash")).quantum_status == "unknown"
+
+
+@pytest.mark.parametrize("algorithm,group", [("EC", None), ("ECC", "P-256"), ("EC", "secp384r1")])
+def test_ec_key_is_vulnerable_without_inventing_usage(algorithm, group):
+    result = assess_finding(finding(algorithm, "unknown", parameters={"named_group": group}))
+    assert result.quantum_status == "vulnerable" and result.challenge_tier == "critical"
+    assert result.usage == "unknown"
+    assert "Confirm whether" in result.recommendation
+    assert "ML-KEM" not in result.recommendation
+
+
+@pytest.mark.parametrize("group", ["MLKEM768", "FFDHE2048", "custom-curve"])
+def test_ec_unknown_usage_with_conflicting_or_unsupported_group_stays_unknown(group):
+    assert assess_finding(finding("EC", "unknown", parameters={"named_group": group})).quantum_status == "unknown"
+
+
+def test_http_listener_is_not_applicable_without_hiding_operational_issue():
+    result = assess_finding(finding("HTTP", "unknown", source_type="cloud", evidence_kind="configured",
+                                   posture_issues=["HTTP forwards traffic without TLS"]))
+    assert result.quantum_status == "not_applicable" and result.challenge_tier == "unknown"
+    assert result.posture_issues == ["HTTP forwards traffic without TLS"]
+    assert "does not establish secure transport" in result.rationale
+    assert assess_finding(finding("HTTP", "encryption")).quantum_status == "unknown"
+    assert assess_finding(finding("HTTP", "unknown")).quantum_status == "unknown"
 
 
 def test_pbkdf2_ancient_minimum_is_not_a_safety_threshold():
