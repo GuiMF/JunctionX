@@ -4,6 +4,9 @@ QuantumTrace discovers cryptographic facts in Python/Java/Go source, saved netwo
 captures and AWS JSON snapshots. A shared rule engine assesses findings, calculates
 asset exposure, and exports JSON or a schema-validated CycloneDX 1.6 CBOM.
 
+See [scanner support and remaining boundaries](docs/scanners.md#unsupported-versus-unknown)
+for what is supported, why some evidence remains unknown, and extension paths.
+
 The React dashboard starts with an empty inventory. Open **Import data**, select source,
 AWS snapshot, or capture files and click **Scan selected files** to analyze them
 with the local API, inspect the returned findings, and export the active scan.
@@ -70,7 +73,9 @@ captures are encoded as base64. JSON must contain a `Keys`, `Certificates`, or
 `LoadBalancers` snapshot, or the [documented AWS bundle](docs/api.md). Select related
 AWS snapshots in the same folder: the dashboard bundles each folder into one input so certificate
 references resolve. Select only one snapshot of each kind per folder; keep different environments
-in separate folders. Individually selected files are grouped together.
+in separate folders. Individually selected files are grouped together. Native AWS
+DescribeKey (`KeyMetadata`) and DescribeCertificate (`Certificate`) JSON responses
+are also accepted; each is submitted separately with its original evidence paths.
 
 Select 1–10,000 files with unique relative paths. Encoded inputs are limited to 64 MiB each and
 3 GB combined (3,000,000,000 bytes), including base64 expansion and the combined

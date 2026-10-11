@@ -107,6 +107,13 @@ three together to resolve certificate links in the same adapter invocation. Thes
 are raw metadata exports, not `quantumtrace.normalized.v1` fixtures. See
 [the cloud guide](scanners.md) for a runnable API example.
 
+Native AWS `DescribeKey` (`{"KeyMetadata": {...}}`) and `DescribeCertificate`
+(`{"Certificate": {...}}`) responses are also raw cloud inputs. Original JSON
+pointers are retained. An absent `GeneratedAt` leaves observation timestamps
+unknown. The dashboard submits native files individually; automatic links across
+separate inputs are not inferred. A filename-keyed bundle may contain native
+responses under their corresponding inventory filenames.
+
 Every adapter receives an `AdapterContext` containing the scan's timezone-aware `evaluated_at`. Use this value for expiry and other time-dependent posture checks rather than reading the wall clock. The service gives each invocation independent copies of its input and context; mutations cannot change another adapter's evaluation time or the request.
 
 The core validates each input independently, assesses findings using its own rules, and checks identity conflicts before committing that input's results. Parser failures, malformed output and conflicting IDs reject that input while retaining earlier successful results. Existing failed/unsupported counts and errors make the scan partial if there is any successful work. Empty, successfully checked inputs can complete without findings; no findings does not itself mean safety.

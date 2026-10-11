@@ -4,7 +4,7 @@ import re
 
 from core.models import Finding
 
-RULESET_VERSION = "1.1.0"
+RULESET_VERSION = "1.1.1"
 NIST_PQC = "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs"
 FIPS203 = "https://csrc.nist.gov/pubs/fips/203/final"
 FIPS204 = "https://csrc.nist.gov/pubs/fips/204/final"
@@ -38,7 +38,7 @@ CLASSICAL_USES = {
     "X25519": {"key_establishment"}, "X448": {"key_establishment"},
 }
 CLASSICAL_EC_GROUPS = {
-    "X25519", "X448", "SECP256R1", "SECP384R1", "SECP521R1", "P256", "P384", "P521",
+    "X25519", "X448", "SECP256R1", "SECP256K1", "SECP384R1", "SECP521R1", "P256", "P384", "P521",
 }
 CLASSICAL_GROUPS = CLASSICAL_EC_GROUPS | {
     "FFDHE2048", "FFDHE3072", "FFDHE4096", "FFDHE6144", "FFDHE8192",

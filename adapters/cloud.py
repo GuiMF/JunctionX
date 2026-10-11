@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 
 from adapters.normalized import input_bytes
 from core.models import (
@@ -18,7 +19,7 @@ KMS_REFERENCE = "https://docs.aws.amazon.com/kms/latest/developerguide/symm-asym
 ALB_REFERENCE = "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html"
 NLB_REFERENCE = "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/describe-ssl-policies.html"
 ACM_REFERENCE = "https://docs.aws.amazon.com/acm/latest/APIReference/API_CertificateDetail.html"
-MAPPING_VERSION = "cloud-1.1"
+MAPPING_VERSION = "cloud-1.2"
 INPUTS = (
     ("kms_key_inventory.json", "Keys", "kms_key", "KeyArn"),
     ("acm_certificates.json", "Certificates", "certificate", "CertificateArn"),
@@ -61,12 +62,27 @@ KMS_KEY_SPECS = {
     "RSA_4096": ("RSA", 4096, None),
     "ECC_NIST_P256": ("EC", 256, "secp256r1"),
     "ECC_NIST_P384": ("EC", 384, "secp384r1"),
+    "ECC_NIST_P521": ("EC", 521, "secp521r1"),
+    "ECC_SECG_P256K1": ("EC", 256, "secp256k1"),
+    "ECC_NIST_EDWARDS25519": ("Ed25519", 256, "ed25519"),
+    **{f"HMAC_{bits}": ("HMAC", bits, None) for bits in (224, 256, 384, 512)},
+    **{f"ML_DSA_{level}": (f"ML-DSA-{level}", None, None) for level in (44, 65, 87)},
+    "SM2": ("SM2", 256, None),
 }
 CERTIFICATE_KEY_SPECS = {
     **{spec: parameters for spec, parameters in KMS_KEY_SPECS.items() if spec.startswith("RSA_")},
+    "RSA_1024": ("RSA", 1024, None),
     "EC_prime256v1": ("EC", 256, "secp256r1"),
     "EC_secp384r1": ("EC", 384, "secp384r1"),
+    "EC_secp521r1": ("EC", 521, "secp521r1"),
 }
+CERTIFICATE_SIGNATURES = {
+    "SHA1WITHRSA": ("RSA", "SHA1"),
+    **{f"SHA{bits}WITHRSA": ("RSA", f"SHA{bits}") for bits in (256, 384, 512)},
+    **{f"SHA{bits}WITHECDSA": ("ECDSA", f"SHA{bits}") for bits in (256, 384, 512)},
+    **{f"ECDSA_WITH_SHA{bits}": ("ECDSA", f"SHA{bits}") for bits in (256, 384, 512)},
+}
+NATIVE_RESPONSES = {"KeyMetadata": "kms_key_inventory.json", "Certificate": "acm_certificates.json"}
 
 
 def _date(value):
@@ -79,6 +95,31 @@ def _date(value):
         return result.astimezone(timezone.utc)
     except OverflowError as exc:
         raise ValueError("Timestamp is outside the supported UTC range") from exc
+
+
+def _resource_date(value):
+    # AWS JSON API timestamps are epoch seconds; CLI snapshots use ISO-8601.
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        try:
+            return datetime.fromtimestamp(value, timezone.utc)
+        except (ValueError, OverflowError, OSError) as exc:
+            raise ValueError("Timestamp is outside the supported UTC range") from exc
+    return _date(value)
+
+
+def _symmetric_spec(arn, region):
+    """Resolve the documented China exception only with consistent location evidence."""
+    parts = arn.split(":", 5)
+    partition, arn_region = parts[1], parts[3]
+    if parts[2] != "kms" or (region is not None and region != arn_region):
+        return "unknown", None, None
+    if partition == "aws-cn" and re.fullmatch(r"cn-[a-z]+-\d+", arn_region):
+        return "SM4", 128, None
+    if partition == "aws-us-gov" and re.fullmatch(r"us-gov-[a-z]+-\d+", arn_region):
+        return "AES", 256, "GCM"
+    if partition == "aws" and re.fullmatch(r"(?:af|ap|ca|eu|il|me|mx|sa|us)-[a-z]+-\d+", arn_region):
+        return "AES", 256, "GCM"
+    return "unknown", None, None
 
 
 def _json_object(pairs):
@@ -109,8 +150,10 @@ def _validate_record(record, identifier):
     if not isinstance(record, dict):
         raise ValueError("Resource must be an object")
     arn = record.get(identifier)
-    if not isinstance(arn, str) or not arn.startswith("arn:aws:"):
+    if not isinstance(arn, str) or not re.fullmatch(r"arn:(?:aws|aws-cn|aws-us-gov):[^:]+:[^:]+:[^:]+:.+", arn):
         raise ValueError(f"Missing or invalid {identifier}")
+    if "Arn" in record and "KeyArn" in record and record["Arn"] != record["KeyArn"]:
+        raise ValueError("Conflicting key ARNs")
     if "Listeners" in record and not isinstance(record["Listeners"], list):
         raise ValueError("Listeners must be a list")
     for field in ("Tags", "Certificates", "DefaultActions"):
@@ -119,7 +162,7 @@ def _validate_record(record, identifier):
             or not all(isinstance(item, dict) for item in record[field])
         ):
             raise ValueError(f"{field} must be a list of objects")
-    for field in ("SigningAlgorithms", "EncryptionAlgorithms", "InUseBy"):
+    for field in ("SigningAlgorithms", "EncryptionAlgorithms", "MacAlgorithms", "KeyAgreementAlgorithms", "InUseBy"):
         if field in record and (
             not isinstance(record[field], list)
             or not all(isinstance(item, str) for item in record[field])
@@ -128,7 +171,7 @@ def _validate_record(record, identifier):
     for certificate in record.get("Certificates", []):
         if "CertificateArn" in certificate and not isinstance(certificate["CertificateArn"], str):
             raise ValueError("CertificateArn reference must be a string")
-    for field in ("KeySpec", "KeyUsage", "KeyState", "KeyRotationStatus", "KeyAlgorithm",
+    for field in ("KeySpec", "CustomerMasterKeySpec", "KeyUsage", "KeyState", "KeyRotationStatus", "KeyAlgorithm",
                   "SignatureAlgorithm", "Protocol", "SslPolicy", "Type"):
         if field in record and not isinstance(record[field], str):
             raise ValueError(f"{field} must be a string")
@@ -136,9 +179,9 @@ def _validate_record(record, identifier):
         raise ValueError("SslPolicy must not be blank")
     for field in ("NotBefore", "NotAfter", "ValidTo", "DeletionDate"):
         if field in record:
-            _date(record[field])
+            _resource_date(record[field])
     if "NotBefore" in record and "NotAfter" in record:
-        if _date(record["NotBefore"]) >= _date(record["NotAfter"]):
+        if _resource_date(record["NotBefore"]) >= _resource_date(record["NotAfter"]):
             raise ValueError("NotBefore must precede NotAfter")
     return arn
 
@@ -164,8 +207,8 @@ def _scan_cloud(contents, evaluation):
             raise ValueError("Team tag value must be a string")
         item = {
             "asset_id": arn, "kind": kind, "parent_id": parent, "owner": owner,
-            "snapshot_at": snapshot["GeneratedAt"], "account": snapshot.get("Account"),
-            "region": snapshot.get("Region"), "configuration": record,
+            "snapshot_at": snapshot.get("GeneratedAt"), "account": snapshot.get("Account", arn.split(":")[4]),
+            "region": snapshot.get("Region", arn.split(":")[3]), "configuration": record,
             "evidence": [_evidence(file, locator, record)],
         }
         assets_by_id[arn] = item
@@ -212,66 +255,88 @@ def _scan_cloud(contents, evaluation):
             report["input_hashes"][filename] = hashlib.sha256(content).hexdigest()
             snapshot = json.loads(content, object_pairs_hook=_json_object,
                                   parse_constant=_invalid_json_constant, parse_float=_json_float)
-            if not isinstance(snapshot, dict) or not isinstance(snapshot.get(collection), list):
+            if isinstance(snapshot, dict):
+                shape_keys = [key for key in [*(row[1] for row in INPUTS), *NATIVE_RESPONSES]
+                              if key in snapshot]
+                if len(shape_keys) != 1:
+                    raise ValueError("Ambiguous or unsupported cloud response")
+            native = next((key for key, name in NATIVE_RESPONSES.items()
+                           if name == filename and isinstance(snapshot, dict) and key in snapshot), None)
+            if not isinstance(snapshot, dict) or (native is None and not isinstance(snapshot.get(collection), list)):
                 raise ValueError(f"Expected an object with a {collection} list")
+            if native and (collection in snapshot or not isinstance(snapshot[native], dict)):
+                raise ValueError("Ambiguous or invalid native AWS response")
             for field in ("Account", "Region"):
                 if field in snapshot and (not isinstance(snapshot[field], str) or not snapshot[field].strip()):
                     raise ValueError(f"{field} must be a nonempty string")
-            generated = _date(snapshot.get("GeneratedAt"))
-            report["snapshots"].append({
-                "file": str(file), "locator": prefix + "/GeneratedAt", "generated_at": generated.isoformat(),
-                "age_seconds": (evaluation - generated).total_seconds(),
-            })
+            if not native or "GeneratedAt" in snapshot:
+                generated = _date(snapshot.get("GeneratedAt"))
+                report["snapshots"].append({
+                    "file": str(file), "locator": prefix + "/GeneratedAt", "generated_at": generated.isoformat(),
+                    "age_seconds": (evaluation - generated).total_seconds(),
+                })
         except (OSError, ValueError) as exc:
             coverage["file_failed"] = True
             error(file, prefix, str(exc))
             continue
-        coverage["total"] = len(snapshot[collection])
-        for index, record in enumerate(snapshot[collection]):
-            pointer = prefix + f"/{collection}/{index}"
+        records = [snapshot[native]] if native else snapshot[collection]
+        coverage["total"] = len(records)
+        for index, record in enumerate(records):
+            pointer = prefix + (f"/{native}" if native else f"/{collection}/{index}")
+            resource_identifier = "Arn" if native == "KeyMetadata" else identifier
             try:
-                item = asset(record, kind, identifier, file, pointer, snapshot)
+                item = asset(record, kind, resource_identifier, file, pointer, snapshot)
             except ValueError as exc:
                 coverage["failed"] += 1
                 error(file, pointer, str(exc))
                 continue
             coverage["inventoried"] += 1
             if kind == "kms_key":
-                usage = {"SIGN_VERIFY": "signature", "ENCRYPT_DECRYPT": "encryption"}.get(record.get("KeyUsage"), "unknown")
-                spec = record.get("KeySpec")
+                usage = {"SIGN_VERIFY": "signature", "ENCRYPT_DECRYPT": "encryption",
+                         "GENERATE_VERIFY_MAC": "mac", "KEY_AGREEMENT": "key_establishment"}.get(record.get("KeyUsage"), "unknown")
+                spec_field = "KeySpec" if "KeySpec" in record else "CustomerMasterKeySpec"
+                spec = record.get(spec_field)
                 algorithm, bits, group = KMS_KEY_SPECS.get(spec, ("unknown", None, None))
                 mode = None
-                # shortcut: symmetric mapping covers the supplied region, verify others before extending.
-                if spec == "SYMMETRIC_DEFAULT" and snapshot.get("Region") == "eu-west-1":
-                    algorithm, bits, mode = "AES", 256, "GCM"
+                if spec == "SYMMETRIC_DEFAULT":
+                    algorithm, bits, mode = _symmetric_spec(item["asset_id"], snapshot.get("Region"))
                 if algorithm == "EC" and usage == "signature":
                     algorithm = "ECDSA"
-                finding(item, "key", algorithm, bits, group, usage, file, pointer + "/KeySpec", spec, KMS_REFERENCE, mode)
+                elif algorithm == "EC" and usage == "key_establishment":
+                    algorithm = "ECDH"
+                if "KeySpec" in record and "CustomerMasterKeySpec" in record and record["KeySpec"] != record["CustomerMasterKeySpec"]:
+                    algorithm, bits, group, mode = "unknown", None, None, None
+                finding(item, "key", algorithm, bits, group, usage, file, pointer + "/" + spec_field, spec, KMS_REFERENCE, mode)
+                if algorithm == "HMAC":
+                    report["findings"][-1]["parameters"]["hash_algorithm"] = f"SHA{bits}"
+                if "KeySpec" in record and "CustomerMasterKeySpec" in record:
+                    report["findings"][-1]["evidence"].append(_evidence(file, pointer + "/CustomerMasterKeySpec", record["CustomerMasterKeySpec"]))
                 if "KeyUsage" in record:
                     report["findings"][-1]["evidence"].append(_evidence(file, pointer + "/KeyUsage", record["KeyUsage"]))
                 if spec == "SYMMETRIC_DEFAULT" and "Region" in snapshot:
                     report["findings"][-1]["evidence"].append(_evidence(file, prefix + "/Region", snapshot["Region"]))
+                if spec == "SYMMETRIC_DEFAULT":
+                    report["findings"][-1]["evidence"].append(_evidence(file, pointer + "/" + resource_identifier, item["asset_id"]))
                 for field, value, code in (
                     ("KeyRotationStatus", "DISABLED", "rotation_disabled"),
                     ("KeyState", "PendingDeletion", "pending_deletion"),
                 ):
                     if record.get(field) == value:
                         issue(item, code, file, pointer + "/" + field, value)
-                if "ValidTo" in record and _date(record["ValidTo"]) <= evaluation:
+                if "ValidTo" in record and _resource_date(record["ValidTo"]) <= evaluation:
                     issue(item, "key_material_expired", file, pointer + "/ValidTo", record["ValidTo"])
             elif kind == "certificate":
                 algorithm, bits, group = CERTIFICATE_KEY_SPECS.get(record.get("KeyAlgorithm"), ("unknown", None, None))
                 finding(item, "public_key", algorithm, bits, group, "unknown", file, pointer + "/KeyAlgorithm", record.get("KeyAlgorithm"), ACM_REFERENCE)
                 signature = record.get("SignatureAlgorithm")
-                signatures = {"SHA256WITHRSA": "RSA", "SHA1WITHRSA": "RSA", "ECDSA_WITH_SHA256": "ECDSA", "ECDSA_WITH_SHA384": "ECDSA"}
-                finding(item, "issuer_signature", signatures.get(signature, "unknown"), None, None, "signature", file, pointer + "/SignatureAlgorithm", signature, ACM_REFERENCE)
-                digests = {"SHA1WITHRSA": "SHA1", "SHA256WITHRSA": "SHA256", "ECDSA_WITH_SHA256": "SHA256", "ECDSA_WITH_SHA384": "SHA384"}
-                report["findings"][-1]["parameters"]["hash_algorithm"] = digests.get(signature)
+                signature_algorithm, digest = CERTIFICATE_SIGNATURES.get(signature, ("unknown", None))
+                finding(item, "issuer_signature", signature_algorithm, None, None, "signature", file, pointer + "/SignatureAlgorithm", signature, ACM_REFERENCE)
+                report["findings"][-1]["parameters"]["hash_algorithm"] = digest
                 if signature == "SHA1WITHRSA":
                     issue(item, "sha1_certificate_signature", file, pointer + "/SignatureAlgorithm", signature)
-                if "NotAfter" in record and _date(record["NotAfter"]) <= evaluation:
+                if "NotAfter" in record and _resource_date(record["NotAfter"]) <= evaluation:
                     issue(item, "certificate_expired", file, pointer + "/NotAfter", record["NotAfter"])
-                if "NotBefore" in record and _date(record["NotBefore"]) > evaluation:
+                if "NotBefore" in record and _resource_date(record["NotBefore"]) > evaluation:
                     issue(item, "certificate_not_yet_valid", file, pointer + "/NotBefore", record["NotBefore"])
             else:
                 listener_coverage = report["coverage"].setdefault("listener", {"unit": "resources", "total": 0, "inventoried": 0, "failed": 0, "file_failed": False})
@@ -345,6 +410,7 @@ def cloud_adapter(scan_input: ScanInput, context: AdapterContext) -> AdapterResu
         if not isinstance(value, dict):
             raise ValueError("Cloud input must be an object")
         collections = [filename for filename, collection, *_ in INPUTS if collection in value]
+        collections.extend(filename for key, filename in NATIVE_RESPONSES.items() if key in value)
         if len(collections) == 1:
             contents = {collections[0]: (scan_input.name, content, "")}
         elif not collections and value and set(value) <= {row[0] for row in INPUTS}:
@@ -356,7 +422,7 @@ def cloud_adapter(scan_input: ScanInput, context: AdapterContext) -> AdapterResu
         return AdapterResult(
             coverage=[Coverage(source_type="cloud", input_name=scan_input.name, unit="inputs", failed=1)],
             errors=[ScanError(source_type="cloud", input_name=scan_input.name,
-                              code="invalid_cloud_input", message="Expected a cloud snapshot or a filename-keyed snapshot bundle")],
+                              code="invalid_cloud_input", message="Expected a cloud snapshot, AWS DescribeKey/DescribeCertificate response, or filename-keyed snapshot bundle")],
             tool_versions={"cloud-adapter": MAPPING_VERSION},
         )
 

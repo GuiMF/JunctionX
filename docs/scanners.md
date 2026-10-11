@@ -1,5 +1,29 @@
 # Scanner support and evaluation
 
+## Unsupported versus unknown
+
+`unsupported` counts inputs or sessions for which there is no applicable detector.
+`unknown` means the detector recognizes the input but cannot establish the required
+fact. `failed` means parsing, validation, encoding or a resource limit prevented
+processing. File/session coverage is separate from a finding's assessment: an
+inventoried HMAC key can still have an unknown quantum assessment.
+
+| Boundary | Reason and current behavior | Further support |
+| --- | --- | --- |
+| Source languages other than Python, Java and Go | No language-aware detector; the API reports `unsupported_language`, and folder import skips these files. | Add a parser and evidence/false-positive tests per language. Renaming the extension is insufficient. |
+| Dynamic source values, unresolved wrappers and cross-file flow | Static evidence does not prove the callee, key size or runtime behavior. Parameters stay unknown; unsupported idioms may be missed. | Extend bounded provenance rules with positive and adversarial tests. Whole-program analysis remains outside the current scanner. |
+| Non-TLS/non-SSH TCP sessions | No cryptographic protocol detector. Plain HTTP, SMTP or PostgreSQL traffic does not by itself establish an encrypted algorithm. | Add protocol-specific handshake parsers; TLS exposed by TShark after STARTTLS can use the TLS detector. |
+| Incomplete TLS and SSH handshakes | Recognized traffic with insufficient selected-algorithm evidence is unknown. Client/SSH offers are retained as `offered`, excluded from exposure scoring. | Capture the relevant handshake. SSH selection and rekey tracking need additional negotiation analysis. |
+| Encrypted TLS 1.3 authentication | A visible ServerHello does not expose certificates or CertificateVerify. | Requires decryption secrets or independently supplied authentication evidence; cannot be recovered by adding a name mapping. |
+| Unmapped cipher suites, groups, AWS policies and algorithms | Registries are deliberately explicit. Unknown identifiers do not establish safety or PQ support. | Extend mappings from authoritative specifications and regression fixtures. |
+| Other cloud providers and raw AWS list responses without key/certificate details | Current cloud parsing covers documented AWS inventories and DescribeKey/DescribeCertificate responses. | Add adapters or obtain detailed resource exports; list-only identifiers cannot establish algorithms. |
+| Unregistered custom adapters | An explicitly supplied empty registry opts out of built-ins. Direct `ScanService` callers register PCAP explicitly; the API does this automatically. | Register the existing adapter; no new detector is required. |
+
+The October 2026 support expansion adds Python EC/ECDSA/ECDH APIs, native AWS
+key/certificate descriptions, broader KMS/ACM mappings, TLS offers and additional
+TLS registries, and visible SSH offers. These additions preserve missing evidence
+as unknown. They do not certify arbitrary source code or whole encrypted sessions.
+
 ## Source discovery
 
 The default local API now accepts raw Python (`.py`), Java (`.java`) and Go (`.go`)
@@ -30,8 +54,8 @@ Use `--synthetic` for organizer and other synthetic examples.
 
 ## Detection and evidence
 
-The bounded detector is pinned as `quantumtrace-source 0.2.0`, rules
-`source-api-v3`. Python uses the standard-library AST. Java and Go use lexical
+The bounded detector is pinned as `quantumtrace-source 0.3.0`, rules
+`source-api-v4`. Python uses the standard-library AST. Java and Go use lexical
 tokens and supported API patterns, not compilers or whole-program analysis.
 See [Python AST documentation](https://docs.python.org/3.12/library/ast.html).
 
@@ -41,6 +65,14 @@ Specific supported and unsupported examples are documented in the
 [labelled evaluation](scanners.md) and language regression tests.
 Imports, comments and string mentions alone are not crypto usage. Aliases and
 simple constants are resolved conservatively; dynamic values remain null.
+
+Python also recognizes `cryptography` EC `generate_private_key` and
+`derive_private_key`, ECDSA signing/verification on resolved private/public keys,
+and ECDH exchange on resolved private keys. Explicit P-256, P-384 and P-521 curve
+constructors supply the curve and key size. Generation retains unknown usage;
+signature and exchange calls establish their own usage. Dynamic receivers and
+algorithm arguments do not establish these operations. See the
+[cryptography EC API](https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ec/).
 
 All findings are `declared`, with null observation timestamps. Evidence gives
 file, 1-based line/column, API, detector version and detector rule. No raw source,
@@ -58,7 +90,7 @@ without calling it is not a hash observation. AES inside a Python `Cipher` is on
 occurrence at `Cipher`; Go GCM construction enriches the bound AES block factory.
 Java factories are occurrence anchors; bound initializer calls can add parameters.
 
-RSA generation keeps usage unknown. Core rules 1.1.0 classify the known RSA
+RSA generation keeps usage unknown. Core rules 1.1.1 classify the known RSA
 primitive as quantum-vulnerable and flag explicitly weak key sizes while asking
 the user to establish usage before choosing a replacement. This follows the
 existing [NIST rationale](https://csrc.nist.gov/projects/post-quantum-cryptography/faqs).
@@ -328,9 +360,23 @@ Mappings were checked on 2026-10-10 against
 and [NLB policies](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/describe-ssl-policies.html).
 The adapter covers the supplied key specs and five TLS policies, plus the demo
 hybrid policy. Cipher lists report membership, not negotiation preference order.
-The symmetric mapping covers `eu-west-1`; other regions remain unknown until
-mapped explicitly. Other algorithms and policies also remain unknown. The adapter
+The symmetric mapping uses consistent ARN partition/region evidence: commercial
+and GovCloud keys use AES-256-GCM; China-region keys use SM4-128, which remains
+unknown to the quantum assessment rules. Conflicting location metadata stays
+unknown. KMS mappings also include P-521, secp256k1, Ed25519, HMAC key specs,
+ML-DSA and SM2; ACM additionally maps RSA-1024 and P-521. Mapping a primitive
+does not guarantee an assessment: HMAC still requires context and SM2 is currently
+unassessed. Other algorithms and policies also remain unknown. The adapter
 does not fetch live policies or infer links to source code or network captures.
+
+Native AWS `DescribeKey` (`KeyMetadata`) and `DescribeCertificate` (`Certificate`)
+responses are accepted directly, preserving their original JSON pointers.
+Resource timestamps may use AWS epoch seconds or ISO-8601. `GeneratedAt` is
+optional for native responses; absent capture timestamps remain null, never
+inferred from a key's creation date or a certificate's validity. The dashboard
+submits each native response separately, so multiple descriptions in one folder
+are accepted without merging their evidence. Cross-input certificate joins are
+not performed; use a documented bundle to resolve related resources together.
 
 ## Modified demonstration
 
@@ -393,10 +439,30 @@ cannot be inferred from a visible ServerHello. Install TShark separately to pars
 captures; scanning is passive and does not initiate connections. QUIC support uses
 handshakes decoded by TShark (including visible Initial packets); it does not decrypt
 application traffic. QUIC connections are tracked separately from TCP streams.
+ClientHello cipher suites, supported groups and key shares are inventoried as
+offers. HelloRetryRequest and incomplete TLS sessions remain unknown until a
+real selected handshake is available; retries do not establish a selected group.
+Unmapped selected suites produce explicit unknown findings. Reserved GREASE
+values do not count as cryptographic offers.
+
 The cipher registry includes TLS 1.2 ECDHE-ECDSA/ECDHE-RSA with AES-128/256-GCM
 ([RFC 5289](https://www.rfc-editor.org/rfc/rfc5289.html)), alongside the existing
 RSA/AES-128-CBC and TLS 1.3 AES-GCM suites. TLS 1.2 suite evidence identifies
 algorithm families, not the certificate key size, selected curve, or signature hash.
+Additional mappings cover RSA/DHE AES-GCM, ChaCha20-Poly1305 and TLS 1.3 CCM
+suites, P-256/P-384/P-521, X448 and FFDHE groups. ChaCha20-Poly1305 is inventoried
+but remains unknown to the current assessment rules. Sources:
+[RFC 5288](https://www.rfc-editor.org/rfc/rfc5288.html),
+[RFC 7905](https://www.rfc-editor.org/rfc/rfc7905.html),
+[RFC 8446](https://www.rfc-editor.org/rfc/rfc8446.html),
+[RFC 7919](https://www.rfc-editor.org/rfc/rfc7919.html).
+
+Visible SSH KEXINIT lists supply offered key exchange, host-key, encryption and
+MAC algorithms. Offers are excluded from exposure scoring; neither list order
+alone nor an SSH banner proves a negotiated selection. Extension markers are
+ignored, unknown algorithm names remain explicit, and repeated packets retain
+frame evidence. SSH sessions remain unknown pending observed selection support.
+See [RFC 4253](https://www.rfc-editor.org/rfc/rfc4253.html).
 
 ```sh
 .venv/bin/python network-capture.py capture.pcap > reports/network.json

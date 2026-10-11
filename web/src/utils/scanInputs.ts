@@ -81,6 +81,11 @@ export async function prepareScan(files: File[]): Promise<ScanRequest> {
     }
     if (extension === 'json') {
       const entries = cloudSnapshotEntries(content, filePath(file));
+      if (entries === null) {
+        // Native describe responses retain their own names and JSON pointers.
+        inputs.push({ name: filePath(file), source_type: 'cloud', format: 'raw', encoding: 'utf-8', content });
+        continue;
+      }
       const directory = filePath(file).includes('/') ? filePath(file).slice(0, filePath(file).lastIndexOf('/') + 1) : '';
       const group = cloudGroups.get(directory) ?? { snapshots: new Map<string, string>(), names: [] };
       cloudGroups.set(directory, group);
@@ -104,7 +109,8 @@ export async function prepareScan(files: File[]): Promise<ScanRequest> {
 }
 
 // Shared by folder discovery and scan preparation; arbitrary JSON is not a cloud input.
-export function cloudSnapshotEntries(content: string, name: string): [string, string][] {
+// null identifies a standalone AWS DescribeKey / DescribeCertificate response.
+export function cloudSnapshotEntries(content: string, name: string): [string, string][] | null {
   let value: Record<string, unknown>;
   try { value = JSON.parse(content); }
   catch { throw new Error(`${name}: invalid JSON. Fix the snapshot and select it again.`); }
@@ -112,14 +118,20 @@ export function cloudSnapshotEntries(content: string, name: string): [string, st
     throw new Error(`${name}: expected an AWS snapshot object.`);
   }
   const collections = Object.entries(cloudCollections).filter(([key]) => key in value);
+  const descriptions = ['KeyMetadata', 'Certificate'].filter(key => key in value);
+  if (descriptions.length === 1 && collections.length === 0 &&
+      !Object.values(cloudCollections).some(key => key in value)) {
+    const record = value[descriptions[0]];
+    if (record && typeof record === 'object' && !Array.isArray(record)) return null;
+  }
   let entries: [string, string][];
-  if (collections.length === 1 && Array.isArray(value[collections[0][0]])) {
+  if (descriptions.length === 0 && collections.length === 1 && Array.isArray(value[collections[0][0]])) {
     entries = [[collections[0][1], content]];
-  } else if (collections.length === 0 && Object.keys(value).length &&
+  } else if (descriptions.length === 0 && collections.length === 0 && Object.keys(value).length &&
       Object.keys(value).every(key => Object.values(cloudCollections).includes(key))) {
     entries = Object.entries(value).map(([key, snapshot]) => [key, JSON.stringify(snapshot)]);
   } else {
-    throw new Error(`${name}: ambiguous or unsupported JSON. Use an AWS snapshot with Keys, Certificates or LoadBalancers, or a documented filename-keyed bundle.`);
+    throw new Error(`${name}: ambiguous or unsupported JSON. Use an AWS snapshot with Keys, Certificates or LoadBalancers, a DescribeKey / DescribeCertificate response, or a documented filename-keyed bundle.`);
   }
   return entries;
 }

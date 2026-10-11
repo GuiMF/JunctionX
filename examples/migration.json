@@ -44,7 +44,7 @@
             "classical_fallback": true,
             "negotiated_group": null,
             "reference": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
-            "mapping_version": "cloud-1.1"
+            "mapping_version": "cloud-1.2"
           }
         },
         "usage": "key_establishment",
@@ -63,7 +63,7 @@
         "posture_issues": [],
         "owner": null,
         "observed_at": "2026-09-14T09:35:51Z",
-        "rule_id": "QT-TLS-NEGOTIATION-UNOBSERVED@1.1.0",
+        "rule_id": "QT-TLS-NEGOTIATION-UNOBSERVED@1.1.1",
         "rationale": "The TLS policy describes configured capabilities, but no negotiated key-establishment algorithm was observed. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
         "recommendation": "Inspect a captured ServerHello to establish the selected cipher suite and key-share group; assess authentication separately.",
         "references": [
@@ -115,7 +115,7 @@
             "classical_fallback": true,
             "negotiated_group": null,
             "reference": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
-            "mapping_version": "cloud-1.1"
+            "mapping_version": "cloud-1.2"
           }
         },
         "usage": "key_establishment",
@@ -134,7 +134,7 @@
         "posture_issues": [],
         "owner": null,
         "observed_at": "2026-09-14T09:35:51Z",
-        "rule_id": "QT-TLS-NEGOTIATION-UNOBSERVED@1.1.0",
+        "rule_id": "QT-TLS-NEGOTIATION-UNOBSERVED@1.1.1",
         "rationale": "The TLS policy describes configured capabilities, but no negotiated key-establishment algorithm was observed. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
         "recommendation": "Inspect a captured ServerHello to establish the selected cipher suite and key-share group; assess authentication separately.",
         "references": [

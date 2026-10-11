@@ -310,7 +310,7 @@ test('uncertainty reasons filter findings and keep HTTP out of the unknown tier'
   assert.doesNotMatch(container.querySelector('[role=dialog]').textContent, /unknown tier/i);
 });
 
-test('partial coverage without input errors remains explained after dismissing notification', async (t) => {
+test('partial scan retains its status without the removed coverage banner', async (t) => {
   const live = response('partial');
   live.errors = [];
   live.coverage = [{ source_type: 'pcap', input_name: 'network.pcap', unit: 'sessions', assessed: 97, unknown: 0, unsupported: 38, failed: 0 }];
@@ -319,7 +319,7 @@ test('partial coverage without input errors remains explained after dismissing n
   await select([file()]); await click('Scan selected files');
   await click('Dismiss');
   const notice = container.querySelector('[aria-label="Incomplete scan coverage"]');
-  assert.match(notice.textContent, /Scan partially completed/);
-  assert.match(notice.textContent, /network.pcap \(pcap\): 38 unsupported, 0 failed sessions/);
+  assert.equal(notice, null);
+  assertActiveScan(container, { id: 'live-partial', status: 'partial' });
   assert.equal(container.querySelector('[aria-label="Input errors"]'), null);
 });

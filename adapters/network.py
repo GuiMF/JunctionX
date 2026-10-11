@@ -16,6 +16,7 @@ from core.models import (
 )
 from core.identity import stable_asset_id, stable_finding_id
 from adapters.normalized import input_bytes
+from adapters.network_ssh import SSH_FIELDS, SSH_SIGNALS
 
 CIPHER_REGISTRY = {
     "0x002f": [
@@ -42,6 +43,32 @@ for suite, signature, bits in (
         {"algorithm": "AES", "usage": "encryption", "key_bits": bits, "mode": "GCM"},
     ]
 
+# RFC 5288 (RSA/DHE AES-GCM), RFC 7905 (ChaCha20-Poly1305), and
+# RFC 8446 Appendix B.4 (TLS 1.3). Suite hashes are PRF/HKDF hashes,
+# not evidence of the signature hash, so they are deliberately not propagated.
+for suite, exchange, signature, bits in (
+    ("0x009c", "RSA", None, 128), ("0x009d", "RSA", None, 256),
+    ("0x009e", "DHE", "RSA", 128), ("0x009f", "DHE", "RSA", 256),
+):
+    CIPHER_REGISTRY[suite] = [
+        {"algorithm": exchange, "usage": "key_establishment"},
+        *([{"algorithm": signature, "usage": "signature"}] if signature else []),
+        {"algorithm": "AES", "usage": "encryption", "key_bits": bits, "mode": "GCM"},
+    ]
+for suite, exchange, signature in (
+    ("0x1303", None, None), ("0xcca8", "ECDHE", "RSA"),
+    ("0xcca9", "ECDHE", "ECDSA"), ("0xccaa", "DHE", "RSA"),
+):
+    CIPHER_REGISTRY[suite] = [
+        *([{"algorithm": exchange, "usage": "key_establishment"}] if exchange else []),
+        *([{"algorithm": signature, "usage": "signature"}] if signature else []),
+        {"algorithm": "ChaCha20-Poly1305", "usage": "encryption", "key_bits": 256},
+    ]
+for suite, mode in (("0x1304", "CCM"), ("0x1305", "CCM-8")):
+    CIPHER_REGISTRY[suite] = [
+        {"algorithm": "AES", "usage": "encryption", "key_bits": 128, "mode": mode},
+    ]
+
 
 class _TLSFields:
     """TShark nests QUIC TLS fields inside the QUIC layer in PDML output."""
@@ -65,11 +92,52 @@ GROUP_REGISTRY = {
     "4588": {"algorithm": "X25519MLKEM768", "usage": "key_establishment"},
     "29": {"algorithm": "X25519", "usage": "key_establishment"}
 }
+# RFC 8446 section 4.2.7 and RFC 7919. These are selected key-exchange
+# groups, not certificate curves. Do not infer a certificate or signature.
+for number, name in ((23, "secp256r1"), (24, "secp384r1"), (25, "secp521r1")):
+    GROUP_REGISTRY[str(number)] = {
+        "algorithm": "ECDHE", "usage": "key_establishment", "named_group": name,
+    }
+GROUP_REGISTRY["30"] = {"algorithm": "X448", "usage": "key_establishment", "named_group": "X448"}
+for number, bits in enumerate((2048, 3072, 4096, 6144, 8192), start=256):
+    GROUP_REGISTRY[str(number)] = {
+        "algorithm": "DHE", "usage": "key_establishment",
+        "named_group": f"ffdhe{bits}", "key_bits": bits,
+    }
+
+
+def _field_values(layer, name):
+    """Read every PDML occurrence, rather than only PyShark's first value."""
+    field = getattr(layer, name, None)
+    if field is None:
+        return []
+    fields = getattr(field, "all_fields", None)
+    if isinstance(fields, list):
+        return [str(value.get_default_value()) for value in fields]
+    return [str(field)]
+
+
+def _registry_key(value, *, cipher=False):
+    try:
+        number = int(value, 16 if value.lower().startswith("0x") else 10)
+    except ValueError:
+        return value
+    return f"0x{number:04x}" if cipher else str(number)
+
+
+def _grease(value):
+    """RFC 8701 reserved placeholders advertise no cryptographic capability."""
+    try:
+        number = int(value, 16 if value.lower().startswith("0x") else 10)
+    except ValueError:
+        return False
+    return number & 0x0f0f == 0x0a0a and number >> 8 == number & 0xff
 
 HRR_RANDOM = "cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c"
 
 def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> AdapterResult:
     findings = []
+    by_id = {}
     errors = []
     coverage = []
     try:
@@ -145,119 +213,87 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
                 if stream_key not in stream_states:
                     stream_states[stream_key] = "unsupported"
                 
-                for tls in _tls_layers(packet):
-                    if not hasattr(tls, 'handshake_type'):
+                # A capture-local stream identifies both directions, including QUIC
+                # migrations. Offers and selections must share the same asset.
+                asset_id = stable_asset_id("pcap", f"{capture_hash}|{stream_key}")
+
+                def emit(primitive, role, kind, detail):
+                    finding_id = stable_finding_id(asset_id, primitive['usage'], role, kind)
+                    evidence = Evidence(file=scan_input.name, locator=f"frame:{packet.number}", detail=detail)
+                    if finding_id in by_id:
+                        if evidence not in by_id[finding_id].evidence:
+                            by_id[finding_id].evidence.append(evidence)
+                        return
+                    finding = Finding(
+                        id=finding_id, asset_id=asset_id, source_type="pcap",
+                        algorithm=primitive['algorithm'], usage=primitive['usage'],
+                        parameters=Parameters(**{key: primitive[key] for key in
+                            ("key_bits", "mode", "named_group", "hash_algorithm") if key in primitive}),
+                        evidence_kind=kind, evidence=[evidence], confidence="high",
+                        observed_at=datetime.fromtimestamp(float(packet.sniff_timestamp), timezone.utc),
+                    )
+                    by_id[finding_id] = finding
+                    findings.append(finding)
+
+                for ssh in (layer for layer in packet.layers if layer.layer_name == "ssh"):
+                    if stream_states[stream_key] == "unsupported":
+                        stream_states[stream_key] = "unknown"
+                    if "20" not in _field_values(ssh, "message_code"):
                         continue
-                    handshake_type = tls.handshake_type
-                    
-                    if handshake_type == "2":
-                        # Check HelloRetryRequest
-                        random_bytes = ""
-                        if hasattr(tls, 'handshake_random'):
-                            random_bytes = tls.handshake_random.replace(":", "").lower()
-                        
-                        if random_bytes == HRR_RANDOM:
-                            # It's HRR, mark unsupported/retry and don't emit selected group
-                            if stream_states.get(stream_key) not in ("assessed", "failed"):
-                                stream_states[stream_key] = "unsupported"
-                            continue
-                            
-                        # Actual ServerHello
-                        selecao = tls.handshake_ciphersuite
-                        frame_number = packet.number
-                        
-                        ts = float(packet.sniff_timestamp)
-                        dt = datetime.fromtimestamp(ts, timezone.utc)
-                        
-                        flow_key = f"{stream_key}-{ip_src}-{ip_dst}"
-                        asset_id = stable_asset_id("pcap", f"{capture_hash}|{flow_key}")
-                        
-                        primitives = CIPHER_REGISTRY.get(selecao)
-                        if primitives:
-                            for prim in primitives:
-                                role = f"ciphersuite-{prim['usage']}"
-                                finding_id = stable_finding_id(asset_id, prim['usage'], role, "observed")
-                                
-                                params = Parameters()
-                                if "key_bits" in prim:
-                                    params.key_bits = prim["key_bits"]
-                                if "mode" in prim:
-                                    params.mode = prim["mode"]
-                                
-                                finding = Finding(
-                                    id=finding_id,
-                                    asset_id=asset_id,
-                                    source_type="pcap",
-                                    algorithm=prim["algorithm"],
-                                    parameters=params,
-                                    usage=prim["usage"],
-                                    evidence_kind="observed",
-                                    evidence=[Evidence(
-                                        file=scan_input.name,
-                                        locator=f"frame:{frame_number}",
-                                        detail=f"ServerHello selected cipher suite {selecao}"
-                                    )],
-                                    confidence="high",
-                                    observed_at=dt
-                                )
-                                findings.append(finding)
-                            
-                            # Successful assessment upgrades stream state
+                    for field, registry, usage in SSH_FIELDS:
+                        for values in _field_values(ssh, field):
+                            for name in dict.fromkeys(values.split(",")):
+                                name = name.strip()
+                                if not name or name in SSH_SIGNALS:
+                                    continue
+                                primitive = registry.get(name, {"algorithm": "unknown", "usage": usage})
+                                emit(primitive, f"ssh-{field}-{name}", "offered",
+                                     f"SSH KEXINIT from {ip_src} advertises {field}: {name}; selection is unverified")
+
+                for tls in _tls_layers(packet):
+                    # Recognized TLS without visible negotiation is incomplete,
+                    # rather than an unsupported protocol.
+                    if stream_states[stream_key] == "unsupported":
+                        stream_states[stream_key] = "unknown"
+                    hello_types = [value for value in _field_values(tls, 'handshake_type') if value in {"1", "2"}]
+                    # Flattened PDML fields cannot safely associate multiple hellos.
+                    if len(hello_types) != 1:
+                        continue
+                    offered = hello_types[0] == "1"
+                    kind = "offered" if offered else "observed"
+                    label = "ClientHello offers" if offered else "ServerHello selected"
+                    random_bytes = str(getattr(tls, 'handshake_random', '')).replace(":", "").lower()
+                    if not offered and random_bytes == HRR_RANDOM:
+                        continue  # Retry requests do not prove a completed selection.
+                    suites = _field_values(tls, 'handshake_ciphersuite')
+                    groups = _field_values(tls, 'handshake_extensions_key_share_group')
+                    if not offered and (len(suites) != 1 or len(groups) > 1):
+                        continue
+                    for value in dict.fromkeys(suites):
+                        suite = _registry_key(value, cipher=True)
+                        if offered and (_grease(suite) or suite in {"0x00ff", "0x5600"}):
+                            continue  # GREASE and SCSV values are not cryptographic offers.
+                        primitives = CIPHER_REGISTRY.get(suite)
+                        for primitive in primitives or [{"algorithm": "unknown", "usage": "unknown"}]:
+                            emit(primitive, f"ciphersuite-{suite}-{primitive['usage']}", kind,
+                                 f"{label} {'unknown ' if not primitives else ''}cipher suite {suite}")
+                        if primitives and not offered and stream_states[stream_key] != "failed":
                             stream_states[stream_key] = "assessed"
-                        else:
-                            # If we don't know the cipher, and it hasn't failed/assessed yet
-                            if stream_states.get(stream_key) not in ("assessed", "failed"):
-                                stream_states[stream_key] = "unknown"
-                        
-                        if hasattr(tls, 'handshake_extensions_key_share_group'):
-                            group = tls.handshake_extensions_key_share_group
-                            group_info = GROUP_REGISTRY.get(group)
-                            if group_info:
-                                role = "keyshare-key_establishment"
-                                finding_id = stable_finding_id(asset_id, group_info["usage"], role, "observed")
-                                
-                                finding = Finding(
-                                    id=finding_id,
-                                    asset_id=asset_id,
-                                    source_type="pcap",
-                                    algorithm=group_info["algorithm"],
-                                    usage=group_info["usage"],
-                                    evidence_kind="observed",
-                                    evidence=[Evidence(
-                                        file=scan_input.name,
-                                        locator=f"frame:{frame_number}",
-                                        detail=f"ServerHello selected key share group {group}"
-                                    )],
-                                    confidence="high",
-                                    observed_at=dt
-                                )
-                                findings.append(finding)
-                                stream_states[stream_key] = "assessed"
-                            else:
-                                role = "keyshare-key_establishment"
-                                finding_id = stable_finding_id(asset_id, "key_establishment", role, "observed")
-                                finding = Finding(
-                                    id=finding_id,
-                                    asset_id=asset_id,
-                                    source_type="pcap",
-                                    algorithm="unknown",
-                                    usage="key_establishment",
-                                    evidence_kind="observed",
-                                    evidence=[Evidence(
-                                        file=scan_input.name,
-                                        locator=f"frame:{frame_number}",
-                                        detail=f"ServerHello selected unknown key share group {group}"
-                                    )],
-                                    confidence="high",
-                                    observed_at=dt
-                                )
-                                findings.append(finding)
-                                if stream_states.get(stream_key) not in ("assessed", "failed"):
-                                    stream_states[stream_key] = "unknown"
-                    
-                    elif handshake_type == "1": # ClientHello
-                        pass
-                        
+                    group_entries = [(value, "keyshare", "key share group") for value in dict.fromkeys(groups)]
+                    if offered:
+                        group_entries.extend((value, "supported-group", "supported group") for value in
+                            dict.fromkeys(_field_values(tls, 'handshake_extensions_supported_group')))
+                    for value, role, description in group_entries:
+                        group = _registry_key(value)
+                        if offered and _grease(group):
+                            continue
+                        primitive = GROUP_REGISTRY.get(group)
+                        emit(primitive or {"algorithm": "unknown", "usage": "key_establishment"},
+                             f"{role}-{group}-key_establishment", kind,
+                             f"{label} {'unknown ' if not primitive else ''}{description} {group}")
+                        if primitive and not offered and stream_states[stream_key] != "failed":
+                            stream_states[stream_key] = "assessed"
+
             except AttributeError as ae:
                 key = stream_key if stream_key is not None else f"pkt_{id(packet)}"
                 stream_states[key] = "failed"
@@ -313,5 +349,5 @@ def parse_pcap_adapter(scan_input: ScanInput, context: AdapterContext) -> Adapte
         findings=findings,
         coverage=coverage,
         errors=errors,
-        tool_versions={"pyshark": pyshark_ver}
+        tool_versions={"pyshark": pyshark_ver, "quantumtrace-network": "0.2.0"}
     )

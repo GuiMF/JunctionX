@@ -68,6 +68,33 @@ test('real adapter failures produce partial and failed scans, preserving success
   assert.ok(failed.scan.errors.length > 0);
 });
 
+test('native AWS descriptions reach the API and export without synthetic timestamps or rewritten evidence', async () => {
+  const metadata = { Arn: 'arn:aws:kms:us-east-1:123456789012:key/native', KeySpec: 'SYMMETRIC_DEFAULT', KeyUsage: 'ENCRYPT_DECRYPT' };
+  const certificate = { CertificateArn: 'arn:aws:acm:us-east-1:123456789012:certificate/native', KeyAlgorithm: 'EC_secp521r1', SignatureAlgorithm: 'SHA512WITHECDSA' };
+  const request = await prepareScan([
+    new File([JSON.stringify({ KeyMetadata: metadata })], 'key.json'),
+    new File([JSON.stringify({ Certificate: certificate })], 'certificate.json'),
+  ]);
+  const { scan, exports } = scanAndExport(request);
+  assert.equal(scan.status, 'completed');
+  assert.equal(scan.findings.length, 3);
+  assert.deepEqual(scan.snapshots, []);
+  for (const finding of scan.findings) {
+    assert.equal(finding.observed_at, null);
+    const input = request.inputs.find(item => item.name === finding.evidence[0].file);
+    assert.ok(input);
+    for (const evidence of finding.evidence) {
+      let value = JSON.parse(input.content);
+      for (const part of evidence.locator.split('/').slice(1)) value = value[part];
+      assert.deepEqual(value, JSON.parse(evidence.detail));
+    }
+  }
+  assert.equal(scan.findings.find(item => item.algorithm === 'AES').parameters.key_bits, 256);
+  assert.equal(scan.findings.find(item => item.algorithm === 'EC').parameters.named_group, 'secp521r1');
+  assert.deepEqual(exports.json, scan);
+  assert.equal(exports.cyclonedx.components.length, 3);
+});
+
 test('folder scans preserve every relative path through discovery, evidence and exports beyond 16 files', async () => {
   const files = Array.from({ length: 24 }, (_, i) => Object.defineProperty(
     new File(['import hashlib\nhashlib.md5(b"data")'], 'crypto.py'),

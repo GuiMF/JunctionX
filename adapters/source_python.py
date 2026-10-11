@@ -30,6 +30,7 @@ class _Object:
     bits: int | None = None
     mode: str | None = None
     digest: str | None = None
+    group: str | None = None
 
 
 _UNKNOWN = None
@@ -42,6 +43,8 @@ _HASH_PREFIX = _PRIMITIVES + "hashes."
 _CIPHER = _PRIMITIVES + "ciphers."
 _RSA = _PRIMITIVES + "asymmetric.rsa.generate_private_key"
 _ED = _PRIMITIVES + "asymmetric.ed25519.Ed25519PrivateKey."
+_EC = _PRIMITIVES + "asymmetric.ec."
+_EC_CURVES = {"SECP256R1": 256, "SECP384R1": 384, "SECP521R1": 521}
 _PBKDF = _PRIMITIVES + "kdf.pbkdf2.PBKDF2HMAC"
 
 
@@ -168,6 +171,17 @@ class _Scanner(ast.NodeVisitor):
                 return _Object("RSA", bits=_positive(self._arg(node, 1, "key_size")))
             if path in {_ED + "generate", _ED + "from_private_bytes"}:
                 return _Object("Ed25519")
+            if path.startswith(_EC) and path.removeprefix(_EC) in _EC_CURVES:
+                group = path.removeprefix(_EC)
+                return _Object("curve", bits=_EC_CURVES[group], group=group)
+            if path in {_EC + "generate_private_key", _EC + "derive_private_key"}:
+                curve = self._arg(node, int(path.endswith("derive_private_key")), "curve")
+                return _Object("EC", bits=curve.bits if isinstance(curve, _Object) and curve.kind == "curve" else None,
+                               group=curve.group if isinstance(curve, _Object) and curve.kind == "curve" else None)
+            if path == _EC + "ECDSA":
+                return _Object("ecdsa", digest=self._digest(self._arg(node, 0, "algorithm")))
+            if path == _EC + "ECDH":
+                return _Object("ecdh")
             if path.startswith(_CIPHER + "modes.") and path.removeprefix(_CIPHER + "modes.") in {"ECB", "GCM", "CBC", "CTR", "CCM"}:
                 return _Object("mode", mode=path.rsplit(".", 1)[-1])
             if path in {_CIPHER + "algorithms.AES", _CIPHER + "aead.AESGCM"}:
@@ -193,6 +207,8 @@ class _Scanner(ast.NodeVisitor):
                     return value.length
             if isinstance(node.func, ast.Attribute) and node.func.attr == "public_key":
                 receiver = self._value(node.func.value)
+                if isinstance(receiver, _Object) and receiver.kind == "EC":
+                    return _Object("EC-public", bits=receiver.bits, group=receiver.group)
                 if isinstance(receiver, _Object) and receiver.kind in {"RSA", "Ed25519"}:
                     return receiver
         return _UNKNOWN
@@ -212,6 +228,9 @@ class _Scanner(ast.NodeVisitor):
                 self._emit(node, "RSA", "unknown", path, "python-rsa-generation", key_bits=obj.bits)
             elif path in {_ED + "generate", _ED + "from_private_bytes"}:
                 self._emit(node, "Ed25519", "signature", path, "python-ed25519")
+            elif path in {_EC + "generate_private_key", _EC + "derive_private_key"}:
+                self._emit(node, "EC", "unknown", path, "python-ec-generation",
+                           key_bits=obj.bits, named_group=obj.group)
             elif path in {_CIPHER + "algorithms.AES", _CIPHER + "aead.AESGCM", _CIPHER + "Cipher"}:
                 if isinstance(obj, _Object) and obj.kind == "AES":
                     self._emit(node, "AES", "encryption", path, "python-aes", key_bits=obj.bits, mode=obj.mode)
@@ -248,6 +267,19 @@ class _Scanner(ast.NodeVisitor):
                     self._emit(node, algorithm, "signature", "cryptography." + algorithm + "." + node.func.attr,
                                "python-signature", key_bits=receiver.bits,
                                hash_algorithm=digest)
+                elif isinstance(receiver, _Object) and receiver.kind == ("EC" if node.func.attr == "sign" else "EC-public"):
+                    signature_algorithm = self._arg(node, 1 if node.func.attr == "sign" else 2, "signature_algorithm")
+                    if isinstance(signature_algorithm, _Object) and signature_algorithm.kind == "ecdsa":
+                        self._emit(node, "ECDSA", "signature", "cryptography.EC." + node.func.attr,
+                                   "python-signature", key_bits=receiver.bits, named_group=receiver.group,
+                                   hash_algorithm=signature_algorithm.digest)
+            elif isinstance(node.func, ast.Attribute) and node.func.attr == "exchange":
+                receiver = self._value(node.func.value)
+                exchange_algorithm = self._arg(node, 0, "algorithm")
+                if (isinstance(receiver, _Object) and receiver.kind == "EC"
+                        and isinstance(exchange_algorithm, _Object) and exchange_algorithm.kind == "ecdh"):
+                    self._emit(node, "ECDH", "key_establishment", "cryptography.EC.exchange",
+                               "python-ecdh", key_bits=receiver.bits, named_group=receiver.group)
         self.generic_visit(node)
 
     def _bind(self, target: ast.AST, value: object = None) -> None:

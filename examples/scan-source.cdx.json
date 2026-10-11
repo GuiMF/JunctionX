@@ -35,7 +35,7 @@
       },
       {
         "name": "quantumtrace:ruleset_version",
-        "value": "1.1.0"
+        "value": "1.1.1"
       },
       {
         "name": "quantumtrace:scan_id",
@@ -67,7 +67,7 @@
       },
       {
         "name": "quantumtrace:tool_versions",
-        "value": "{\"quantumtrace-core\":\"0.1.0\",\"synthetic%2Fhandoff.py/quantumtrace-source\":\"0.2.0\",\"synthetic%2Fhandoff.py/source-rules\":\"source-api-v3\"}"
+        "value": "{\"quantumtrace-core\":\"0.1.0\",\"synthetic%2Fhandoff.py/quantumtrace-source\":\"0.3.0\",\"synthetic%2Fhandoff.py/source-rules\":\"source-api-v4\"}"
       }
     ],
     "timestamp": "2026-10-10T12:00:00Z"
@@ -107,7 +107,7 @@
         },
         {
           "name": "quantumtrace:evidence",
-          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.2.0; rule source-api-v3/python-aes; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:8:column:12\"}]"
+          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.3.0; rule source-api-v4/python-aes; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:8:column:12\"}]"
         },
         {
           "name": "quantumtrace:evidence_kind",
@@ -151,7 +151,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-AES-PARAMETERS@1.1.0"
+          "value": "QT-AES-PARAMETERS@1.1.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -170,7 +170,7 @@
         "occurrences": [
           {
             "location": "synthetic/handoff.py",
-            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.2.0; rule source-api-v3/python-aes; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:8:column:12\"}"
+            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.3.0; rule source-api-v4/python-aes; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:8:column:12\"}"
           }
         ]
       }
@@ -210,7 +210,7 @@
         },
         {
           "name": "quantumtrace:evidence",
-          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.2.0; rule source-api-v3/python-aes; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:6:column:1\"}]"
+          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.3.0; rule source-api-v4/python-aes; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:6:column:1\"}]"
         },
         {
           "name": "quantumtrace:evidence_kind",
@@ -254,7 +254,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-AES@1.1.0"
+          "value": "QT-AES@1.1.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -273,7 +273,7 @@
         "occurrences": [
           {
             "location": "synthetic/handoff.py",
-            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.2.0; rule source-api-v3/python-aes; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:6:column:1\"}"
+            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.ciphers.aead.AESGCM; detector quantumtrace-source/0.3.0; rule source-api-v4/python-aes; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:6:column:1\"}"
           }
         ]
       }
@@ -312,7 +312,7 @@
         },
         {
           "name": "quantumtrace:evidence",
-          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.2.0; rule source-api-v3/python-rsa-generation; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:4:column:1\"}]"
+          "value": "[{\"detail\":\"API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.3.0; rule source-api-v4/python-rsa-generation; source declaration only; runtime execution unverified\",\"file\":\"synthetic/handoff.py\",\"locator\":\"line:4:column:1\"}]"
         },
         {
           "name": "quantumtrace:evidence_kind",
@@ -356,7 +356,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-RSA-UNKNOWN-USAGE@1.1.0"
+          "value": "QT-RSA-UNKNOWN-USAGE@1.1.1"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -375,11 +375,11 @@
         "occurrences": [
           {
             "location": "synthetic/handoff.py",
-            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.2.0; rule source-api-v3/python-rsa-generation; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:4:column:1\"}"
+            "additionalContext": "{\"detail\":\"API cryptography.hazmat.primitives.asymmetric.rsa.generate_private_key; detector quantumtrace-source/0.3.0; rule source-api-v4/python-rsa-generation; source declaration only; runtime execution unverified\",\"evidence_kind\":\"declared\",\"locator\":\"line:4:column:1\"}"
           }
         ]
       }
     }
   ],
-  "serialNumber": "urn:uuid:78290cfc-036a-5bc1-aaf7-5c4642afc9b8"
+  "serialNumber": "urn:uuid:2398a226-b42b-50ec-a39a-27243ccf0792"
 }

@@ -301,6 +301,7 @@ def test_conflicting_aes_mode_cannot_hide_ecb():
     ("ML-DSA", "ML-DSA-65", "resistant_primitive"),
     ("SLH-DSA", "SLH-DSA-SHA2-128s", "resistant_primitive"),
     ("ECDSA", "secp256r1", "vulnerable"),
+    ("ECDSA", "secp256k1", "vulnerable"),
     ("ECDSA", "X25519", "unknown"),
     ("Ed25519", "secp256r1", "unknown"),
 ])

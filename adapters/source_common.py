@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 
 from core.models import Parameters, Usage
 
-SCANNER_VERSION = "0.2.0"
-RULESET_VERSION = "source-api-v3"
+SCANNER_VERSION = "0.3.0"
+RULESET_VERSION = "source-api-v4"
 
 
 class SourceParseError(ValueError):

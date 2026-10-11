@@ -1,4 +1,8 @@
-# Deterministic assessment v1.1.0
+# Deterministic assessment v1.1.1
+
+Version 1.1.1 adds secp256k1 to compatible classical EC groups, including AWS KMS
+ECDSA keys. It follows the existing discrete-logarithm assessment for classical
+elliptic-curve cryptography; conflicting or unknown groups remain unknown.
 
 `core.assessment.assess_finding(Finding) -> Finding` returns a deep copy. It reads the normalized algorithm, usage, parameters, and evidence scope. There is no LLM, network call, clock dependency, or inference from evidence text, comments, filenames, owner, or asset names. The adapter supplies those facts; assessment cannot establish whether a detector is correct.
 
