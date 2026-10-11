@@ -42,17 +42,20 @@ def request(base: str, path: str, body=None, *, method=None, expected=200, timeo
         return json.loads(raw) if raw else None
 
 
-def smoke(base: str) -> None:
+def wait_for_health(base: str) -> None:
     deadline = time.monotonic() + 60
     while True:
         try:
             assert request(base, "/healthz", timeout=2) == {"status": "ok"}
             break
-        except (URLError, TimeoutError):
+        except (URLError, TimeoutError, ConnectionError):
             if time.monotonic() >= deadline:
                 raise
             time.sleep(0.5)
 
+
+def smoke(base: str) -> None:
+    wait_for_health(base)
     root = Path(__file__).resolve().parents[1]
     cloud = {name: json.loads((root / "cloud-posture" / name).read_text()) for name in (
         "kms_key_inventory.json", "acm_certificates.json", "load_balancer_listeners.json")}
