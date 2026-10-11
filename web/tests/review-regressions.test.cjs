@@ -133,7 +133,10 @@ test('successful live export downloads the API response and clears its timeout',
   const fetch = mock.method(global, 'fetch', async () => ({ ok: true, blob: async () => blob }));
   const clear = mock.method(global, 'clearTimeout');
   await exportCycloneDxCbom({ ...mockScanResult, scan_id: 'live/scan', synthetic: false });
-  assert.match(fetch.mock.calls[0].arguments[0], /live%2Fscan\/export/);
+  assert.match(fetch.mock.calls[0].arguments[0], /\/api\/exports\?format=cyclonedx$/);
+  const options = fetch.mock.calls[0].arguments[1];
+  assert.equal(options.method, 'POST');
+  assert.deepEqual(JSON.parse(options.body), { ...mockScanResult, scan_id: 'live/scan', synthetic: false });
   assert.deepEqual(downloads, [{ href: 'blob:live-report', download: 'quantumtrace-cbom-live/scan.cdx.json' }]);
   assert.deepEqual(revoked, ['blob:live-report']);
   assert.equal(clear.mock.callCount(), 1);

@@ -3,6 +3,7 @@
 from typing import Literal
 from contextlib import asynccontextmanager
 import os
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
@@ -128,7 +129,23 @@ def create_app(
         scan_id: str,
         format: Literal["json", "cyclonedx"] = Query(default="json"),
     ) -> JSONResponse:
-        scan = require_scan(scan_id)
+        return export_response(require_scan(scan_id), format)
+
+    @app.post("/api/exports")
+    def export_submitted_scan(
+        scan: ScanResult,
+        format: Literal["json", "cyclonedx"] = Query(default="json"),
+    ) -> JSONResponse:
+        """Convert a validated client-held result without process-local storage."""
+        # Finding IDs become CycloneDX bom-ref values. Client-held documents
+        # need this integrity check before conversion, without reflecting an
+        # untrusted ID or masking unrelated exporter failures.
+        finding_ids = [finding.id for finding in scan.findings]
+        if len(finding_ids) != len(set(finding_ids)):
+            raise HTTPException(status_code=422, detail="Finding IDs must be unique for export")
+        return export_response(scan, format)
+
+    def export_response(scan: ScanResult, format: str) -> JSONResponse:
         document = (
             export_cyclonedx(scan)
             if format == "cyclonedx"
@@ -138,7 +155,7 @@ def create_app(
         return JSONResponse(
             content=document,
             media_type="application/vnd.cyclonedx+json" if format == "cyclonedx" else "application/json",
-            headers={"Content-Disposition": f'attachment; filename="{scan.scan_id}.{suffix}"'},
+            headers={"Content-Disposition": f'attachment; filename="{quote(scan.scan_id, safe="")}.{suffix}"'},
         )
 
     return app

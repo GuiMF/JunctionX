@@ -82,6 +82,14 @@ def smoke(base: str) -> None:
     assert len(cbom["components"]) == len(findings)
     print("PASS health, source/cloud/real-PCAP scanning, retrieval and JSON/CycloneDX exports")
 
+    # This ID was never stored; browser exports must survive a different instance.
+    client_scan = {**scan, "scan_id": "smoke-without-server-state"}
+    assert request(base, "/api/exports?format=json", client_scan) == client_scan
+    stateless_cbom = request(base, "/api/exports?format=cyclonedx", client_scan)
+    assert stateless_cbom["bomFormat"] == "CycloneDX" and stateless_cbom["specVersion"] == "1.6"
+    assert len(stateless_cbom["components"]) == len(findings)
+    print("PASS stateless JSON/CycloneDX exports without a stored scan")
+
     upload = request(base, "/api/uploads", {}, expected=201)["upload_id"]
     upload_path = "/api/uploads/" + upload
     try:

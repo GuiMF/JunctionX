@@ -86,8 +86,9 @@ Individual requests time out after 5 minutes; completing a batched scan allows
 30 minutes, and exports allow 10 seconds. **Cancel scan** discards pending results
 in the browser (server work may continue). Incomplete uploads expire after one
 hour of inactivity and are removed on the next upload operation or API shutdown.
-At most two uploads may await completion. Exports are available after a scan and
-use the active scan ID; if it was evicted or the API restarted, scan the files again.
+At most two uploads may await completion. Exports submit the active result held
+by the browser for conversion, so they work after the server restarts or another
+instance receives the export request. Refreshing the page clears that result.
 
 ## Scan and demonstrate
 

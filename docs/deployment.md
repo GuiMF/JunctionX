@@ -50,21 +50,22 @@ workflow regressions; the Vercel preview check verifies the cloud build.
 
 This configuration packages and routes the services; it does not change storage:
 
-- Scans and upload sessions belong to one process. Vercel can send later requests
-  to a different instance or scale an idle instance down after 30 seconds in
-  preview or 5 minutes in production. Even a small scan can therefore become
-  unavailable for export after an idle interval. Reliable exports and
-  multi-request uploads require shared storage.
+- Stored scans and upload sessions belong to one process. Vercel can send later
+  requests to a different instance or scale an idle instance down after 30 seconds
+  in preview or 5 minutes in production. The dashboard exports via
+  `POST /api/exports`, submitting its active result for stateless conversion, so
+  those exports survive backend instance changes. GET-by-ID retrieval and
+  multi-request uploads still require shared storage.
 - The UI allows 64 MiB batches and 3 GB selections, but Vercel documents a 4.5 MB
   function request/response payload limit. Large uploads need direct object
-  storage uploads and a revised API.
+  storage uploads and a revised API. Stateless export requests and generated
+  CBOM responses must also stay within the payload limit.
 - Synchronous scans face function execution limits. Long scans need durable jobs.
 - The API has no authentication or user isolation. Use synthetic data for demos.
 
 Container functions also have these constraints. One worker per container does
 not prevent multiple Vercel instances. Local smoke tests do not verify cloud
-persistence or large uploads. Confirm service names, public paths, no bindings,
-and the container runtime before publishing.
+persistence or large uploads.
 
 References: [Services](https://vercel.com/docs/services),
 [bindings](https://vercel.com/docs/services/bindings),

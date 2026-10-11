@@ -119,7 +119,11 @@ test('successful scan updates the active result and evidence, closes import, and
   await click('Close evidence inspector');
   assert.equal(JSON.parse(requests[0][1].body).inputs[0].content, await file().text());
   await exportFormat('Project JSON'); await exportFormat('CycloneDX 1.6 CBOM');
-  assert.deepEqual(requests.map(x => x[0]), ['http://127.0.0.1:8123/api/scans', 'http://127.0.0.1:8123/api/scans/live-completed/export?format=json', 'http://127.0.0.1:8123/api/scans/live-completed/export?format=cyclonedx']);
+  assert.deepEqual(requests.map(x => x[0]), ['http://127.0.0.1:8123/api/scans', 'http://127.0.0.1:8123/api/exports?format=json', 'http://127.0.0.1:8123/api/exports?format=cyclonedx']);
+  for (const [, options] of requests.slice(1)) {
+    assert.equal(options.method, 'POST');
+    assert.deepEqual(JSON.parse(options.body), live);
+  }
   assert.deepEqual(downloads, ['quantumtrace-scan-live-completed.json', 'quantumtrace-cbom-live-completed.cdx.json']);
 });
 
