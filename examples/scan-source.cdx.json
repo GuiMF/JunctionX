@@ -35,7 +35,7 @@
       },
       {
         "name": "quantumtrace:ruleset_version",
-        "value": "1.0.2"
+        "value": "1.1.0"
       },
       {
         "name": "quantumtrace:scan_id",
@@ -151,7 +151,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-UNKNOWN@1.0.2"
+          "value": "QT-AES-PARAMETERS@1.1.0"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -254,7 +254,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-AES@1.0.2"
+          "value": "QT-AES@1.1.0"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -356,7 +356,7 @@
         },
         {
           "name": "quantumtrace:rule_id",
-          "value": "QT-RSA-UNKNOWN-USAGE@1.0.2"
+          "value": "QT-RSA-UNKNOWN-USAGE@1.1.0"
         },
         {
           "name": "quantumtrace:schema_version",
@@ -381,5 +381,5 @@
       }
     }
   ],
-  "serialNumber": "urn:uuid:6d71b5b0-7235-59df-8fe0-42ce12eccc5b"
+  "serialNumber": "urn:uuid:78290cfc-036a-5bc1-aaf7-5c4642afc9b8"
 }

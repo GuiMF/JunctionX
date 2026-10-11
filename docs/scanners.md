@@ -58,7 +58,7 @@ without calling it is not a hash observation. AES inside a Python `Cipher` is on
 occurrence at `Cipher`; Go GCM construction enriches the bound AES block factory.
 Java factories are occurrence anchors; bound initializer calls can add parameters.
 
-RSA generation keeps usage unknown. Core rules 1.0.2 classify the known RSA
+RSA generation keeps usage unknown. Core rules 1.1.0 classify the known RSA
 primitive as quantum-vulnerable and flag explicitly weak key sizes while asking
 the user to establish usage before choosing a replacement. This follows the
 existing [NIST rationale](https://csrc.nist.gov/projects/post-quantum-cryptography/faqs).
@@ -462,6 +462,10 @@ unmatched detection. A zero denominator yields JSON null, not a perfect score.
 File assessment and scan errors are reported separately from detection recall.
 Known-gap misses leave the command successful so the report can be inspected;
 input-integrity errors or adapter failures produce a nonzero exit status.
+Use `--strict` to fail on any false positive, missed occurrence (including a
+known gap), or annotated parameter mismatch. CI uses this mode for the committed
+holdout corpus. The optional organizer corpus is subject to the same gate when
+both `--strict` and `--organizer-root` are supplied.
 
 Parameter scoring is separate and checks only fields explicitly included in each
 manual label. An explicit null means the parameter should remain unresolved; an

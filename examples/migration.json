@@ -63,11 +63,12 @@
         "posture_issues": [],
         "owner": null,
         "observed_at": "2026-09-14T09:35:51Z",
-        "rule_id": "QT-UNKNOWN@1.0.2",
-        "rationale": "The normalized algorithm, parameters, or usage are insufficient for a supported assessment. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
-        "recommendation": "Confirm the algorithm and usage from direct evidence; retain unresolved facts as unknown.",
+        "rule_id": "QT-TLS-NEGOTIATION-UNOBSERVED@1.1.0",
+        "rationale": "The TLS policy describes configured capabilities, but no negotiated key-establishment algorithm was observed. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
+        "recommendation": "Inspect a captured ServerHello to establish the selected cipher suite and key-share group; assess authentication separately.",
         "references": [
-          "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html"
+          "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
+          "https://www.rfc-editor.org/rfc/rfc8446.html"
         ]
       }
     ]
@@ -133,11 +134,12 @@
         "posture_issues": [],
         "owner": null,
         "observed_at": "2026-09-14T09:35:51Z",
-        "rule_id": "QT-UNKNOWN@1.0.2",
-        "rationale": "The normalized algorithm, parameters, or usage are insufficient for a supported assessment. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
-        "recommendation": "Confirm the algorithm and usage from direct evidence; retain unresolved facts as unknown.",
+        "rule_id": "QT-TLS-NEGOTIATION-UNOBSERVED@1.1.0",
+        "rationale": "The TLS policy describes configured capabilities, but no negotiated key-establishment algorithm was observed. Configured capability does not establish observed negotiation or runtime use. A primitive assessment does not certify whole-application resilience.",
+        "recommendation": "Inspect a captured ServerHello to establish the selected cipher suite and key-share group; assess authentication separately.",
         "references": [
-          "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html"
+          "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html",
+          "https://www.rfc-editor.org/rfc/rfc8446.html"
         ]
       }
     ]

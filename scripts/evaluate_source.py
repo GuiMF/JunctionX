@@ -136,6 +136,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--organizer-root", type=Path,
                         help="Optional organizer sample-repos directory at the pinned commit")
+    parser.add_argument("--strict", action="store_true",
+                        help="Fail on detection or annotated parameter mismatches, including known gaps")
     args = parser.parse_args(argv)
     try:
         reports = [evaluate_corpus(FIXTURES / "holdout", FIXTURES / "holdout-labels.json")]
@@ -144,8 +146,12 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError) as error:
         parser.exit(2, f"Evaluation failed: {error}\n")
     print(json.dumps({"reports": reports}, indent=2))
-    # Known gaps are reported as misses, not a process failure; corpus errors fail.
-    return int(any(report["scan_errors"] for report in reports))
+    # Reporting mode preserves known gaps; strict mode gates every requested corpus.
+    return int(any(report["scan_errors"] or (args.strict and (
+        report["detection"]["false_positive"]
+        or report["detection"]["false_negative"]
+        or report["parameters"]["mismatches"]
+    )) for report in reports))
 
 
 if __name__ == "__main__":

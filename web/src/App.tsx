@@ -3,6 +3,7 @@ import { Database, Upload } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { CoverageCards } from './components/CoverageCards';
 import { RiskPostureBanner } from './components/RiskPostureBanner';
+import { ScanCoverageNotice } from './components/ScanCoverageNotice';
 import { FindingsTable } from './components/FindingsTable';
 import { EvidenceModal } from './components/EvidenceModal';
 import { UploadBar } from './components/UploadBar';
@@ -93,7 +94,7 @@ export const App: React.FC = () => {
             <h2 className="mb-2 font-medium">{scanResult.status === 'failed' ? 'Scan failed' : 'Some inputs could not be assessed'}</h2>
             <ul className="space-y-1">{scanResult.errors.map((error, index) => <li key={index}>{error.input_name} ({error.source_type}) — {error.code}: {error.message}</li>)}</ul>
           </section>}
-          {scanResult ? <div className="space-y-5"><RiskPostureBanner findings={scanResult.findings} score={scanResult.score} /><FindingsTable key={resetCounter} findings={scanResult.findings} onSelectFinding={setSelectedFinding} selectedFindingId={selectedFinding?.id} /></div> : <section className="rounded-md border border-slate-200 bg-white px-6 py-16 text-center" aria-labelledby="empty-inventory-title">
+          {scanResult ? <div className="space-y-5"><ScanCoverageNotice scan={scanResult} /><RiskPostureBanner findings={scanResult.findings} score={scanResult.score} /><FindingsTable key={resetCounter} findings={scanResult.findings} onSelectFinding={setSelectedFinding} selectedFindingId={selectedFinding?.id} /></div> : <section className="rounded-md border border-slate-200 bg-white px-6 py-16 text-center" aria-labelledby="empty-inventory-title">
             <Database size={32} className="mx-auto mb-4 text-slate-400" aria-hidden="true" />
             <h1 id="empty-inventory-title" className="text-xl font-semibold text-slate-900">No scans yet</h1>
             <p className="mx-auto mb-6 mt-2 max-w-md text-sm text-slate-500">Import source code, network captures, or AWS snapshots to discover cryptographic assets and assess their exposure.</p>

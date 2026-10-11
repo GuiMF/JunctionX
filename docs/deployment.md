@@ -38,17 +38,28 @@ The container runs one Uvicorn worker as an unprivileged user on `PORT`, default
 privileges. The Docker context contains only backend code, dependencies and schemas.
 Standalone `npm run dev` in `web/` proxies `/api` to `http://127.0.0.1:8000`.
 
+## CI deployment checks
+
+The `deployment-smoke` GitHub Actions job builds this same Dockerfile, starts
+the image, and checks the health route, source and cloud scanning, a real PCAP
+through TShark, uploads, and JSON/CBOM exports over HTTP. The frontend checks
+also verify same-origin API routing. These checks catch packaging and local
+workflow regressions; the Vercel preview check verifies the cloud build.
+
 ## Outstanding hosted-backend constraints
 
 This configuration packages and routes the services; it does not change storage:
 
-- Scans and upload sessions belong to one process. Vercel can send later requests
-  to a different instance or scale an idle instance down. The dashboard exports
-  via `POST /api/exports`, submitting its active result for stateless conversion.
-  GET-by-ID retrieval and multi-request uploads still require shared storage.
+- Stored scans and upload sessions belong to one process. Vercel can send later
+  requests to a different instance or scale an idle instance down after 30 seconds
+  in preview or 5 minutes in production. The dashboard exports via
+  `POST /api/exports`, submitting its active result for stateless conversion, so
+  those exports survive backend instance changes. GET-by-ID retrieval and
+  multi-request uploads still require shared storage.
 - The UI allows 64 MiB batches and 3 GB selections, but Vercel documents a 4.5 MB
   function request/response payload limit. Large uploads need direct object
-  storage uploads and a revised API.
+  storage uploads and a revised API. Stateless export requests and generated
+  CBOM responses must also stay within the payload limit.
 - Synchronous scans face function execution limits. Long scans need durable jobs.
 - The API has no authentication or user isolation. Use synthetic data for demos.
 

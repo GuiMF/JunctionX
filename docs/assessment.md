@@ -1,6 +1,6 @@
-# Deterministic assessment v1.0.2
+# Deterministic assessment v1.1.0
 
-`core.assessment.assess_finding(Finding) -> Finding` returns a deep copy. It reads normalized algorithm, usage, and parameters only. There is no LLM, network call, clock dependency, or inference from evidence text, comments, filenames, owner, or asset names. The adapter supplies those facts; assessment cannot establish whether a detector is correct.
+`core.assessment.assess_finding(Finding) -> Finding` returns a deep copy. It reads the normalized algorithm, usage, parameters, and evidence scope. There is no LLM, network call, clock dependency, or inference from evidence text, comments, filenames, owner, or asset names. The adapter supplies those facts; assessment cannot establish whether a detector is correct.
 
 Every result includes a versioned rule ID, rationale, recommendation, and authoritative reference URLs. Unknown cases receive an explicit unknown rule. Confidence, identity, evidence kind, timestamps, ownership, and detector-supplied issues survive assessment. Evidence is never upgraded from offered/configured/declared to observed.
 
@@ -16,7 +16,10 @@ Assessment consumes fresh detector facts. Repeating assessment on an unchanged r
 | FIPS ML-DSA / SLH-DSA families and valid named sets | resistant_primitive / resilient | Signatures only. Verify implementation and platform support. |
 | RFC 10024 exact hybrid groups | hybrid / resilient | X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024. This says nothing about authentication. |
 | Kyber drafts, unknown group IDs, unsupported algorithms, incompatible usage | unknown / unknown | No substring-based certification or guessed registry mapping. |
-| Hash, HMAC, PBKDF2 | unknown / unknown | Required security properties, secret entropy, tags, salts, PRF, or password handling are not fully established by this contract. |
+| MD5 / SHA-1 used as a hash | quantum_weakened / medium | Explicit challenge migration policy; existing collision weaknesses stay visible. A non-security checksum is not assumed to be a security use. This does not classify a containing HMAC, signature or KDF. |
+| Classical EC/ECC key with unknown usage | vulnerable / critical | Known classical primitive, but signing versus key establishment is unresolved. Conflicting or unsupported named groups remain unknown. |
+| Configured cloud HTTP listener | not_applicable / unknown | No TLS primitive to classify; the UI displays Not applicable. HTTP forwarding issues remain operational findings. Excluded from both exposure and uncertainty counts. |
+| Other hashes, HMAC, PBKDF2 | unknown / unknown | Required security properties, secret entropy, tags, salts, PRF, or password handling are not fully established by this contract. |
 
 The challenge tier concerns quantum migration only. Existing weaknesses are in `classical_issues`; cloud expiry/rotation and similar operational facts remain in `posture_issues`. For example, AES-256-ECB retains a resistant primitive classification **and** an ECB weakness. This is intentional: the inventory must show both, and no view should display the tier as a whole-system safety verdict.
 
@@ -26,7 +29,11 @@ Unknown AES sizes and conflicting AES name/parameter values remain unknown. Conf
 
 An offered group is a capability, not a selected group. Configuration is not runtime use. Declared source is not execution. Observed findings apply only to the captured operation. In passive TLS 1.3, encrypted handshake records normally conceal certificate/CertificateVerify details after ServerHello; absent authentication remains unknown. A scan cannot certify application resilience by seeing TLS 1.3, AES-256, or one hybrid exchange.
 
-References checked 10 October 2026; the implemented rules and allowlists are pinned by `RULESET_VERSION`. No registry refresh occurs during scans. Changes to these decisions require a ruleset version change and regression review.
+Legacy-hash policy follows the project brief’s medium SHA-1 example and extends the same conservative migration tier to MD5 hash occurrences. `quantum_weakened` distinguishes this challenge policy from Shor-vulnerable public-key primitives and from primitive resistance. It makes no practical-attack or whole-application security claim. The NIST PQC FAQ and hash guidance inform the limits and classical warnings; they do not define this project’s medium tier. Modern hash names, HMAC and PBKDF2 still require context.
+
+Ruleset 1.1.0 also gives unresolved AES parameters and unobserved configured TLS negotiation distinct rule IDs, so the dashboard can explain and filter uncertainty without guessing from rationale text. The API adds `quantum_weakened` to the quantum-status enum; consumers with exhaustive enum handling must accept it. The existing challenge-tier enum is unchanged.
+
+Original references checked 10 October 2026; NIST PQC/hash guidance rechecked for the legacy-hash policy on 11 October 2026; the implemented rules and allowlists are pinned by `RULESET_VERSION`. No registry refresh occurs during scans. Changes to these decisions require a ruleset version change and regression review.
 
 - [NIST PQC FAQ](https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs): symmetric-key nuance and generic quantum search. AES-128's medium tier is this project's simplification.
 - [FIPS 203](https://csrc.nist.gov/pubs/fips/203/final), [FIPS 204](https://csrc.nist.gov/pubs/fips/204/final), [FIPS 205](https://csrc.nist.gov/pubs/fips/205/final): standardized KEM and signature roles.

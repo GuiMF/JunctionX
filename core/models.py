@@ -64,7 +64,7 @@ class Finding(ContractModel):
     evidence_kind: EvidenceKind
     evidence: list[Evidence] = Field(min_length=1)
     confidence: Literal["high", "medium", "low"]
-    quantum_status: Literal["vulnerable", "resistant_primitive", "hybrid", "unknown", "not_applicable"] = "unknown"
+    quantum_status: Literal["vulnerable", "quantum_weakened", "resistant_primitive", "hybrid", "unknown", "not_applicable"] = "unknown"
     challenge_tier: Literal["critical", "medium", "resilient", "unknown"] = "unknown"
     classical_issues: list[Text] = Field(default_factory=list)
     posture_issues: list[Text] = Field(default_factory=list)

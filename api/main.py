@@ -137,6 +137,12 @@ def create_app(
         format: Literal["json", "cyclonedx"] = Query(default="json"),
     ) -> JSONResponse:
         """Convert a validated client-held result without process-local storage."""
+        # Finding IDs become CycloneDX bom-ref values. Client-held documents
+        # need this integrity check before conversion, without reflecting an
+        # untrusted ID or masking unrelated exporter failures.
+        finding_ids = [finding.id for finding in scan.findings]
+        if len(finding_ids) != len(set(finding_ids)):
+            raise HTTPException(status_code=422, detail="Finding IDs must be unique for export")
         return export_response(scan, format)
 
     def export_response(scan: ScanResult, format: str) -> JSONResponse:

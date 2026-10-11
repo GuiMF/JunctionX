@@ -30,3 +30,16 @@ def test_stateless_export_validates_input_without_echoing_it():
         response = client.post('/api/exports', json={'secret': 'never-echo-this'})
         assert response.status_code == 422
         assert 'never-echo-this' not in response.text
+
+
+@pytest.mark.parametrize("format", ["json", "cyclonedx"])
+def test_stateless_export_rejects_duplicate_finding_ids_without_echoing_them(format):
+    request = json.loads((Path(__file__).parents[1] / 'examples/scan-source.request.json').read_text())
+    with TestClient(create_app()) as client:
+        scan = client.post('/api/scans', json=request).json()
+        scan['findings'][0]['id'] = 'private-finding-id-never-echo'
+        scan['findings'].append(dict(scan['findings'][0]))
+        response = client.post(f'/api/exports?format={format}', json=scan)
+        assert response.status_code == 422
+        assert response.json() == {'detail': 'Finding IDs must be unique for export'}
+        assert 'private-finding-id-never-echo' not in response.text

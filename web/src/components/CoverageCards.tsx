@@ -53,6 +53,7 @@ export const CoverageCards: React.FC<CoverageCardsProps> = ({ coverage }) => {
 
   return (
     <div className="grid grid-cols-1 gap-3">
+      <p className="px-1 text-[12px] text-slate-500">Processing coverage. An assessed input may still contain unresolved cryptographic findings.</p>
       {cards.map((card) => {
         const Icon = card.icon;
 

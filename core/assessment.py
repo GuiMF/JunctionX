@@ -4,7 +4,7 @@ import re
 
 from core.models import Finding
 
-RULESET_VERSION = "1.0.2"
+RULESET_VERSION = "1.1.0"
 NIST_PQC = "https://csrc.nist.gov/Projects/post-quantum-cryptography/faqs"
 FIPS203 = "https://csrc.nist.gov/pubs/fips/203/final"
 FIPS204 = "https://csrc.nist.gov/pubs/fips/204/final"
@@ -115,7 +115,18 @@ def assess_finding(finding: Finding) -> Finding:
     if usage == "key_establishment" and group:
         key_name = group if _compatible_key_group(algorithm, group) else "CONFLICTINGGROUP"
 
-    if usage == "signature" and group and not _compatible_signature_group(algorithm, group):
+    if algorithm == "HTTP" and usage == "unknown" and finding.source_type == "cloud" and finding.evidence_kind == "configured":
+        classify("not_applicable", "unknown", "HTTP-NOT-APPLICABLE",
+                 "An HTTP listener has no TLS cryptographic primitive to classify for quantum migration. "
+                 "This does not establish secure transport; forwarding and redirect behavior are separate operational concerns.",
+                 "Review the listener's forwarding or HTTPS redirect configuration and assess TLS on the destination separately.")
+    elif algorithm in {"EC", "ECC"} and usage == "unknown" and (not group or group in CLASSICAL_EC_GROUPS):
+        classify("vulnerable", "critical", "EC-UNKNOWN-USAGE",
+                 "The known classical elliptic-curve public key relies on discrete logarithms and is quantum-vulnerable. "
+                 "The evidence does not establish whether it is used for signatures or key establishment.",
+                 "Confirm whether the key signs or establishes shared secrets before choosing a compatible post-quantum replacement.",
+                 NIST_PQC)
+    elif usage == "signature" and group and not _compatible_signature_group(algorithm, group):
         rationale = "The signature algorithm and named-group metadata conflict or their combination is unsupported."
         recommendation = "Resolve the signing algorithm and its parameter set from direct evidence before assessing it."
     elif key_name in HYBRID_GROUPS and usage == "key_establishment":
@@ -187,6 +198,7 @@ def assess_finding(finding: Finding) -> Finding:
                      "Verify authenticated encryption, nonce uniqueness, key handling, and separately assess key establishment "
                      "and signatures. Consider AES-256 where policy requires additional margin.", NIST_PQC)
         else:
+            rule = "AES-PARAMETERS"
             rationale = "AES key size is absent, unsupported, or contradicts its name, or mode metadata conflicts; assessment remains unknown."
             recommendation = "Resolve AES key size in bits and any conflicting mode metadata from the actual API or configuration."
         if "ECB" in {mode, match[2]}:
@@ -220,6 +232,15 @@ def assess_finding(finding: Finding) -> Finding:
         rationale = "A hash name alone does not establish the required preimage/collision strength or surrounding construction."
         recommendation = "Confirm the hash's security purpose and surrounding construction; assess authentication and key establishment separately."
         refs.append(HASHES)
+        if algorithm in {"MD5", "SHA1"} and usage == "hash":
+            classify("quantum_weakened", "medium", "LEGACY-HASH",
+                     "This legacy hash receives the challenge's medium quantum-migration tier for reduced generic "
+                     "preimage-search margin under Grover's algorithm. This is a project policy, not a practical quantum "
+                     "break or a NIST safety rating. Existing collision weaknesses are reported separately; "
+                     "the surrounding construction and security purpose still require review.",
+                     "Replace collision-sensitive uses with a supported SHA-2 or SHA-3 construction; confirm whether "
+                     "the hash serves a security purpose or only a non-security checksum. Assess MACs and KDFs separately.",
+                     NIST_PQC, HASHES)
         if algorithm in {"MD5", "SHA1"}:
             refs.append(MD5 if algorithm == "MD5" else TRANSITION)
             if usage == "signature":
@@ -229,6 +250,14 @@ def assess_finding(finding: Finding) -> Finding:
             elif usage == "kdf":
                 recommendation = ("Identify the complete derivation construction and security purpose. A KDF usage label "
                                   "does not establish direct password hashing or transfer collision attacks to that construction.")
+
+    if (status == "unknown" and finding.parameters.configured_tls_policy is not None
+            and finding.source_type == "cloud" and finding.evidence_kind == "configured"
+            and usage == "key_establishment" and algorithm == "UNKNOWN" and not group):
+        rule = "TLS-NEGOTIATION-UNOBSERVED"
+        rationale = "The TLS policy describes configured capabilities, but no negotiated key-establishment algorithm was observed."
+        recommendation = "Inspect a captured ServerHello to establish the selected cipher suite and key-share group; assess authentication separately."
+        refs.append(TLS)
 
     # Signature digest weaknesses are independent from the asymmetric quantum classification.
     digest = _name(finding.parameters.hash_algorithm)

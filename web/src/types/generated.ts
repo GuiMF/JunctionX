@@ -39,7 +39,7 @@ export interface Finding {
   evidence_kind: "declared" | "configured" | "offered" | "observed";
   evidence: Array<Evidence>;
   confidence: "high" | "medium" | "low";
-  quantum_status: "vulnerable" | "resistant_primitive" | "hybrid" | "unknown" | "not_applicable";
+  quantum_status: "vulnerable" | "quantum_weakened" | "resistant_primitive" | "hybrid" | "unknown" | "not_applicable";
   challenge_tier: "critical" | "medium" | "resilient" | "unknown";
   classical_issues: Array<string>;
   posture_issues: Array<string>;
